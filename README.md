@@ -412,31 +412,6 @@ GitHub Actions can be used to automate build, test, and deployment processes.
 
 ---
 
-## 🌟 Key Highlights
-
-✔ Smart Parking Discovery
-✔ Online Parking Reservation
-✔ QR-Based Parking Token
-✔ Customer Mobile Application
-✔ Parking Owner Management
-✔ Parking Staff Operations
-✔ Administrator Management
-✔ JWT Authentication
-✔ Role-Based Access Control
-✔ Secure API Architecture
-✔ Payment & Billing Management
-✔ Rating & Feedback System
-✔ Agentic AI Integration
-✔ PostgreSQL Database
-✔ .NET 8 Web API
-✔ React Web Application
-✔ Flutter Mobile Application
-✔ Automated Testing
-✔ CI/CD Ready
-✔ Cloud Deployment Ready
-
----
-
 ## 🚀 QuickPark Vision
 
 > **Park smarter. Reserve faster. Travel easier.**
