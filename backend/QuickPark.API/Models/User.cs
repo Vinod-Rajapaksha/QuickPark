@@ -1,5 +1,3 @@
-using System;
-
 namespace QuickPark.API.Models;
 
 public class User
