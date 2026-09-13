@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import * as Icons from 'lucide-react';
-import type { NavigationItem } from '../../constants/navigationConfig';
+import type { NavigationItem } from '../../app/config/navigationConfig';
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpe
         <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
           {allowedNavItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
-            const Icon = (Icons as any)[item.icon] || Icons.Circle;
+            const Icon = (Icons[item.icon as keyof typeof Icons] as React.ElementType) || Icons.Circle;
 
             return (
               <Link

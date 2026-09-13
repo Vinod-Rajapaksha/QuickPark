@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, LogOut, User as UserIcon } from 'lucide-react';
-import type { User } from '../../features/auth/types/auth';
+import type { User } from '../../features/auth/types/authTypes';
 import ConfirmDialog from '../common/ConfirmDialog/ConfirmDialog';
 
 interface TopBarProps {
