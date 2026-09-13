@@ -1,4 +1,3 @@
-using System;
 using QuickPark.API.Models;
 
 namespace QuickPark.API.DTOs.Auth;
@@ -10,5 +9,5 @@ public class UserResponse
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string NIC { get; set; } = string.Empty;
-    public Role Role { get; set; }
+    public UserRole Role { get; set; }
 }

@@ -20,7 +20,7 @@ public class DbSeeder
     {
         await _context.Database.MigrateAsync();
 
-        if (!await _context.Users.AnyAsync(u => u.Role == Role.PLATFORM_ADMIN))
+        if (!await _context.Users.AnyAsync(u => u.Role == UserRole.PLATFORM_ADMIN))
         {
             if (!string.IsNullOrEmpty(_adminSeedOptions.Email) && !string.IsNullOrEmpty(_adminSeedOptions.Password))
             {
@@ -29,7 +29,7 @@ public class DbSeeder
                     FullName = "Platform Administrator",
                     Email = _adminSeedOptions.Email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(_adminSeedOptions.Password),
-                    Role = Role.PLATFORM_ADMIN,
+                    Role = UserRole.PLATFORM_ADMIN,
                     Phone = _adminSeedOptions.Phone,
                     NIC = _adminSeedOptions.NIC
                 };
