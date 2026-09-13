@@ -8,7 +8,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string NIC { get; set; } = string.Empty;
-    public Role Role { get; set; }
+    public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
