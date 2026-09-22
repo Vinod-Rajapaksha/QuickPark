@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QuickPark.API.Data;
@@ -11,9 +12,11 @@ using QuickPark.API.Data;
 namespace QuickPark.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260919103811_AddFeedbackReply")]
+    partial class AddFeedbackReply
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,12 +37,6 @@ namespace QuickPark.API.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ModeratedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ModeratedBy")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("ParkingId")
                         .HasColumnType("uuid");
@@ -62,12 +59,6 @@ namespace QuickPark.API.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ParkingId");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("Type");
 
                     b.HasIndex("UserId");
 
@@ -108,13 +99,16 @@ namespace QuickPark.API.Migrations
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("RepliedByUserId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ReplierRole")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -223,7 +217,7 @@ namespace QuickPark.API.Migrations
             modelBuilder.Entity("QuickPark.API.Models.FeedbackReply", b =>
                 {
                     b.HasOne("QuickPark.API.Models.Feedback", "Feedback")
-                        .WithMany("Replies")
+                        .WithMany()
                         .HasForeignKey("FeedbackId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -245,8 +239,6 @@ namespace QuickPark.API.Migrations
             modelBuilder.Entity("QuickPark.API.Models.Feedback", b =>
                 {
                     b.Navigation("Keywords");
-
-                    b.Navigation("Replies");
 
                     b.Navigation("Reports");
                 });

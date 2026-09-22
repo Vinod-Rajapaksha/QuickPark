@@ -7,6 +7,7 @@ using System.Text;
 using QuickPark.API.Services.Interfaces;
 using QuickPark.API.Services.Implementations;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
@@ -27,7 +28,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Configure DbSeeder
 builder.Services.AddScoped<DbSeeder>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
+//feedback services
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IParkingUsageValidator, ParkingUsageValidator>();
+builder.Services.AddScoped<IFeedbackReplyService,FeedbackReplyService>();
+builder.Services.AddScoped<IFeedbackReportService,FeedbackReportService>();
+builder.Services.AddScoped<IParkingAccessValidator, ParkingAccessValidator>();
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
