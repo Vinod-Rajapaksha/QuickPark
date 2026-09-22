@@ -8,6 +8,8 @@ import Landing from './pages/public/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Profile from './pages/dashboard/Profile';
+import ProviderProfilePage from './pages/provider/ProfilePage';
+import ProvidersPage from './pages/admin/ProvidersPage';
 import { ProtectedRoute } from './app/routes/ProtectedRoute';
 import Spinner from './components/common/Spinner/Spinner';
 
@@ -40,8 +42,12 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<div className="p-4">Welcome to your dashboard</div>} />
             <Route path="/profile" element={<Profile />} />
+            <Route element={<ProtectedRoute allowedRoles={[Role.PARKING_OWNER]} />}>
+              <Route path="/provider/profile" element={<ProviderProfilePage />} />
+            </Route>
             <Route element={<ProtectedRoute allowedRoles={[Role.PLATFORM_ADMIN]} />}>
                <Route path="/admin" element={<div className="p-4">Admin Only Area</div>} />
+               <Route path="/admin/providers" element={<ProvidersPage />} />
             </Route>
           </Route>
         </Route>

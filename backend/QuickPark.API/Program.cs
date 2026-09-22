@@ -27,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Configure DbSeeder
 builder.Services.AddScoped<DbSeeder>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProviderService, ProviderService>();
 
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
