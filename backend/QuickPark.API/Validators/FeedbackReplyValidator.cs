@@ -2,6 +2,7 @@ using FluentValidation;
 using QuickPark.API.DTOs.Feedback;
 
 namespace QuickPark.API.Validators;
+
 public class FeedbackReplyValidator 
     : AbstractValidator<CreateFeedbackReplyRequest>
 {

@@ -1,12 +1,9 @@
 using QuickPark.API.Services.Interfaces;
 
-
 namespace QuickPark.API.Services.Implementations;
-
 
 public class ParkingUsageValidator : IParkingUsageValidator
 {
-
 
     public Task<bool> CanUserReviewParking(
         Guid userId,
@@ -14,7 +11,6 @@ public class ParkingUsageValidator : IParkingUsageValidator
     {
         // TEMPORARY IMPLEMENTATION
         return Task.FromResult(true);
-
     }
 
 }

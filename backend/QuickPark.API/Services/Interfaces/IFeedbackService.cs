@@ -1,6 +1,7 @@
 using QuickPark.API.DTOs.Feedback;
 
 namespace QuickPark.API.Services.Interfaces;
+
 public interface IFeedbackService
 {
         Task<FeedbackResponse> CreateAsync(

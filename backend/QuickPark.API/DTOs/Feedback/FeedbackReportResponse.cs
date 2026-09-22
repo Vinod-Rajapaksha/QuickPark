@@ -1,4 +1,5 @@
 namespace QuickPark.API.DTOs.Feedback;
+
 public class FeedbackReportResponse
 {
     public Guid Id { get; set; }

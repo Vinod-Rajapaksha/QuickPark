@@ -16,14 +16,11 @@ public class FeedbackReplyController : ControllerBase
 
     private readonly IFeedbackReplyService _service;
 
-
     public FeedbackReplyController(
         IFeedbackReplyService service)
     {
         _service = service;
     }
-
-
 
     private Guid GetUserId()
     {
@@ -32,18 +29,13 @@ public class FeedbackReplyController : ControllerBase
             User.FindFirstValue(
                 ClaimTypes.NameIdentifier);
 
-
         if(!Guid.TryParse(value,out var id))
         {
             throw new UnauthorizedAccessException();
         }
 
-
         return id;
     }
-
-
-
 
     private UserRole GetUserRole()
     {
@@ -51,14 +43,11 @@ public class FeedbackReplyController : ControllerBase
             User.FindFirstValue(
                 ClaimTypes.Role);
 
-
         if(string.IsNullOrEmpty(role))
         {
             throw new UnauthorizedAccessException(
                 "User role missing.");
         }
-
-
 
         if(!Enum.TryParse<UserRole>(
             role,
@@ -68,10 +57,8 @@ public class FeedbackReplyController : ControllerBase
                 "Invalid user role.");
         }
 
-
         return result;
     }
-
 
 
     [Authorize]
@@ -80,14 +67,12 @@ public class FeedbackReplyController : ControllerBase
         CreateFeedbackReplyRequest request)
     {
 
-
         var result =
             await _service.CreateAsync(
                 GetUserId(),
                 GetUserRole(),
                 request
             );
-
 
         return Ok(result);
 

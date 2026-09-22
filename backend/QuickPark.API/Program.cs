@@ -28,7 +28,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Configure DbSeeder
 builder.Services.AddScoped<DbSeeder>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-//feedback services
+
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IParkingUsageValidator, ParkingUsageValidator>();
 builder.Services.AddScoped<IFeedbackReplyService,FeedbackReplyService>();

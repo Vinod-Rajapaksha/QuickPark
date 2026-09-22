@@ -1,6 +1,5 @@
 namespace QuickPark.API.Enums;
 
-
 public enum FeedbackKeywordType
 {
     SAFE,

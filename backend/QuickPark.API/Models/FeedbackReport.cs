@@ -1,4 +1,5 @@
 namespace QuickPark.API.Models;
+
 public class FeedbackReport
 {
 

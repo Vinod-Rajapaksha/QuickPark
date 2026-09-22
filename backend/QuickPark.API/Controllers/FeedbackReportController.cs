@@ -8,16 +8,11 @@ using System.Security.Claims;
 
 namespace QuickPark.API.Controllers;
 
-
 [ApiController]
 [Route("api/[controller]")]
 public class FeedbackReportController : ControllerBase
 {
-
-
     private readonly IFeedbackReportService _service;
-
-
 
     public FeedbackReportController(
         IFeedbackReportService service)
@@ -25,21 +20,11 @@ public class FeedbackReportController : ControllerBase
         _service = service;
     }
 
-
-
-
-
-
-
-
     private Guid GetUserId()
     {
-
         var userId =
             User.FindFirstValue(
                 ClaimTypes.NameIdentifier);
-
-
 
         if(!Guid.TryParse(
             userId,
@@ -49,18 +34,9 @@ public class FeedbackReportController : ControllerBase
                 "Invalid authenticated user.");
         }
 
-
-
         return id;
 
     }
-
-
-
-
-
-
-
 
     private UserRole GetUserRole()
     {
@@ -69,16 +45,11 @@ public class FeedbackReportController : ControllerBase
             User.FindFirstValue(
                 ClaimTypes.Role);
 
-
-
         if(string.IsNullOrEmpty(role))
         {
             throw new UnauthorizedAccessException(
                 "Role missing.");
         }
-
-
-
 
         if(!Enum.TryParse<UserRole>(
             role,
@@ -88,40 +59,23 @@ public class FeedbackReportController : ControllerBase
                 "Invalid role.");
         }
 
-
-
         return result;
 
     }
-
-
-
-
-
-
-
-
-
-    // DRIVER REPORTS PARKING FEEDBACK
 
     [Authorize(Roles="DRIVER")]
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateFeedbackReportRequest request)
     {
-
-
         await _service.CreateAsync(
             GetUserId(),
             GetUserRole(),
             request);
 
-
-
         return Ok(
             "Feedback reported successfully");
 
     }
-
 
 }

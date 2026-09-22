@@ -6,10 +6,13 @@ using QuickPark.API.Models;
 using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.API.Services.Implementations;
+
 public class FeedbackService : IFeedbackService
+
 {    private readonly AppDbContext _context;
+
      private readonly IParkingUsageValidator _parkingValidator;
-    public FeedbackService(
+     public FeedbackService(
         AppDbContext context,
         IParkingUsageValidator parkingValidator)
     {
@@ -17,7 +20,6 @@ public class FeedbackService : IFeedbackService
 
         _parkingValidator = parkingValidator;
     }
-
 
     public async Task<FeedbackResponse> CreateAsync(
         Guid userId,

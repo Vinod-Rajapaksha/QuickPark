@@ -7,6 +7,7 @@ public class Feedback
     public Guid Id { get; set; }
         = Guid.NewGuid();
     public Guid UserId { get; set; }
+    
     public FeedbackType Type { get; set; }
 
     public Guid? ParkingId { get; set; }

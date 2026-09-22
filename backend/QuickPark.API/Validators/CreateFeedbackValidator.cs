@@ -3,6 +3,7 @@ using QuickPark.API.DTOs.Feedback;
 using QuickPark.API.Enums;
 
 namespace QuickPark.API.Validators;
+
 public class CreateFeedbackValidator
     : AbstractValidator<CreateFeedbackRequest>
 {
