@@ -4,7 +4,7 @@ using QuickPark.API.Models;
 
 namespace QuickPark.API.Data.Configurations;
 
-public class FeedbackReportConfiguration 
+public class FeedbackReportConfiguration
     : IEntityTypeConfiguration<FeedbackReport>
 {
     public void Configure(EntityTypeBuilder<FeedbackReport> builder)

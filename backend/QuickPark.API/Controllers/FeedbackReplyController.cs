@@ -5,9 +5,7 @@ using QuickPark.API.Models;
 using QuickPark.API.Services.Interfaces;
 using System.Security.Claims;
 
-
 namespace QuickPark.API.Controllers;
-
 
 [ApiController]
 [Route("api/[controller]")]
@@ -24,12 +22,11 @@ public class FeedbackReplyController : ControllerBase
 
     private Guid GetUserId()
     {
-
         var value =
             User.FindFirstValue(
                 ClaimTypes.NameIdentifier);
 
-        if(!Guid.TryParse(value,out var id))
+        if (!Guid.TryParse(value, out var id))
         {
             throw new UnauthorizedAccessException();
         }
@@ -43,13 +40,13 @@ public class FeedbackReplyController : ControllerBase
             User.FindFirstValue(
                 ClaimTypes.Role);
 
-        if(string.IsNullOrEmpty(role))
+        if (string.IsNullOrEmpty(role))
         {
             throw new UnauthorizedAccessException(
                 "User role missing.");
         }
 
-        if(!Enum.TryParse<UserRole>(
+        if (!Enum.TryParse<UserRole>(
             role,
             out var result))
         {
@@ -60,13 +57,11 @@ public class FeedbackReplyController : ControllerBase
         return result;
     }
 
-
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateFeedbackReplyRequest request)
     {
-
         var result =
             await _service.CreateAsync(
                 GetUserId(),

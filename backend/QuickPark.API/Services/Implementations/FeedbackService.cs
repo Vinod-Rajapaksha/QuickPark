@@ -9,12 +9,13 @@ namespace QuickPark.API.Services.Implementations;
 
 public class FeedbackService : IFeedbackService
 
-{    private readonly AppDbContext _context;
+{
+    private readonly AppDbContext _context;
 
-     private readonly IParkingUsageValidator _parkingValidator;
-     public FeedbackService(
-        AppDbContext context,
-        IParkingUsageValidator parkingValidator)
+    private readonly IParkingUsageValidator _parkingValidator;
+    public FeedbackService(
+       AppDbContext context,
+       IParkingUsageValidator parkingValidator)
     {
         _context = context;
 
@@ -26,9 +27,9 @@ public class FeedbackService : IFeedbackService
         CreateFeedbackRequest request)
     {
 
-        if(request.Type == FeedbackType.PARKING)
+        if (request.Type == FeedbackType.PARKING)
         {
-            if(request.ParkingId == null)
+            if (request.ParkingId == null)
             {
                 throw new Exception(
                     "Parking id is required for parking feedback");
@@ -40,18 +41,18 @@ public class FeedbackService : IFeedbackService
                     userId,
                     request.ParkingId.Value);
 
-            if(!canReview)
+            if (!canReview)
             {
                 throw new Exception(
                     "You cannot review this parking");
             }
 
         }
-        if(request.Type == FeedbackType.SYSTEM)
+        if (request.Type == FeedbackType.SYSTEM)
         {
             request.ParkingId = null;
 
-            if(request.Keywords != null &&
+            if (request.Keywords != null &&
                request.Keywords.Any())
             {
                 throw new Exception(
@@ -76,10 +77,10 @@ public class FeedbackService : IFeedbackService
 
         };
 
-        if(request.Type == FeedbackType.PARKING &&
+        if (request.Type == FeedbackType.PARKING &&
            request.Keywords != null)
         {
-            foreach(var keyword in request.Keywords)
+            foreach (var keyword in request.Keywords)
             {
                 feedback.Keywords.Add(
                     new FeedbackKeyword
@@ -104,11 +105,11 @@ public class FeedbackService : IFeedbackService
             .Where(x =>
                 x.Status == FeedbackStatus.ACTIVE)
 
-            .Include(x=>x.User)
+            .Include(x => x.User)
 
-            .Include(x=>x.Keywords)
+            .Include(x => x.Keywords)
 
-            .Select(x=>new FeedbackResponse
+            .Select(x => new FeedbackResponse
             {
                 Id = x.Id,
                 UserName = x.User.FullName,
@@ -119,7 +120,7 @@ public class FeedbackService : IFeedbackService
                 Status = x.Status,
                 Keywords =
                     x.Keywords
-                    .Select(k=>k.Keyword)
+                    .Select(k => k.Keyword)
                     .ToList()
             })
             .ToListAsync();
@@ -132,14 +133,14 @@ public class FeedbackService : IFeedbackService
         var feedback =
             await _context.Feedbacks
 
-            .Include(x=>x.User)
+            .Include(x => x.User)
 
-            .Include(x=>x.Keywords)
+            .Include(x => x.Keywords)
 
             .FirstOrDefaultAsync(
-                x=>x.Id == id);
+                x => x.Id == id);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
@@ -156,7 +157,7 @@ public class FeedbackService : IFeedbackService
             Status = feedback.Status,
             Keywords =
                 feedback.Keywords
-                .Select(x=>x.Keyword)
+                .Select(x => x.Keyword)
                 .ToList()
 
         };
@@ -171,18 +172,18 @@ public class FeedbackService : IFeedbackService
         var feedback =
             await _context.Feedbacks
 
-            .Include(x=>x.Keywords)
+            .Include(x => x.Keywords)
 
             .FirstOrDefaultAsync(
-                x=>x.Id == id);
+                x => x.Id == id);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
         }
 
-        if(feedback.UserId != userId)
+        if (feedback.UserId != userId)
         {
             throw new Exception(
                 "You cannot update this feedback");
@@ -192,10 +193,10 @@ public class FeedbackService : IFeedbackService
 
         feedback.Keywords.Clear();
 
-        if(feedback.Type == FeedbackType.PARKING &&
+        if (feedback.Type == FeedbackType.PARKING &&
            request.Keywords != null)
         {
-            foreach(var keyword in request.Keywords)
+            foreach (var keyword in request.Keywords)
             {
                 feedback.Keywords.Add(
                     new FeedbackKeyword
@@ -206,7 +207,7 @@ public class FeedbackService : IFeedbackService
             }
 
         }
-        if(feedback.Type == FeedbackType.SYSTEM)
+        if (feedback.Type == FeedbackType.SYSTEM)
         {
             feedback.Status =
                 FeedbackStatus.PENDING_APPROVAL;
@@ -231,14 +232,14 @@ public class FeedbackService : IFeedbackService
         var feedback =
             await _context.Feedbacks
             .FirstOrDefaultAsync(
-                x=>x.Id == id);
+                x => x.Id == id);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
         }
-        if(feedback.UserId != userId)
+        if (feedback.UserId != userId)
         {
             throw new Exception(
                 "You cannot delete this feedback");
@@ -258,9 +259,9 @@ public class FeedbackService : IFeedbackService
         var feedback =
             await _context.Feedbacks
             .FirstOrDefaultAsync(
-                x=>x.Id == id);
+                x => x.Id == id);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
@@ -282,15 +283,15 @@ public class FeedbackService : IFeedbackService
         var feedback =
             await _context.Feedbacks
             .FirstOrDefaultAsync(
-                x=>x.Id == id);
+                x => x.Id == id);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
         }
 
-        if(feedback.Type != FeedbackType.SYSTEM)
+        if (feedback.Type != FeedbackType.SYSTEM)
         {
             throw new Exception(
                 "Only system feedback requires approval");
@@ -311,9 +312,9 @@ public class FeedbackService : IFeedbackService
         var feedback =
             await _context.Feedbacks
             .FirstOrDefaultAsync(
-                x=>x.Id == id);
+                x => x.Id == id);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
@@ -338,11 +339,11 @@ public class FeedbackService : IFeedbackService
                 &&
                 x.Status == FeedbackStatus.PENDING_APPROVAL)
 
-            .Include(x=>x.User)
+            .Include(x => x.User)
 
-            .Include(x=>x.Keywords)
+            .Include(x => x.Keywords)
 
-            .Select(x=>new FeedbackResponse
+            .Select(x => new FeedbackResponse
             {
 
                 Id = x.Id,
@@ -354,7 +355,7 @@ public class FeedbackService : IFeedbackService
                 Status = x.Status,
                 Keywords =
                     x.Keywords
-                    .Select(k=>k.Keyword)
+                    .Select(k => k.Keyword)
                     .ToList()
             })
 
@@ -365,11 +366,11 @@ public class FeedbackService : IFeedbackService
     {
         return await _context.FeedbackReports
 
-            .Include(x=>x.Feedback)
+            .Include(x => x.Feedback)
 
-            .ThenInclude(x=>x.User)
+            .ThenInclude(x => x.User)
 
-            .Select(x=>new FeedbackReportResponse
+            .Select(x => new FeedbackReportResponse
             {
 
                 Id = x.Id,
@@ -394,9 +395,9 @@ public class FeedbackService : IFeedbackService
         var feedback =
             await _context.Feedbacks
             .FirstOrDefaultAsync(
-                x=>x.Id == id);
+                x => x.Id == id);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
@@ -417,6 +418,6 @@ public class FeedbackService : IFeedbackService
             DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        
+
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using QuickPark.API.Models;
 
 namespace QuickPark.API.Data.Configurations;
+
 public class FeedbackKeywordConfiguration
     : IEntityTypeConfiguration<FeedbackKeyword>
 {
@@ -14,10 +15,10 @@ public class FeedbackKeywordConfiguration
         builder.Property(x => x.Keyword)
             .HasConversion<string>()
             .IsRequired();
-        
-        builder.HasOne(x=>x.Feedback)
-            .WithMany(x=>x.Keywords)
-            .HasForeignKey(x=>x.FeedbackId)
+
+        builder.HasOne(x => x.Feedback)
+            .WithMany(x => x.Keywords)
+            .HasForeignKey(x => x.FeedbackId)
             .OnDelete(DeleteBehavior.Cascade);
 
     }

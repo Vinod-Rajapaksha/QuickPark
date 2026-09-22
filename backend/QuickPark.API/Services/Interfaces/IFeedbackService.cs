@@ -4,9 +4,9 @@ namespace QuickPark.API.Services.Interfaces;
 
 public interface IFeedbackService
 {
-        Task<FeedbackResponse> CreateAsync(
-        Guid userId,
-        CreateFeedbackRequest request);
+    Task<FeedbackResponse> CreateAsync(
+    Guid userId,
+    CreateFeedbackRequest request);
 
     Task<List<FeedbackResponse>> GetAllAsync();
 

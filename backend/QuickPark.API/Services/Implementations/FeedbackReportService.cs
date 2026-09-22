@@ -7,7 +7,7 @@ using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.API.Services.Implementations;
 
-public class FeedbackReportService 
+public class FeedbackReportService
     : IFeedbackReportService
 {
     private readonly AppDbContext _context;
@@ -22,13 +22,13 @@ public class FeedbackReportService
         UserRole role,
         CreateFeedbackReportRequest request)
     {
-        if(role != UserRole.DRIVER)
+        if (role != UserRole.DRIVER)
         {
             throw new Exception(
                 "Only drivers can report feedback");
         }
 
-        if(string.IsNullOrWhiteSpace(request.Reason))
+        if (string.IsNullOrWhiteSpace(request.Reason))
         {
             throw new Exception(
                 "Report reason is required");
@@ -37,28 +37,28 @@ public class FeedbackReportService
         var feedback =
             await _context.Feedbacks
             .FirstOrDefaultAsync(
-                x=>x.Id == request.FeedbackId);
+                x => x.Id == request.FeedbackId);
 
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
         }
 
-        if(feedback.Type != FeedbackType.PARKING)
+        if (feedback.Type != FeedbackType.PARKING)
         {
             throw new Exception(
                 "System feedback cannot be reported");
         }
 
-        if(feedback.Status != FeedbackStatus.ACTIVE)
+        if (feedback.Status != FeedbackStatus.ACTIVE)
         {
             throw new Exception(
                 "Cannot report unavailable feedback");
         }
 
-        if(feedback.UserId == userId)
+        if (feedback.UserId == userId)
         {
             throw new Exception(
                 "Cannot report own feedback");
@@ -72,7 +72,7 @@ public class FeedbackReportService
                 &&
                 x.ReporterUserId == userId);
 
-        if(alreadyExists)
+        if (alreadyExists)
         {
             throw new Exception(
                 "Already reported");

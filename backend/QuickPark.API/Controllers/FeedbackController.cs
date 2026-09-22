@@ -4,7 +4,6 @@ using QuickPark.API.DTOs.Feedback;
 using QuickPark.API.Services.Interfaces;
 using System.Security.Claims;
 
-
 namespace QuickPark.API.Controllers;
 
 [ApiController]
@@ -23,7 +22,7 @@ public class FeedbackController : ControllerBase
             User.FindFirstValue(
                 ClaimTypes.NameIdentifier);
 
-        if(!Guid.TryParse(
+        if (!Guid.TryParse(
             userId,
             out var id))
         {
@@ -96,7 +95,7 @@ public class FeedbackController : ControllerBase
 
     }
 
-    [Authorize(Roles="PLATFORM_ADMIN")]
+    [Authorize(Roles = "PLATFORM_ADMIN")]
     [HttpGet("pending")]
     public async Task<IActionResult> GetPending()
     {
@@ -107,7 +106,7 @@ public class FeedbackController : ControllerBase
 
     }
 
-    [Authorize(Roles="PLATFORM_ADMIN")]
+    [Authorize(Roles = "PLATFORM_ADMIN")]
     [HttpGet("reports")]
     public async Task<IActionResult> GetReports()
     {
@@ -117,53 +116,46 @@ public class FeedbackController : ControllerBase
 
     }
 
-    [Authorize(Roles="PLATFORM_ADMIN")]
+    [Authorize(Roles = "PLATFORM_ADMIN")]
     [HttpPatch("{id}/approve")]
     public async Task<IActionResult> Approve(
         Guid id)
     {
         await _service.ApproveAsync(id);
-
         return Ok(
             "Feedback approved");
 
     }
 
-
-    [Authorize(Roles="PLATFORM_ADMIN")]
+    [Authorize(Roles = "PLATFORM_ADMIN")]
     [HttpPatch("{id}/hide")]
     public async Task<IActionResult> Hide(
         Guid id)
     {
 
         await _service.HideAsync(id);
-
         return Ok(
             "Feedback hidden");
 
     }
 
-
-    [Authorize(Roles="PLATFORM_ADMIN")]
+    [Authorize(Roles = "PLATFORM_ADMIN")]
     [HttpPatch("{id}/restore")]
     public async Task<IActionResult> Restore(
         Guid id)
     {
         await _service.RestoreAsync(id);
-
         return Ok(
             "Feedback restored");
 
     }
 
-
-    [Authorize(Roles="PLATFORM_ADMIN")]
+    [Authorize(Roles = "PLATFORM_ADMIN")]
     [HttpDelete("admin/{id}")]
     public async Task<IActionResult> AdminDelete(
         Guid id)
     {
         await _service.AdminDeleteAsync(id);
-
         return Ok(
             "Feedback removed by admin");
 

@@ -3,7 +3,7 @@ using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.API.Services.Implementations;
 
-public class ParkingAccessValidator 
+public class ParkingAccessValidator
     : IParkingAccessValidator
 {
     public Task<bool> CanReplyToParkingFeedback(

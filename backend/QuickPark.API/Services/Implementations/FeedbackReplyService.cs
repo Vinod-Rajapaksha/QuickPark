@@ -7,7 +7,7 @@ using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.API.Services.Implementations;
 
-public class FeedbackReplyService 
+public class FeedbackReplyService
     : IFeedbackReplyService
 {
     private readonly AppDbContext _context;
@@ -34,18 +34,18 @@ public class FeedbackReplyService
         var feedback =
             await _context.Feedbacks
             .FirstOrDefaultAsync(
-                x=>x.Id == request.FeedbackId);
+                x => x.Id == request.FeedbackId);
 
-        if(feedback == null)
+        if (feedback == null)
         {
             throw new Exception(
                 "Feedback not found");
         }
 
-        if(feedback.Type == FeedbackType.SYSTEM)
+        if (feedback.Type == FeedbackType.SYSTEM)
         {
 
-            if(role != UserRole.PLATFORM_ADMIN)
+            if (role != UserRole.PLATFORM_ADMIN)
             {
                 throw new Exception(
                     "Only admin can reply to system feedback");
@@ -53,17 +53,17 @@ public class FeedbackReplyService
 
         }
 
-        if(feedback.Type == FeedbackType.PARKING)
+        if (feedback.Type == FeedbackType.PARKING)
         {
 
-            if(role != UserRole.PARKING_OWNER &&
+            if (role != UserRole.PARKING_OWNER &&
                role != UserRole.PARKING_STAFF)
             {
                 throw new Exception(
                     "Only provider or staff can reply");
             }
 
-            if(feedback.ParkingId == null)
+            if (feedback.ParkingId == null)
             {
                 throw new Exception(
                     "Parking information missing");
@@ -75,7 +75,7 @@ public class FeedbackReplyService
                     userId,
                     feedback.ParkingId.Value,
                     role);
-            if(!allowed)
+            if (!allowed)
             {
                 throw new Exception(
                     "You cannot reply to this parking feedback");

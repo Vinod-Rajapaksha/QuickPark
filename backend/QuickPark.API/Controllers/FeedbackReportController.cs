@@ -5,7 +5,6 @@ using QuickPark.API.Models;
 using QuickPark.API.Services.Interfaces;
 using System.Security.Claims;
 
-
 namespace QuickPark.API.Controllers;
 
 [ApiController]
@@ -26,7 +25,7 @@ public class FeedbackReportController : ControllerBase
             User.FindFirstValue(
                 ClaimTypes.NameIdentifier);
 
-        if(!Guid.TryParse(
+        if (!Guid.TryParse(
             userId,
             out var id))
         {
@@ -40,18 +39,17 @@ public class FeedbackReportController : ControllerBase
 
     private UserRole GetUserRole()
     {
-
         var role =
             User.FindFirstValue(
                 ClaimTypes.Role);
 
-        if(string.IsNullOrEmpty(role))
+        if (string.IsNullOrEmpty(role))
         {
             throw new UnauthorizedAccessException(
                 "Role missing.");
         }
 
-        if(!Enum.TryParse<UserRole>(
+        if (!Enum.TryParse<UserRole>(
             role,
             out var result))
         {
@@ -63,7 +61,7 @@ public class FeedbackReportController : ControllerBase
 
     }
 
-    [Authorize(Roles="DRIVER")]
+    [Authorize(Roles = "DRIVER")]
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateFeedbackReportRequest request)
