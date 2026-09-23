@@ -72,5 +72,13 @@ public class FeedbackReplyController : ControllerBase
         return Ok(result);
 
     }
+    [Authorize]
+    [HttpGet("{feedbackId}")]
+    public async Task<IActionResult> GetReplies(Guid feedbackId)
+    {
+        return Ok(
+            await _service.GetRepliesAsync(feedbackId)
+        );
+    }
 
 }

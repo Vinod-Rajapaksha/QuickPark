@@ -102,29 +102,51 @@ public class FeedbackService : IFeedbackService
     public async Task<List<FeedbackResponse>> GetAllAsync()
     {
         return await _context.Feedbacks
+
             .Where(x =>
                 x.Status == FeedbackStatus.ACTIVE)
 
             .Include(x => x.User)
-
             .Include(x => x.Keywords)
+            .Include(x => x.Replies)
 
             .Select(x => new FeedbackResponse
             {
                 Id = x.Id,
-                UserName = x.User.FullName,
-                Type = x.Type,
-                ParkingId = x.ParkingId,
-                Rating = x.Rating,
-                Comment = x.Comment,
-                Status = x.Status,
+                UserName =
+                    x.User.FullName,
+                Type =
+                    x.Type,
+                ParkingId =
+                    x.ParkingId,
+                Rating =
+                    x.Rating,
+                Comment =
+                    x.Comment,
+                Status =
+                    x.Status,
                 Keywords =
                     x.Keywords
                     .Select(k => k.Keyword)
+                    .ToList(),
+                Replies =
+                    x.Replies
+                    .Select(r => new FeedbackReplyResponse
+                    {
+                        Id = r.Id,
+                        RepliedByUserId =
+                            r.RepliedByUserId,
+                        Role =
+                            r.ReplierRole,
+                        Message =
+                            r.Message,
+                        CreatedAt =
+                            r.CreatedAt
+
+                    })
                     .ToList()
             })
             .ToListAsync();
-
     }
 
     public async Task<FeedbackResponse> GetByIdAsync(

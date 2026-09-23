@@ -123,5 +123,32 @@ public class FeedbackReplyService
         };
 
     }
+    public async Task<List<FeedbackReplyResponse>> GetRepliesAsync(
+        Guid feedbackId)
+    {
+        var replies =
+            await _context.FeedbackReplies
+            .Where(x => x.FeedbackId == feedbackId)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => new FeedbackReplyResponse
+            {
+                Id = x.Id,
+
+                RepliedByUserId =
+                        x.RepliedByUserId,
+
+                Role =
+                        x.ReplierRole,
+
+                Message =
+                        x.Message,
+
+                CreatedAt =
+                        x.CreatedAt
+            })
+                .ToListAsync();
+
+        return replies;
+    }
 
 }
