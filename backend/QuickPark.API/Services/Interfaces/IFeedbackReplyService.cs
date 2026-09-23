@@ -11,4 +11,8 @@ public interface IFeedbackReplyService
         CreateFeedbackReplyRequest request
     );
 
+    Task<List<FeedbackReplyResponse>> GetRepliesAsync(
+        Guid feedbackId
+    );
+
 }

@@ -23,4 +23,6 @@ public class FeedbackResponse
     public List<FeedbackKeywordType> Keywords { get; set; }
     = new();
 
+    public List<FeedbackReplyResponse> Replies { get; set; }
+    = new();
 }
