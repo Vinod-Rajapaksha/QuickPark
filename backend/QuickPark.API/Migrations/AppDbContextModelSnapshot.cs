@@ -151,6 +151,70 @@ namespace QuickPark.API.Migrations
                     b.ToTable("FeedbackReports");
                 });
 
+            modelBuilder.Entity("QuickPark.API.Models.ParkingProvider", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("BusinessName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NicDocumentContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NicDocumentPublicId")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<long>("NicDocumentSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("NicDocumentUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("NicSubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VerificationRemarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("VerifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ParkingProviders", (string)null);
+                });
+
             modelBuilder.Entity("QuickPark.API.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -249,6 +313,17 @@ namespace QuickPark.API.Migrations
                     b.Navigation("Replies");
 
                     b.Navigation("Reports");
+                });
+
+            modelBuilder.Entity("QuickPark.API.Models.ParkingProvider", b =>
+                {
+                    b.HasOne("QuickPark.API.Models.User", "User")
+                        .WithOne()
+                        .HasForeignKey("QuickPark.API.Models.ParkingProvider", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

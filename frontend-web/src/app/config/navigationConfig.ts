@@ -18,6 +18,7 @@ export const navigationConfig: NavigationItem[] = [
   { label: 'Booking History', path: '/history', roles: [Role.DRIVER], icon: 'History' },
   
   // PARKING_OWNER
+  { label: 'Verification', path: '/provider/profile', roles: [Role.PARKING_OWNER], icon: 'ShieldCheck' },
   { label: 'Facilities', path: '/facilities', roles: [Role.PARKING_OWNER], icon: 'Building' },
   { label: 'Revenue', path: '/revenue', roles: [Role.PARKING_OWNER], icon: 'DollarSign' },
   { label: 'Analytics', path: '/analytics', roles: [Role.PARKING_OWNER], icon: 'BarChart' },

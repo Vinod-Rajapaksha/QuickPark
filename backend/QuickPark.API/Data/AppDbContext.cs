@@ -11,11 +11,13 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<ParkingProvider> ParkingProviders { get; set; }
+
     public DbSet<Feedback> Feedbacks { get; set; }
     public DbSet<FeedbackKeyword> FeedbackKeywords { get; set; }
     public DbSet<FeedbackReport> FeedbackReports {get;set;} = null!;
     public DbSet<FeedbackReply> FeedbackReplies {get;set;} = null!;
-  
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -27,7 +29,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Role).HasConversion<string>();
         });
 
-         // Feedback Module configurations
+        // Feedback Module configurations
         modelBuilder.ApplyConfiguration(
             new FeedbackConfiguration()
         );
@@ -43,5 +45,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(
             new FeedbackReplyConfiguration()
         );
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
