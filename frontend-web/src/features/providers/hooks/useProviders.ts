@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useToast } from "../../../hooks/useToast";
 import { providerApi } from "../api/providerApi";
 import type {
   ProviderProfile,
@@ -7,6 +8,7 @@ import type {
 import { getApiErrorMessage } from "../utils/providerUtils";
 
 export const useProviders = () => {
+  const toast = useToast();
   const [pending, setPending] = useState<ProviderProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -42,6 +44,21 @@ export const useProviders = () => {
       setActionError(null);
       try {
         await providerApi.updateVerificationStatus(userId, status, remarks);
+        // Announced from the pre-decision snapshot: the refresh below drops the card, and the
+        // queue is long enough for the inline banner to sit off-screen.
+        const ownerName = pending.find((p) => p.userId === userId)?.fullName;
+        const who = ownerName ? ` for ${ownerName}` : "";
+        if (status === "REJECTED") {
+          toast.warning(
+            `NIC verification rejected${who}`,
+            remarks ? `Remarks sent to the owner: ${remarks}` : undefined,
+          );
+        } else {
+          toast.success(
+            `NIC verification approved${who}`,
+            "The owner can now register a parking property.",
+          );
+        }
         await refresh();
         return true;
       } catch (err) {
@@ -53,7 +70,7 @@ export const useProviders = () => {
         setBusyUserId(null);
       }
     },
-    [refresh],
+    [refresh, pending, toast],
   );
 
   const getDocumentUrl = useCallback(async (userId: string) => {
