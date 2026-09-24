@@ -16,8 +16,7 @@ public sealed class CloudinaryImageResult
     public int Height { get; init; }
 }
 
-// Minimal Cloudinary image client using the signed REST API (no SDK dependency).
-// Credentials are supplied by the caller (ProviderService) from configuration / environment.
+// Cloudinary client for uploading and deleting NIC images using the signed REST API.
 public sealed class CloudinaryStorageClient
 {
     private const string UploadPath = "image/upload";
@@ -39,40 +38,42 @@ public sealed class CloudinaryStorageClient
         _folder = string.IsNullOrWhiteSpace(folder) ? "quickpark/nic" : folder!;
     }
 
+    // False while any credential is missing; every call below throws instead of quietly no-oping.
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(_cloudName) &&
         !string.IsNullOrWhiteSpace(_apiKey) &&
         !string.IsNullOrWhiteSpace(_apiSecret);
 
-    public async Task<CloudinaryImageResult> UploadImageAsync(
-        byte[] content, string fileName, string contentType, CancellationToken ct = default)
-    {
-        EnsureConfigured();
-
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var signature = Sign(new SortedList<string, string>
+        // Upload the image to Cloudinary using a signed request and return its URL and public ID.
+        public async Task<CloudinaryImageResult> UploadImageAsync(
+            byte[] content, string fileName, string contentType, CancellationToken ct = default)
         {
-            ["folder"] = _folder,
-            ["timestamp"] = timestamp
-        });
+            EnsureConfigured();
 
-        using var form = new MultipartFormDataContent
-        {
-            { new StringContent(_apiKey), "api_key" },
-            { new StringContent(timestamp), "timestamp" },
-            { new StringContent(signature), "signature" },
-            { new StringContent(_folder), "folder" }
-        };
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var signature = Sign(new SortedList<string, string>
+            {
+                ["folder"] = _folder,
+                ["timestamp"] = timestamp
+            });
 
-        var fileContent = new ByteArrayContent(content);
-        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
-        form.Add(fileContent, "file", fileName);
+            using var form = new MultipartFormDataContent
+            {
+                { new StringContent(_apiKey), "api_key" },
+                { new StringContent(timestamp), "timestamp" },
+                { new StringContent(signature), "signature" },
+                { new StringContent(_folder), "folder" }
+            };
 
-        var json = await PostAsync(UploadPath, form, ct);
-        return ParseUpload(json);
-    }
+            var fileContent = new ByteArrayContent(content);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+            form.Add(fileContent, "file", fileName);
 
-    // Deletes a previously uploaded asset. Best-effort: callers may ignore failures.
+            var json = await PostAsync(UploadPath, form, ct);
+            return ParseUpload(json);
+        }
+
+    // Delete a previously uploaded image from Cloudinary using its public ID.
     public async Task DestroyAsync(string publicId, CancellationToken ct = default)
     {
         EnsureConfigured();
@@ -96,6 +97,7 @@ public sealed class CloudinaryStorageClient
         await PostAsync(DestroyPath, form, ct);
     }
 
+    // Send the request to Cloudinary and handle errors before returning the JSON response.
     private async Task<JsonElement> PostAsync(string path, MultipartFormDataContent form, CancellationToken ct)
     {
         var url = $"https://api.cloudinary.com/v1_1/{_cloudName}/{path}";
@@ -111,6 +113,7 @@ public sealed class CloudinaryStorageClient
         return JsonDocument.Parse(body).RootElement.Clone();
     }
 
+    // Parse Cloudinary upload response and extract image details.
     private static CloudinaryImageResult ParseUpload(JsonElement json)
     {
         var secureUrl = json.TryGetProperty("secure_url", out var su) ? su.GetString() : null;
@@ -131,6 +134,7 @@ public sealed class CloudinaryStorageClient
         };
     }
 
+    // Extract Cloudinary error message from the JSON response.
     private static string? TryReadError(string body)
     {
         try
@@ -144,12 +148,12 @@ public sealed class CloudinaryStorageClient
         }
         catch (JsonException)
         {
-            // Body was not JSON; fall through to the generic message.
+            
         }
         return null;
     }
 
-    // Cloudinary signature: sorted "key=value" pairs joined by '&', api_secret appended, SHA-1 hex.
+    // Generate a SHA-1 signature for Cloudinary request parameters.
     private string Sign(SortedList<string, string> parameters)
     {
         var builder = new StringBuilder();
@@ -164,6 +168,7 @@ public sealed class CloudinaryStorageClient
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
+   // Check whether Cloudinary credentials are configured.
     private void EnsureConfigured()
     {
         if (!IsConfigured)

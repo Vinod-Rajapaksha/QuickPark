@@ -4,6 +4,7 @@ using QuickPark.API.Models;
 
 namespace QuickPark.API.Data.Configurations;
 
+// The ParkingProviders table: one verification record per Parking Owner account.
 public class ParkingProviderConfiguration : IEntityTypeConfiguration<ParkingProvider>
 {
     public void Configure(EntityTypeBuilder<ParkingProvider> builder)
@@ -17,6 +18,7 @@ public class ParkingProviderConfiguration : IEntityTypeConfiguration<ParkingProv
         builder.Property(p => p.BusinessName).HasMaxLength(150);
         builder.Property(p => p.Address).HasMaxLength(300);
 
+        // NIC document references
         builder.Property(p => p.NicDocumentUrl).HasMaxLength(1000);
         builder.Property(p => p.NicDocumentPublicId).HasMaxLength(300);
         builder.Property(p => p.NicDocumentContentType).HasMaxLength(100);
