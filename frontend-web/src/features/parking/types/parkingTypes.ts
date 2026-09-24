@@ -1,9 +1,12 @@
-export type ParkingStatus =
-  | "DRAFT"
-  | "PENDING_APPROVAL"
-  | "APPROVED"
-  | "REJECTED"
-  | "SUSPENDED";
+export const ParkingStatus = {
+  DRAFT: "DRAFT",
+  PENDING_APPROVAL: "PENDING_APPROVAL",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  SUSPENDED: "SUSPENDED",
+} as const;
+
+export type ParkingStatus = typeof ParkingStatus[keyof typeof ParkingStatus];
 
 export type FacilityDocumentType =
   | "LAND_DOCUMENT"

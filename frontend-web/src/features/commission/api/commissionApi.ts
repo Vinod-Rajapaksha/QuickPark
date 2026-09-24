@@ -6,9 +6,6 @@ import type {
   VehicleTypeConfig,
 } from "../types/commissionTypes";
 
-// ParkingConfigurationController is route-templated as api/admin/parking-configuration and
-// is PLATFORM_ADMIN only. Every write here is what the owner form reads back through
-// GET /api/parkingFacilities/registration-options, so a save takes effect immediately.
 const BASE = "/admin/parking-configuration";
 
 export const commissionApi = {

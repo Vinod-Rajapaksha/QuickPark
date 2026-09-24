@@ -7,10 +7,10 @@ import Button from "../../../components/common/Button/Button";
 import Input from "../../../components/common/Input/Input";
 import Select from "../../../components/common/Select/Select";
 import { slotStatusSchema, type SlotStatusValues } from "../schemas/parkingSlotSchemas";
-import type {
+import {
   OwnerSlotState,
-  ParkingSlotRow,
-  SlotStatusInput,
+  type ParkingSlotRow,
+  type SlotStatusInput,
 } from "../types/parkingSlotTypes";
 import {
   formatPeriod,
@@ -47,13 +47,13 @@ export const SlotForm: React.FC<SlotFormProps> = ({
     formState: { errors },
   } = useForm<SlotStatusValues>({
     resolver: zodResolver(slotStatusSchema),
-    defaultValues: { status: states[0] ?? "AVAILABLE", reason: "" },
+    defaultValues: { status: states[0] ?? OwnerSlotState.AVAILABLE, reason: "" },
   });
 
   useEffect(() => {
     if (!open || !slot) return;
     reset({
-      status: (nextOwnerStates(slot)[0] ?? "AVAILABLE") as OwnerSlotState,
+      status: nextOwnerStates(slot)[0] ?? OwnerSlotState.AVAILABLE,
       reason: "",
     });
   }, [open, slot, reset]);
@@ -71,7 +71,7 @@ export const SlotForm: React.FC<SlotFormProps> = ({
 
   const target = watch("status");
   const heldByBooking = slot.current !== null;
-  const wouldStrandDriver = heldByBooking && target !== "AVAILABLE";
+  const wouldStrandDriver = heldByBooking && target !== OwnerSlotState.AVAILABLE;
 
   const submit = handleSubmit((values) =>
     onSubmit({ status: values.status, reason: values.reason?.trim() || undefined }),

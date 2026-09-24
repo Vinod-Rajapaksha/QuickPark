@@ -9,12 +9,16 @@ import type {
   FacilitySectionName,
   ParkingFacility,
 } from "../types/parkingTypes";
-import type { QueueGrouping } from "../utils/parkingUtils";
-import { getApiErrorMessage, openSections } from "../utils/parkingUtils";
+import { ParkingStatus } from "../types/parkingTypes";
+import {
+  QueueGrouping,
+  getApiErrorMessage,
+  openSections,
+} from "../utils/parkingUtils";
 
 type Decision = "APPROVED" | "REJECTED";
 
-export const DEFAULT_QUEUE_STATUS = "PENDING_APPROVAL";
+export const DEFAULT_QUEUE_STATUS = ParkingStatus.PENDING_APPROVAL;
 
 // Admin-side confirmation of a click only; the owner's record of the decision is their notification.
 const decisionCopy = (
@@ -47,7 +51,9 @@ export const useFacilityQueue = () => {
   const status = searchParams.get("status") ?? DEFAULT_QUEUE_STATUS;
   const provider = searchParams.get("provider") ?? "";
   const grouping: QueueGrouping =
-    searchParams.get("group") === "provider" ? "provider" : "property";
+    searchParams.get("group") === QueueGrouping.PROVIDER
+      ? QueueGrouping.PROVIDER
+      : QueueGrouping.PROPERTY;
 
   const [rows, setRows] = useState<FacilityQueueRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);

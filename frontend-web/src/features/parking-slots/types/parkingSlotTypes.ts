@@ -9,15 +9,25 @@ export interface SlotBooking {
 }
 
 // Owner-set states are AVAILABLE, MAINTENANCE, DISABLED; RESERVED and OCCUPIED are derived.
-export type SlotState =
-  | "AVAILABLE"
-  | "RESERVED"
-  | "OCCUPIED"
-  | "MAINTENANCE"
-  | "DISABLED";
+export const SlotState = {
+  AVAILABLE: "AVAILABLE",
+  RESERVED: "RESERVED",
+  OCCUPIED: "OCCUPIED",
+  MAINTENANCE: "MAINTENANCE",
+  DISABLED: "DISABLED",
+} as const;
+
+export type SlotState = typeof SlotState[keyof typeof SlotState];
 
 // The three states a bay can actually be sent to.
-export type OwnerSlotState = "AVAILABLE" | "MAINTENANCE" | "DISABLED";
+export const OwnerSlotState = {
+  AVAILABLE: "AVAILABLE",
+  MAINTENANCE: "MAINTENANCE",
+  DISABLED: "DISABLED",
+} as const;
+
+export type OwnerSlotState =
+  typeof OwnerSlotState[keyof typeof OwnerSlotState];
 
 // Total counts bays in the layout, so a retired bay never inflates what a driver can book.
 export interface SlotBoardCounts {

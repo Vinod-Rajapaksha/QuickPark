@@ -1,159 +1,21 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import {
-  Building2,
-  ChevronRight,
-  Inbox,
-  LayoutList,
-  RefreshCw,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { Inbox, LayoutList, RefreshCw, ShieldCheck } from "lucide-react";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input/Input";
 import Select from "../../components/common/Select/Select";
 import Spinner from "../../components/common/Spinner/Spinner";
-import ParkingStatusBadge from "../../features/parking/components/ParkingStatusBadge";
+import OwnerGroupCard from "../../features/parking/components/OwnerGroupCard";
+import PropertyTable from "../../features/parking/components/PropertyTable";
 import { useFacilityQueue } from "../../features/parking/hooks/useFacilityReviews";
-import type { SelectOption } from "../../components/common/Select/Select";
-import type {
-  FacilityQueueRow,
-  ParkingFacility,
-} from "../../features/parking/types/parkingTypes";
 import {
+  GROUP_OPTIONS,
+  STATUS_OPTIONS,
+} from "../../features/parking/utils/facilityQueueOptions";
+import {
+  QueueGrouping,
   groupByOwner,
   openSections,
-  type QueueGrouping,
 } from "../../features/parking/utils/parkingUtils";
-
-const STATUS_OPTIONS: SelectOption[] = [
-  { value: "", label: "Any status" },
-  { value: "PENDING_APPROVAL", label: "Awaiting review" },
-  { value: "APPROVED", label: "Live" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "SUSPENDED", label: "Suspended" },
-  { value: "DRAFT", label: "Draft" },
-];
-
-const GROUP_OPTIONS: Array<{ value: QueueGrouping; label: string; icon: React.ReactNode }> = [
-  { value: "property", label: "By property", icon: <Building2 size={16} /> },
-  { value: "provider", label: "By provider", icon: <Users size={16} /> },
-];
-
-// What one property still owes the admin, in words the reviewer can triage on.
-const awaitingLabel = (facility: ParkingFacility): string => {
-  if (facility.sections.length === 0) return "Not submitted yet";
-  const open = openSections(facility).length;
-  if (open === 0) return "All four sections approved";
-  return `${open} of ${facility.sections.length} still to decide`;
-};
-
-const QueueLink: React.FC<{ row: FacilityQueueRow; search: string }> = ({
-  row,
-  search,
-}) => (
-  <Link
-    to={`/admin/properties/${row.facility.facilityId}${search ? `?${search}` : ""}`}
-    className="flex items-center gap-1 font-medium text-primary-700 hover:text-primary-800 hover:underline"
-  >
-    Review
-    <ChevronRight size={16} />
-  </Link>
-);
-
-const PropertyTable: React.FC<{ rows: FacilityQueueRow[]; search: string }> = ({
-  rows,
-  search,
-}) => (
-  <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-    <table className="w-full text-left text-sm">
-      <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-        <tr>
-          <th className="px-4 py-2.5 font-medium">Property</th>
-          <th className="px-4 py-2.5 font-medium">Provider</th>
-          <th className="px-4 py-2.5 font-medium">Location</th>
-          <th className="px-4 py-2.5 font-medium">Bays</th>
-          <th className="px-4 py-2.5 font-medium">Awaiting decision</th>
-          <th className="px-4 py-2.5 font-medium" />
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr
-            key={row.facility.facilityId}
-            className="border-t border-slate-100 align-top hover:bg-slate-50"
-          >
-            <td className="px-4 py-3">
-              <span className="font-medium text-slate-900">{row.facility.name}</span>
-              <span className="mt-1 block">
-                <ParkingStatusBadge status={row.facility.status} />
-              </span>
-            </td>
-            <td className="px-4 py-3">
-              <span className="block text-slate-800">{row.providerName || "—"}</span>
-              <span className="block text-slate-500">{row.providerEmail}</span>
-              {row.providerBusinessName && (
-                <span className="block text-slate-500">{row.providerBusinessName}</span>
-              )}
-            </td>
-            <td className="px-4 py-3 text-slate-600">
-              {row.facility.city}, {row.facility.district}
-            </td>
-            <td className="px-4 py-3 text-slate-600">{row.facility.slotCount}</td>
-            <td className="px-4 py-3 text-slate-600">{awaitingLabel(row.facility)}</td>
-            <td className="px-4 py-3 text-right">
-              <QueueLink row={row} search={search} />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
-
-const OwnerGroupCard: React.FC<{
-  group: ReturnType<typeof groupByOwner>[number];
-  search: string;
-}> = ({ group, search }) => (
-  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
-      <div>
-        <p className="font-semibold text-slate-900">{group.label}</p>
-        <p className="text-sm text-slate-500">
-          {group.email}
-          {group.businessName ? ` · ${group.businessName}` : ""} · NIC{" "}
-          {group.verificationStatus || "unknown"}
-        </p>
-      </div>
-      <p className="text-sm text-slate-600">
-        {group.rows.length} propert{group.rows.length === 1 ? "y" : "ies"} ·{" "}
-        {group.awaitingSections === 0
-          ? "nothing awaiting"
-          : `${group.awaitingSections} section${group.awaitingSections === 1 ? "" : "s"} awaiting`}
-      </p>
-    </div>
-    <ul className="divide-y divide-slate-100">
-      {group.rows.map((row) => (
-        <li
-          key={row.facility.facilityId}
-          className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50"
-        >
-          <div>
-            <p className="font-medium text-slate-900">{row.facility.name}</p>
-            <p className="text-sm text-slate-500">
-              {row.facility.city} · {row.facility.slotCount} bays ·{" "}
-              {awaitingLabel(row.facility)}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <ParkingStatusBadge status={row.facility.status} />
-            <QueueLink row={row} search={search} />
-          </div>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
 
 export const ParkingFacilitiesPage: React.FC = () => {
   const {
@@ -271,7 +133,7 @@ export const ParkingFacilitiesPage: React.FC = () => {
           <Inbox size={16} />
           Nothing matches these filters.
         </p>
-      ) : grouping === "property" ? (
+      ) : grouping === QueueGrouping.PROPERTY ? (
         <PropertyTable rows={rows} search={queryString} />
       ) : (
         <div className="space-y-4">

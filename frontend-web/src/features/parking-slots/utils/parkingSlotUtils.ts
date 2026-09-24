@@ -1,10 +1,10 @@
 import type { BadgeVariant } from "../../../components/common/Badge/Badge";
 import { formatMoney } from "../../parking/utils/parkingUtils";
-import type {
+import {
   OwnerSlotState,
-  ParkingSlotRow,
-  SlotBoardCounts,
   SlotState,
+  type ParkingSlotRow,
+  type SlotBoardCounts,
 } from "../types/parkingSlotTypes";
 
 export { formatMoney };
@@ -34,7 +34,11 @@ export const SLOT_STATE_HINT: Record<SlotState, string> = {
 };
 
 // The only states an owner can put a bay into; whether it is reserved is never stored.
-export const OWNER_SLOT_STATES: OwnerSlotState[] = ["AVAILABLE", "MAINTENANCE", "DISABLED"];
+export const OWNER_SLOT_STATES: OwnerSlotState[] = [
+  OwnerSlotState.AVAILABLE,
+  OwnerSlotState.MAINTENANCE,
+  OwnerSlotState.DISABLED,
+];
 
 export const OWNER_SLOT_STATE_LABEL: Record<OwnerSlotState, string> = {
   AVAILABLE: "Back in service",
@@ -51,12 +55,19 @@ export const OWNER_SLOT_STATE_HELP: Record<OwnerSlotState, string> = {
 };
 
 export const BOARD_STATUS_OPTIONS: { value: SlotState; label: string }[] = (
-  ["AVAILABLE", "RESERVED", "OCCUPIED", "MAINTENANCE", "DISABLED"] as SlotState[]
+  [
+    SlotState.AVAILABLE,
+    SlotState.RESERVED,
+    SlotState.OCCUPIED,
+    SlotState.MAINTENANCE,
+    SlotState.DISABLED,
+  ] as SlotState[]
 ).map((value) => ({ value, label: SLOT_STATE_LABEL[value] }));
 
 // A bay a live booking speaks for can only go back to available.
 export const slotStateIsLocked = (slot: ParkingSlotRow): boolean =>
-  !OWNER_SLOT_STATES.includes(slot.status as OwnerSlotState) && slot.status !== "AVAILABLE";
+  !OWNER_SLOT_STATES.includes(slot.status as OwnerSlotState) &&
+  slot.status !== SlotState.AVAILABLE;
 
 export const nextOwnerStates = (slot: ParkingSlotRow): OwnerSlotState[] => {
   if (slotStateIsLocked(slot)) return [];
@@ -82,7 +93,8 @@ export const slotReasonIsAllowed = (reason: string): boolean =>
   reason.length <= MAX_SLOT_REASON_LENGTH;
 
 export const slotReasonIsNeeded = (state: OwnerSlotState, current: SlotState): boolean =>
-  state === "MAINTENANCE" && current !== "MAINTENANCE";
+  state === OwnerSlotState.MAINTENANCE && current !== SlotState.MAINTENANCE;
+
 const pad = (value: number): string => `${value}`.padStart(2, "0");
 
 // The API sends UTC and a datetime-local input wants the owner's own wall clock.

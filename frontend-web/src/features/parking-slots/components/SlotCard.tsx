@@ -3,7 +3,7 @@ import { SquarePen, Users } from "lucide-react";
 import Button from "../../../components/common/Button/Button";
 import Card from "../../../components/common/Card/Card";
 import SlotStatusBadge from "./SlotStatusBadge";
-import type { ParkingSlotRow } from "../types/parkingSlotTypes";
+import { SlotState, type ParkingSlotRow } from "../types/parkingSlotTypes";
 import {
   formatInstant,
   formatMoney,
@@ -30,7 +30,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
     padding="sm"
     className={`border transition-shadow ${
       selected ? "border-primary-400 ring-2 ring-primary-100" : "border-slate-200"
-    } ${slot.status === "DISABLED" ? "opacity-70" : ""}`}
+    } ${slot.status === SlotState.DISABLED ? "opacity-70" : ""}`}
   >
     <div className="flex items-start justify-between gap-2">
       <div className="min-w-0">

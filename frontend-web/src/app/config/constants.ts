@@ -1,5 +1,3 @@
-// Canonical Province → District values; must stay identical to backend Resources/SriLankanLocations.cs and the DB.
-
 export const SRI_LANKA_PROVINCES = [
   "Western",
   "Central",

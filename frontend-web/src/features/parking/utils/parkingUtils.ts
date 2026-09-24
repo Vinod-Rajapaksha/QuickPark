@@ -63,8 +63,21 @@ export const SECTION_STATUS_BADGE_VARIANT: Record<FacilitySectionStatus, BadgeVa
 export const openSections = (facility: ParkingFacility): FacilitySectionReview[] =>
   facility.sections.filter((section) => section.status !== "APPROVED");
 
+// What one property still owes the admin, in words the reviewer can triage on.
+export const awaitingLabel = (facility: ParkingFacility): string => {
+  if (facility.sections.length === 0) return "Not submitted yet";
+  const open = openSections(facility).length;
+  if (open === 0) return "All four sections approved";
+  return `${open} of ${facility.sections.length} still to decide`;
+};
+
 // The queue is arranged per property or per owner by a URL parameter, so it survives opening a record.
-export type QueueGrouping = "property" | "provider";
+export const QueueGrouping = {
+  PROPERTY: "property",
+  PROVIDER: "provider",
+} as const;
+
+export type QueueGrouping = typeof QueueGrouping[keyof typeof QueueGrouping];
 
 export const ownerLabelOf = (
   row: Pick<FacilityQueueRow, "providerName" | "providerEmail">,

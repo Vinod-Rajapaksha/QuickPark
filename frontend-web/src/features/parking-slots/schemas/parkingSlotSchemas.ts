@@ -1,8 +1,13 @@
 import { z } from "zod";
+import { OwnerSlotState, SlotState } from "../types/parkingSlotTypes";
 import { MAX_SLOT_REASON_LENGTH } from "../utils/parkingSlotUtils";
 
 // The three owner-settable states; a bay is never marked reserved by hand.
-const OWNER_STATE_VALUES = ["AVAILABLE", "MAINTENANCE", "DISABLED"] as const;
+const OWNER_STATE_VALUES = [
+  OwnerSlotState.AVAILABLE,
+  OwnerSlotState.MAINTENANCE,
+  OwnerSlotState.DISABLED,
+] as const;
 
 export const slotStatusSchema = z.object({
   status: z.enum(OWNER_STATE_VALUES, { message: "Choose a state for this bay." }),
@@ -20,7 +25,13 @@ export type SlotStatusValues = z.infer<typeof slotStatusSchema>;
 export const slotBoardFilterSchema = z.object({
   vehicleTypeId: z.string().optional(),
   status: z
-    .enum(["AVAILABLE", "RESERVED", "OCCUPIED", "MAINTENANCE", "DISABLED"])
+    .enum([
+      SlotState.AVAILABLE,
+      SlotState.RESERVED,
+      SlotState.OCCUPIED,
+      SlotState.MAINTENANCE,
+      SlotState.DISABLED,
+    ])
     .optional()
     .or(z.literal("")),
   from: z.string().optional(),
