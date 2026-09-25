@@ -19,7 +19,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _nicController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   bool _isPasswordVisible = false;
   int _selectedRole = 0; // 0: Driver, 1: Provider
 
@@ -54,7 +54,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         content: Row(
           children: [
             Icon(
-              isError ? CupertinoIcons.xmark_circle_fill : CupertinoIcons.checkmark_alt_circle_fill,
+              isError
+                  ? CupertinoIcons.xmark_circle_fill
+                  : CupertinoIcons.checkmark_alt_circle_fill,
               color: Colors.white,
             ),
             const SizedBox(width: 12),
@@ -83,7 +85,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.error && next.errorMessage != null) {
         _showToast(next.errorMessage!, isError: true);
-      } else if (next.status == AuthStatus.authenticated && previous?.status != AuthStatus.authenticated) {
+      } else if (next.status == AuthStatus.authenticated &&
+          previous?.status != AuthStatus.authenticated) {
         _showToast('Account created successfully!');
       }
     });
@@ -100,7 +103,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            icon: Icon(CupertinoIcons.back, color: theme.colorScheme.onSurface, size: 20),
+            icon: Icon(
+              CupertinoIcons.back,
+              color: theme.colorScheme.onSurface,
+              size: 20,
+            ),
             onPressed: () => context.pop(),
           ),
         ),
@@ -123,7 +130,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         color: primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      child: Icon(CupertinoIcons.person_badge_plus, size: 32, color: primaryColor),
+                      child: Icon(
+                        CupertinoIcons.person_badge_plus,
+                        size: 32,
+                        color: primaryColor,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -141,7 +152,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           Text(
                             "Join QuickPark & park smarter today",
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
                           ),
                         ],
@@ -195,10 +208,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: "Full Name",
-                    prefixIcon: Icon(CupertinoIcons.person, color: primaryColor),
+                    prefixIcon: Icon(
+                      CupertinoIcons.person,
+                      color: primaryColor,
+                    ),
                   ),
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty ? 'Please enter your name' : null,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Please enter your name'
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -211,8 +228,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: Icon(CupertinoIcons.mail, color: primaryColor),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Please enter your email';
-                    if (!value.contains('@')) return 'Please enter a valid email';
+                    if (value == null || value.trim().isEmpty)
+                      return 'Please enter your email';
+                    if (!value.contains('@'))
+                      return 'Please enter a valid email';
                     return null;
                   },
                 ),
@@ -227,9 +246,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           labelText: "Phone Number",
-                          prefixIcon: Icon(CupertinoIcons.phone, color: primaryColor),
+                          prefixIcon: Icon(
+                            CupertinoIcons.phone,
+                            color: primaryColor,
+                          ),
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Required'
                             : null,
                       ),
@@ -241,10 +264,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           labelText: "NIC Number",
-                          prefixIcon: Icon(CupertinoIcons.creditcard, color: primaryColor),
+                          prefixIcon: Icon(
+                            CupertinoIcons.creditcard,
+                            color: primaryColor,
+                          ),
                         ),
                         validator: (value) =>
-                            value == null || value.trim().isEmpty ? 'Required' : null,
+                            value == null || value.trim().isEmpty
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                   ],
@@ -261,8 +289,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: Icon(CupertinoIcons.lock, color: primaryColor),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        _isPasswordVisible
+                            ? CupertinoIcons.eye_slash
+                            : CupertinoIcons.eye,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       onPressed: () {
                         setState(() {
@@ -272,8 +304,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter a password';
-                    if (value.length < 6) return 'Must be at least 6 characters';
+                    if (value == null || value.isEmpty)
+                      return 'Please enter a password';
+                    if (value.length < 6)
+                      return 'Must be at least 6 characters';
                     return null;
                   },
                 ),
@@ -281,14 +315,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // Register Button
                 ElevatedButton(
-                  onPressed: authState.status == AuthStatus.loading ? null : _register,
+                  onPressed: authState.status == AuthStatus.loading
+                      ? null
+                      : _register,
                   child: authState.status == AuthStatus.loading
                       ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
                         )
-                      : const Text("Create Account", style: TextStyle(fontSize: 18)),
+                      : const Text(
+                          "Create Account",
+                          style: TextStyle(fontSize: 18),
+                        ),
                 ),
                 const SizedBox(height: 20),
 
@@ -299,13 +341,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Text(
                       "Already have an account?",
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                         fontSize: 15,
                       ),
                     ),
                     TextButton(
                       onPressed: () => context.pop(),
-                      child: const Text("Sign In", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "Sign In",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -384,10 +434,9 @@ class _RoleCard extends StatelessWidget {
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.5),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ],

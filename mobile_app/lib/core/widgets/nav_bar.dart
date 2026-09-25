@@ -51,7 +51,9 @@ class NavBar extends StatelessWidget {
               final primaryColor = Theme.of(context).primaryColor;
               final color = isSelected
                   ? primaryColor
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6);
 
               return InkWell(
                 onTap: () => onTap(index),
@@ -59,7 +61,10 @@ class NavBar extends StatelessWidget {
                 highlightColor: Colors.transparent,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? primaryColor.withValues(alpha: 0.15)

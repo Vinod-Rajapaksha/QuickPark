@@ -30,7 +30,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpe
 
         <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
           {allowedNavItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
+            const isDashboardItem = item.path === '/dashboard';
+            const isActive = isDashboardItem 
+              ? location.pathname.endsWith('dashboard')
+              : location.pathname.startsWith(item.path);
             const Icon = (Icons[item.icon as keyof typeof Icons] as React.ElementType) || Icons.Circle;
 
             return (

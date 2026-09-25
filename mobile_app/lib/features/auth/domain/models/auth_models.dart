@@ -5,9 +5,9 @@ class LoginRequest {
   LoginRequest({required this.email, required this.password});
 
   Map<String, dynamic> toJson() => {
-        'email': email.trim().toLowerCase(),
-        'password': password,
-      };
+    'email': email.trim().toLowerCase(),
+    'password': password,
+  };
 }
 
 class GoogleLoginRequest {
@@ -15,9 +15,7 @@ class GoogleLoginRequest {
 
   GoogleLoginRequest({required this.idToken});
 
-  Map<String, dynamic> toJson() => {
-        'idToken': idToken,
-      };
+  Map<String, dynamic> toJson() => {'idToken': idToken};
 }
 
 class RegisterRequest {
@@ -38,13 +36,13 @@ class RegisterRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'fullName': fullName,
-        'email': email,
-        'password': password,
-        'phone': phone,
-        'nic': nic,
-        'role': role,
-      };
+    'fullName': fullName,
+    'email': email,
+    'password': password,
+    'phone': phone,
+    'nic': nic,
+    'role': role,
+  };
 }
 
 class User {

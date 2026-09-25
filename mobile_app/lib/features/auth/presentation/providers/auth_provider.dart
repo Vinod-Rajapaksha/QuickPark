@@ -11,17 +11,9 @@ class AuthState {
   final User? user;
   final String? errorMessage;
 
-  AuthState({
-    required this.status,
-    this.user,
-    this.errorMessage,
-  });
+  AuthState({required this.status, this.user, this.errorMessage});
 
-  AuthState copyWith({
-    AuthStatus? status,
-    User? user,
-    String? errorMessage,
-  }) {
+  AuthState copyWith({AuthStatus? status, User? user, String? errorMessage}) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
@@ -30,7 +22,9 @@ class AuthState {
   }
 }
 
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);
 
 class AuthNotifier extends Notifier<AuthState> {
   late final AuthRepository _authRepository;
@@ -62,7 +56,9 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> login(String email, String password) async {
     state = state.copyWith(status: AuthStatus.loading);
     try {
-      await _authRepository.login(LoginRequest(email: email, password: password));
+      await _authRepository.login(
+        LoginRequest(email: email, password: password),
+      );
       final user = await _authRepository.getCurrentUser();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (e) {
@@ -81,14 +77,14 @@ class AuthNotifier extends Notifier<AuthState> {
         state = state.copyWith(status: AuthStatus.unauthenticated);
         return;
       }
-      
+
       final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
-      
+
       if (idToken == null) {
         throw Exception('Failed to get ID token from Google.');
       }
-      
+
       await _authRepository.loginWithGoogle(idToken);
       final user = await _authRepository.getCurrentUser();
       state = AuthState(status: AuthStatus.authenticated, user: user);

@@ -12,7 +12,9 @@ class DriverProfileScreen extends ConsumerWidget {
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
         title: const Text('Sign Out'),
-        message: const Text('Are you sure you want to sign out of your account?'),
+        message: const Text(
+          'Are you sure you want to sign out of your account?',
+        ),
         actions: <CupertinoActionSheetAction>[
           CupertinoActionSheetAction(
             isDestructiveAction: true,
@@ -56,8 +58,8 @@ class DriverProfileScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDestructive 
-                      ? errorColor.withValues(alpha: 0.1) 
+                  color: isDestructive
+                      ? errorColor.withValues(alpha: 0.1)
                       : themePrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -77,18 +79,29 @@ class DriverProfileScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: isDestructive ? errorColor : Theme.of(context).colorScheme.onSurface,
+                        color: isDestructive
+                            ? errorColor
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 13),
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(CupertinoIcons.chevron_right, size: 20, color: Colors.grey.shade400),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 20,
+                color: Colors.grey.shade400,
+              ),
             ],
           ),
         ),
@@ -108,7 +121,12 @@ class DriverProfileScreen extends ConsumerWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.only(top: 60, bottom: 40, left: 24, right: 24),
+              padding: const EdgeInsets.only(
+                top: 60,
+                bottom: 40,
+                left: 24,
+                right: 24,
+              ),
               decoration: BoxDecoration(
                 color: themePrimary,
                 borderRadius: const BorderRadius.only(
@@ -130,9 +148,12 @@ class DriverProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(CupertinoIcons.bell_fill, color: Colors.white),
+                        icon: const Icon(
+                          CupertinoIcons.bell_fill,
+                          color: Colors.white,
+                        ),
                         onPressed: () {},
-                      )
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -147,9 +168,13 @@ class DriverProfileScreen extends ConsumerWidget {
                             ),
                             child: CircleAvatar(
                               radius: 40,
-                              backgroundColor: Colors.white.withValues(alpha: 0.2),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.2,
+                              ),
                               child: Text(
-                                user?.fullName.isNotEmpty == true ? user!.fullName[0].toUpperCase() : 'U',
+                                user?.fullName.isNotEmpty == true
+                                    ? user!.fullName[0].toUpperCase()
+                                    : 'U',
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -171,12 +196,16 @@ class DriverProfileScreen extends ConsumerWidget {
                                     color: Colors.black.withValues(alpha: 0.15),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
-                                  )
+                                  ),
                                 ],
                               ),
-                              child: Icon(CupertinoIcons.camera_fill, color: themePrimary, size: 14),
+                              child: Icon(
+                                CupertinoIcons.camera_fill,
+                                color: themePrimary,
+                                size: 14,
+                              ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                       const SizedBox(width: 16),
@@ -202,14 +231,21 @@ class DriverProfileScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Text(
                                 'Driver Account',
-                                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -220,7 +256,7 @@ class DriverProfileScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
 
             Container(

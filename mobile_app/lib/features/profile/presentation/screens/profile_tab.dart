@@ -18,7 +18,7 @@ class ProfileTab extends ConsumerWidget {
             onPressed: () {
               ref.read(authProvider.notifier).logout();
             },
-          )
+          ),
         ],
       ),
       body: ListView(
@@ -26,20 +26,30 @@ class ProfileTab extends ConsumerWidget {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-            child: Icon(Icons.person, size: 50, color: Theme.of(context).primaryColor),
+            backgroundColor: Theme.of(
+              context,
+            ).primaryColor.withValues(alpha: 0.1),
+            child: Icon(
+              Icons.person,
+              size: 50,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             user?.fullName ?? 'User',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             user?.email ?? 'user@example.com',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
           ),
           const SizedBox(height: 32),
           const Divider(),

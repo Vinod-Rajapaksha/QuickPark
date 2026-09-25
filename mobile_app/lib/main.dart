@@ -8,7 +8,7 @@ import 'routing/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Environment Variables
   await dotenv.load(fileName: ".env");
 

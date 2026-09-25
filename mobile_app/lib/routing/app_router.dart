@@ -45,8 +45,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   final hasSeenOnboarding = ref.watch(localStorageProvider).hasSeenOnboarding;
 
   final isAuth = authState.status == AuthStatus.authenticated;
-  final initialLocation = hasSeenOnboarding 
-      ? (isAuth ? _getInitialRoute(authState.user?.role) : '/login') 
+  final initialLocation = hasSeenOnboarding
+      ? (isAuth ? _getInitialRoute(authState.user?.role) : '/login')
       : '/onboarding';
 
   return GoRouter(
@@ -54,25 +54,31 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: initialLocation,
     redirect: (context, state) {
       final isAuth = authState.status == AuthStatus.authenticated;
-      final isLoggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final isLoggingIn =
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
       if (!hasSeenOnboarding && !isOnboarding) return '/onboarding';
-      if (hasSeenOnboarding && isOnboarding) return isAuth ? _getInitialRoute(authState.user?.role) : '/login';
+      if (hasSeenOnboarding && isOnboarding)
+        return isAuth ? _getInitialRoute(authState.user?.role) : '/login';
 
       if (!isAuth && !isLoggingIn && hasSeenOnboarding) return '/login';
       if (isAuth && isLoggingIn) return _getInitialRoute(authState.user?.role);
-      
+
       // Role-based protection
       if (isAuth) {
         final role = authState.user?.role ?? 0;
         final path = state.matchedLocation;
-        
-        if (role == 0 && (path.startsWith('/provider') || path.startsWith('/admin'))) {
+
+        if (role == 0 &&
+            (path.startsWith('/provider') || path.startsWith('/admin'))) {
           return '/driver/home';
-        } else if (role == 1 && (path.startsWith('/driver') || path.startsWith('/admin'))) {
+        } else if (role == 1 &&
+            (path.startsWith('/driver') || path.startsWith('/admin'))) {
           return '/provider/dashboard';
-        } else if (role == 2 && (path.startsWith('/driver') || path.startsWith('/provider'))) {
+        } else if (role == 2 &&
+            (path.startsWith('/driver') || path.startsWith('/provider'))) {
           return '/admin/dashboard';
         }
       }
@@ -84,87 +90,105 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
       ),
-      
+
       // DRIVER ROUTES
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => DriverLayout(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            DriverLayout(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/driver/home',
-              builder: (context, state) => const HomeScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/driver/bookings',
-              builder: (context, state) => const DriverBookingsScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/driver/profile',
-              builder: (context, state) => const DriverProfileScreen(),
-            ),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/driver/home',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/driver/bookings',
+                builder: (context, state) => const DriverBookingsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/driver/profile',
+                builder: (context, state) => const DriverProfileScreen(),
+              ),
+            ],
+          ),
         ],
       ),
 
       // PROVIDER ROUTES
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => ProviderLayout(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            ProviderLayout(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/provider/dashboard',
-              builder: (context, state) => const ProviderDashboardScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/provider/scanner',
-              builder: (context, state) => const ProviderScannerScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/provider/profile',
-              builder: (context, state) => const ProviderProfileScreen(),
-            ),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/provider/dashboard',
+                builder: (context, state) => const ProviderDashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/provider/scanner',
+                builder: (context, state) => const ProviderScannerScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/provider/profile',
+                builder: (context, state) => const ProviderProfileScreen(),
+              ),
+            ],
+          ),
         ],
       ),
 
       // ADMIN ROUTES
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => AdminLayout(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            AdminLayout(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/admin/dashboard',
-              builder: (context, state) => const AdminDashboardScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/admin/users',
-              builder: (context, state) => const AdminUsersScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/admin/settings',
-              builder: (context, state) => const AdminSettingsScreen(),
-            ),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/dashboard',
+                builder: (context, state) => const AdminDashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/users',
+                builder: (context, state) => const AdminUsersScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/settings',
+                builder: (context, state) => const AdminSettingsScreen(),
+              ),
+            ],
+          ),
         ],
       ),
     ],

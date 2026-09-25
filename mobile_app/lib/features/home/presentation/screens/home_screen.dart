@@ -11,26 +11,21 @@ class BottomNavNotifier extends Notifier<int> {
   void setIndex(int index) => state = index;
 }
 
-final bottomNavIndexProvider = NotifierProvider<BottomNavNotifier, int>(BottomNavNotifier.new);
+final bottomNavIndexProvider = NotifierProvider<BottomNavNotifier, int>(
+  BottomNavNotifier.new,
+);
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  static const List<Widget> _tabs = [
-    MapTab(),
-    ReservationsTab(),
-    ProfileTab(),
-  ];
+  static const List<Widget> _tabs = [MapTab(), ReservationsTab(), ProfileTab()];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
 
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: _tabs,
-      ),
+      body: IndexedStack(index: currentIndex, children: _tabs),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) {
