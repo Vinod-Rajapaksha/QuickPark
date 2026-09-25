@@ -32,6 +32,9 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
+      - name: Create .env file
+        run: cp .env.example .env
+
       - name: Check Flutter formatting
         run: dart format --output=none --set-exit-if-changed .
 
