@@ -10,7 +10,7 @@ class ApiInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     final token = await _secureStorage.getToken();
     if (token != null) {
-      options.headers['Cookie'] = 'AuthToken=$token';
+      options.headers['Cookie'] = 'quickpark_auth=$token';
     }
     
     options.headers['Accept'] = 'application/json';
