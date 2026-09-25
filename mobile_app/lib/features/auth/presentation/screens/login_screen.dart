@@ -130,10 +130,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     prefixIcon: Icon(CupertinoIcons.mail, color: primaryColor),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Please enter your email';
-                    if (!value.contains('@'))
+                    }
+                    if (!value.contains('@')) {
                       return 'Please enter a valid email';
+                    }
                     return null;
                   },
                 ),
@@ -163,8 +165,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Please enter your password';
+                    }
                     return null;
                   },
                 ),

@@ -59,12 +59,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/register';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
-      if (!hasSeenOnboarding && !isOnboarding) return '/onboarding';
-      if (hasSeenOnboarding && isOnboarding)
+      if (!hasSeenOnboarding && !isOnboarding) {
+        return '/onboarding';
+      }
+      if (hasSeenOnboarding && isOnboarding) {
         return isAuth ? _getInitialRoute(authState.user?.role) : '/login';
+      }
 
-      if (!isAuth && !isLoggingIn && hasSeenOnboarding) return '/login';
-      if (isAuth && isLoggingIn) return _getInitialRoute(authState.user?.role);
+      if (!isAuth && !isLoggingIn && hasSeenOnboarding) {
+        return '/login';
+      }
+      if (isAuth && isLoggingIn) {
+        return _getInitialRoute(authState.user?.role);
+      }
 
       // Role-based protection
       if (isAuth) {
