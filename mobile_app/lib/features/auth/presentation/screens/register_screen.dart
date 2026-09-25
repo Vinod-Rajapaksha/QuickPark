@@ -228,10 +228,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: Icon(CupertinoIcons.mail, color: primaryColor),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty)
+                    if (value == null || value.trim().isEmpty) {
                       return 'Please enter your email';
-                    if (!value.contains('@'))
+                    }
+                    if (!value.contains('@')) {
                       return 'Please enter a valid email';
+                    }
                     return null;
                   },
                 ),
@@ -304,10 +306,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Please enter a password';
-                    if (value.length < 6)
+                    }
+                    if (value.length < 6) {
                       return 'Must be at least 6 characters';
+                    }
                     return null;
                   },
                 ),

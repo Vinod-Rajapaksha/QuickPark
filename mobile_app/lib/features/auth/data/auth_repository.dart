@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/secure_storage_service.dart';
@@ -83,7 +84,7 @@ class AuthRepository {
 
   Exception _handleError(dynamic e) {
     if (e is DioException) {
-      print(
+      debugPrint(
         'DioError: ${e.message}, Response: ${e.response?.data}, StatusCode: ${e.response?.statusCode}',
       );
       String message = 'Something went wrong.';
@@ -112,7 +113,7 @@ class AuthRepository {
       }
       return Exception(message);
     }
-    print('Unknown Error: $e');
+    debugPrint('Unknown Error: $e');
     return Exception(e.toString());
   }
 }
