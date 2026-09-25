@@ -11,7 +11,9 @@ class AdminSettingsScreen extends ConsumerWidget {
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
         title: const Text('Sign Out'),
-        message: const Text('Are you sure you want to sign out of the Admin panel?'),
+        message: const Text(
+          'Are you sure you want to sign out of the Admin panel?',
+        ),
         actions: <CupertinoActionSheetAction>[
           CupertinoActionSheetAction(
             isDestructiveAction: true,
@@ -55,8 +57,8 @@ class AdminSettingsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDestructive 
-                      ? errorColor.withValues(alpha: 0.1) 
+                  color: isDestructive
+                      ? errorColor.withValues(alpha: 0.1)
                       : themePrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -76,18 +78,29 @@ class AdminSettingsScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: isDestructive ? errorColor : Theme.of(context).colorScheme.onSurface,
+                        color: isDestructive
+                            ? errorColor
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 13),
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(CupertinoIcons.chevron_right, size: 20, color: Colors.grey.shade400),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 20,
+                color: Colors.grey.shade400,
+              ),
             ],
           ),
         ),
@@ -107,7 +120,12 @@ class AdminSettingsScreen extends ConsumerWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.only(top: 60, bottom: 40, left: 24, right: 24),
+              padding: const EdgeInsets.only(
+                top: 60,
+                bottom: 40,
+                left: 24,
+                right: 24,
+              ),
               decoration: BoxDecoration(
                 color: themePrimary,
                 borderRadius: const BorderRadius.only(
@@ -129,9 +147,12 @@ class AdminSettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(CupertinoIcons.bell_fill, color: Colors.white),
+                        icon: const Icon(
+                          CupertinoIcons.bell_fill,
+                          color: Colors.white,
+                        ),
                         onPressed: () {},
-                      )
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -146,9 +167,13 @@ class AdminSettingsScreen extends ConsumerWidget {
                             ),
                             child: CircleAvatar(
                               radius: 40,
-                              backgroundColor: Colors.white.withValues(alpha: 0.2),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.2,
+                              ),
                               child: Text(
-                                user?.fullName.isNotEmpty == true ? user!.fullName[0].toUpperCase() : 'A',
+                                user?.fullName.isNotEmpty == true
+                                    ? user!.fullName[0].toUpperCase()
+                                    : 'A',
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -182,14 +207,21 @@ class AdminSettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Text(
                                 'System Admin',
-                                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -200,7 +232,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
 
             // Options List

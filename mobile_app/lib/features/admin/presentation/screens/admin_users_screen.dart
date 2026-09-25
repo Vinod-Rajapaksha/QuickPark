@@ -11,4 +11,3 @@ class AdminUsersScreen extends StatelessWidget {
     );
   }
 }
-

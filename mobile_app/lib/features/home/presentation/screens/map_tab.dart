@@ -6,12 +6,8 @@ class MapTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Find Parking'),
-      ),
-      body: const Center(
-        child: Text('Map View Integration Goes Here'),
-      ),
+      appBar: AppBar(title: const Text('Find Parking')),
+      body: const Center(child: Text('Map View Integration Goes Here')),
     );
   }
 }

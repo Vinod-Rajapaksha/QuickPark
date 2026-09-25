@@ -11,4 +11,3 @@ class DriverBookingsScreen extends StatelessWidget {
     );
   }
 }
-

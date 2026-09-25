@@ -26,10 +26,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
+      ref
+          .read(authProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text);
     }
   }
 
@@ -43,9 +42,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(isError ? CupertinoIcons.xmark_circle_fill : CupertinoIcons.checkmark_alt_circle_fill, color: Colors.white),
+            Icon(
+              isError
+                  ? CupertinoIcons.xmark_circle_fill
+                  : CupertinoIcons.checkmark_alt_circle_fill,
+              color: Colors.white,
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.w600))),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
           ],
         ),
         backgroundColor: isError ? theme.colorScheme.error : theme.primaryColor,
@@ -65,7 +74,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.error && next.errorMessage != null) {
         _showToast(next.errorMessage!, isError: true);
-      } else if (next.status == AuthStatus.authenticated && previous?.status != AuthStatus.authenticated) {
+      } else if (next.status == AuthStatus.authenticated &&
+          previous?.status != AuthStatus.authenticated) {
         _showToast('Successfully logged in!');
       }
     });
@@ -86,24 +96,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: primaryColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(CupertinoIcons.car_detailed, size: 60, color: primaryColor),
+                    child: Icon(
+                      CupertinoIcons.car_detailed,
+                      size: 60,
+                      color: primaryColor,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
                 Text(
                   "Welcome Back",
                   style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "Sign in to continue your journey",
                   style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
@@ -116,8 +130,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     prefixIcon: Icon(CupertinoIcons.mail, color: primaryColor),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter your email';
-                    if (!value.contains('@')) return 'Please enter a valid email';
+                    if (value == null || value.isEmpty)
+                      return 'Please enter your email';
+                    if (!value.contains('@'))
+                      return 'Please enter a valid email';
                     return null;
                   },
                 ),
@@ -132,8 +148,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     prefixIcon: Icon(CupertinoIcons.lock, color: primaryColor),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        _isPasswordVisible
+                            ? CupertinoIcons.eye_slash
+                            : CupertinoIcons.eye,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       onPressed: () {
                         setState(() {
@@ -143,7 +163,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter your password';
+                    if (value == null || value.isEmpty)
+                      return 'Please enter your password';
                     return null;
                   },
                 ),
@@ -152,7 +173,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      _showToast('Reset password feature coming soon.', isError: false);
+                      _showToast(
+                        'Reset password feature coming soon.',
+                        isError: false,
+                      );
                     },
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
                     child: const Text("Forgot Password?"),
@@ -160,12 +184,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: authState.status == AuthStatus.loading ? null : _login,
+                  onPressed: authState.status == AuthStatus.loading
+                      ? null
+                      : _login,
                   child: authState.status == AuthStatus.loading
                       ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
                         )
                       : const Text("Sign In", style: TextStyle(fontSize: 18)),
                 ),
@@ -175,16 +204,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const Expanded(child: Divider()),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text("OR", style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+                      child: Text(
+                        "OR",
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const Expanded(child: Divider()),
                   ],
                 ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: authState.status == AuthStatus.loading ? null : _loginWithGoogle,
+                  onPressed: authState.status == AuthStatus.loading
+                      ? null
+                      : _loginWithGoogle,
                   icon: const Icon(CupertinoIcons.globe),
-                  label: const Text("Continue with Google", style: TextStyle(fontSize: 16)),
+                  label: const Text(
+                    "Continue with Google",
+                    style: TextStyle(fontSize: 16),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.onSurface,
                     minimumSize: const Size(double.infinity, 56),
@@ -200,11 +242,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     Text(
                       "Don't have an account?",
-                      style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 16),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                        fontSize: 16,
+                      ),
                     ),
                     TextButton(
                       onPressed: () => context.push('/register'),
-                      child: const Text("Create one", style: TextStyle(fontSize: 16)),
+                      child: const Text(
+                        "Create one",
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ],
                 ),

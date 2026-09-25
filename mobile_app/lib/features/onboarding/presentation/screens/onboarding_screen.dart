@@ -18,18 +18,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     {
       "title": "Find Parking Fast",
       "description": "Locate the nearest available parking spots in real-time.",
-      "image": "assets/images/onboarding1.png"
+      "image": "assets/images/onboarding1.png",
     },
     {
       "title": "Reserve Your Spot",
-      "description": "Book a parking spot ahead of time and guarantee your space.",
-      "image": "assets/images/onboarding2.png"
+      "description":
+          "Book a parking spot ahead of time and guarantee your space.",
+      "image": "assets/images/onboarding2.png",
     },
     {
       "title": "Easy Payment",
       "description": "Pay securely and seamlessly through the app.",
-      "image": "assets/images/onboarding3.png"
-    }
+      "image": "assets/images/onboarding3.png",
+    },
   ];
 
   @override
@@ -72,7 +73,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ElevatedButton(
                       onPressed: () async {
                         if (_currentPage == _onboardingData.length - 1) {
-                          await ref.read(localStorageProvider).setHasSeenOnboarding(true);
+                          await ref
+                              .read(localStorageProvider)
+                              .setHasSeenOnboarding(true);
                           if (context.mounted) {
                             context.go('/login');
                           }
@@ -142,9 +145,9 @@ class OnboardingContent extends StatelessWidget {
         const Spacer(),
         Text(
           title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Padding(
@@ -152,9 +155,9 @@ class OnboardingContent extends StatelessWidget {
           child: Text(
             description,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey.shade600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
           ),
         ),
         const Spacer(),

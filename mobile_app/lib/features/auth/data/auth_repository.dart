@@ -5,10 +5,7 @@ import '../../../../core/storage/secure_storage_service.dart';
 import '../domain/models/auth_models.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(
-    ref.read(dioProvider),
-    ref.read(secureStorageProvider),
-  );
+  return AuthRepository(ref.read(dioProvider), ref.read(secureStorageProvider));
 });
 
 class AuthRepository {
@@ -20,7 +17,7 @@ class AuthRepository {
   Future<void> login(LoginRequest request) async {
     try {
       final response = await _dio.post('/auth/login', data: request.toJson());
-      
+
       final setCookie = response.headers.map['set-cookie'];
       if (setCookie != null) {
         for (var cookie in setCookie) {
@@ -41,7 +38,7 @@ class AuthRepository {
     try {
       final request = GoogleLoginRequest(idToken: idToken);
       final response = await _dio.post('/auth/google', data: request.toJson());
-      
+
       final setCookie = response.headers.map['set-cookie'];
       if (setCookie != null) {
         for (var cookie in setCookie) {
@@ -79,7 +76,6 @@ class AuthRepository {
     try {
       await _dio.post('/auth/logout');
     } catch (_) {
-      
     } finally {
       await _secureStorage.deleteToken();
     }
@@ -87,16 +83,20 @@ class AuthRepository {
 
   Exception _handleError(dynamic e) {
     if (e is DioException) {
-      print('DioError: ${e.message}, Response: ${e.response?.data}, StatusCode: ${e.response?.statusCode}');
+      print(
+        'DioError: ${e.message}, Response: ${e.response?.data}, StatusCode: ${e.response?.statusCode}',
+      );
       String message = 'Something went wrong.';
 
       if (e.response?.data != null) {
         final data = e.response!.data;
 
         if (data is Map<String, dynamic>) {
-          if (data['message'] is String && (data['message'] as String).isNotEmpty) {
+          if (data['message'] is String &&
+              (data['message'] as String).isNotEmpty) {
             message = data['message'];
-          } else if (data['title'] is String && (data['title'] as String).isNotEmpty) {
+          } else if (data['title'] is String &&
+              (data['title'] as String).isNotEmpty) {
             message = data['title'];
             if (data['errors'] != null) {
               message += ': ${data['errors'].toString()}';
