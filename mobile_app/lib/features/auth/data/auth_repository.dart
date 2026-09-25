@@ -24,9 +24,9 @@ class AuthRepository {
       final setCookie = response.headers.map['set-cookie'];
       if (setCookie != null) {
         for (var cookie in setCookie) {
-          if (cookie.startsWith('AuthToken=')) {
+          if (cookie.startsWith('quickpark_auth=')) {
             final tokenPart = cookie.split(';').first;
-            final token = tokenPart.substring('AuthToken='.length);
+            final token = tokenPart.substring('quickpark_auth='.length);
             await _secureStorage.saveToken(token);
             break;
           }
@@ -45,9 +45,9 @@ class AuthRepository {
       final setCookie = response.headers.map['set-cookie'];
       if (setCookie != null) {
         for (var cookie in setCookie) {
-          if (cookie.startsWith('AuthToken=')) {
+          if (cookie.startsWith('quickpark_auth=')) {
             final tokenPart = cookie.split(';').first;
-            final token = tokenPart.substring('AuthToken='.length);
+            final token = tokenPart.substring('quickpark_auth='.length);
             await _secureStorage.saveToken(token);
             break;
           }
@@ -87,9 +87,32 @@ class AuthRepository {
 
   Exception _handleError(dynamic e) {
     if (e is DioException) {
-      final message = e.response?.data?['message'] ?? e.message;
+      print('DioError: ${e.message}, Response: ${e.response?.data}, StatusCode: ${e.response?.statusCode}');
+      String message = 'Something went wrong.';
+
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+
+        if (data is Map<String, dynamic>) {
+          if (data['message'] is String && (data['message'] as String).isNotEmpty) {
+            message = data['message'];
+          } else if (data['title'] is String && (data['title'] as String).isNotEmpty) {
+            message = data['title'];
+            if (data['errors'] != null) {
+              message += ': ${data['errors'].toString()}';
+            }
+          } else {
+            message = data.toString();
+          }
+        } else if (data is String && data.isNotEmpty) {
+          message = data;
+        }
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        message = e.message!;
+      }
       return Exception(message);
     }
+    print('Unknown Error: $e');
     return Exception(e.toString());
   }
 }

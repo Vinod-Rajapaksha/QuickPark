@@ -5,7 +5,7 @@ class LoginRequest {
   LoginRequest({required this.email, required this.password});
 
   Map<String, dynamic> toJson() => {
-        'email': email,
+        'email': email.trim().toLowerCase(),
         'password': password,
       };
 }
@@ -34,7 +34,7 @@ class RegisterRequest {
     required this.password,
     required this.phone,
     required this.nic,
-    this.role = 0, // Default to Driver (0) based on backend enum
+    this.role = 0, // Default to Driver
   });
 
   Map<String, dynamic> toJson() => {
@@ -61,11 +61,20 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    int parsedRole = 0;
+    if (json['role'] != null) {
+      if (json['role'] is int) {
+        parsedRole = json['role'];
+      } else if (json['role'] is String) {
+        parsedRole = int.tryParse(json['role']) ?? 0;
+      }
+    }
+
     return User(
-      id: json['id'] ?? '',
-      fullName: json['fullName'] ?? '',
-      email: json['email'] ?? '',
-      role: json['role'] ?? 0,
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      role: parsedRole,
     );
   }
 }
