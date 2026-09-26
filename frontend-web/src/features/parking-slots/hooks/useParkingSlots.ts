@@ -48,7 +48,6 @@ export const useParkingSlots = (facilityId: string | undefined) => {
   const refresh = useCallback(async () => {
     if (!facilityId) {
       setBoard(null);
-      setIsLoading(false);
       return;
     }
     setIsLoading(true);
@@ -63,8 +62,15 @@ export const useParkingSlots = (facilityId: string | undefined) => {
   }, [facilityId, params]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    Promise.resolve().then(() => {
+      if (!facilityId) {
+        setBoard(null);
+        setIsLoading(false);
+        return;
+      }
+      void refresh();
+    });
+  }, [facilityId, refresh]);
 
   const applyFilters = useCallback((next: SlotBoardFilter) => {
     setDraft(next);

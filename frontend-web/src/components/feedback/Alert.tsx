@@ -3,21 +3,21 @@ import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 
 export type AlertTone = "error" | "warning" | "success" | "info";
 
-export const ALERT_TONE_CLASSES: Record<AlertTone, string> = {
+const ALERT_TONE_CLASSES: Record<AlertTone, string> = {
   error: "border-red-200 bg-red-50 text-red-700",
   warning: "border-amber-200 bg-amber-50 text-amber-800",
   success: "border-emerald-200 bg-emerald-50 text-emerald-800",
   info: "border-blue-200 bg-blue-50 text-blue-800",
 };
 
-export const ALERT_TONE_ICON_CLASSES: Record<AlertTone, string> = {
+const ALERT_TONE_ICON_CLASSES: Record<AlertTone, string> = {
   error: "text-red-600",
   warning: "text-amber-600",
   success: "text-emerald-600",
   info: "text-blue-600",
 };
 
-export const ALERT_TONE_ICON: Record<AlertTone, React.ElementType> = {
+const ALERT_TONE_ICON: Record<AlertTone, React.ElementType> = {
   error: AlertTriangle,
   warning: AlertTriangle,
   success: CheckCircle2,

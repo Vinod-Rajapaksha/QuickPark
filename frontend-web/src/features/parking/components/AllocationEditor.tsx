@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Save, Layers, AlertTriangle } from "lucide-react";
 import Button from "../../../components/common/Button/Button";
 import Input from "../../../components/common/Input/Input";
@@ -81,9 +81,9 @@ export const AllocationEditor: React.FC<AllocationEditorProps> = ({
     vehicleTypes,
   );
 
-  const totalSlots = useMemo(
-    () => selected.reduce((sum, draft) => sum + asNumber(draft.numberOfSlots), 0),
-    [selected],
+  const totalSlots = selected.reduce(
+    (sum, draft) => sum + asNumber(draft.numberOfSlots),
+    0,
   );
 
   const update = (vehicleTypeId: string, patch: Partial<AllocationDraft>) => {

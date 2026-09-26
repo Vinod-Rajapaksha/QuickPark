@@ -64,31 +64,32 @@ export const useFacilityQueue = () => {
       const next = new URLSearchParams(searchParams);
       if (value === "") next.delete(key);
       else next.set(key, value);
-      // Replace: typing in the owner box must not leave a history entry per keystroke.
       setSearchParams(next, { replace: true });
     },
     [searchParams, setSearchParams],
   );
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
     setLoadError(null);
     try {
-      setRows(
-        await parkingApi.getFacilitiesForReview(
-          status || undefined,
-          provider || undefined,
-        ),
+      const data = await parkingApi.getFacilitiesForReview(
+        status || undefined,
+        provider || undefined,
       );
+      setRows(data);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, "Failed to load the review queue."));
+      setLoadError(
+        getApiErrorMessage(error, "Failed to load the review queue."),
+      );
     } finally {
       setIsLoading(false);
     }
   }, [status, provider]);
 
   useEffect(() => {
-    void refresh();
+    Promise.resolve().then(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   return {
@@ -99,7 +100,6 @@ export const useFacilityQueue = () => {
     setStatus: (value: string) => write("status", value),
     setProvider: (value: string) => write("provider", value),
     setGrouping: (value: QueueGrouping) => write("group", value),
-    // Carries the filters into a record's own page, so coming back restores this queue.
     queryString: searchParams.toString(),
     isLoading,
     loadError,
@@ -117,11 +117,8 @@ export const useFacilityDetail = (facilityId: string | null) => {
 
   const load = useCallback(async (): Promise<FacilityReview | null> => {
     if (!facilityId) {
-      setReview(null);
-      setIsLoading(false);
       return null;
     }
-    setIsLoading(true);
     setLoadError(null);
     try {
       const fresh = await parkingApi.getFacilityForReview(facilityId);
@@ -137,8 +134,15 @@ export const useFacilityDetail = (facilityId: string | null) => {
   }, [facilityId]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    Promise.resolve().then(() => {
+      if (facilityId) {
+        void load();
+      } else {
+        setReview(null);
+        setIsLoading(false);
+      }
+    });
+  }, [facilityId, load]);
 
   // One decision can settle all four sections, so the record is re-read and the fresh verdicts announced.
   const run = useCallback(
@@ -168,10 +172,15 @@ export const useFacilityDetail = (facilityId: string | null) => {
   );
 
   const labelOf = (facility: ParkingFacility, section: FacilitySectionName) =>
-    facility.sections.find((row) => row.section === section)?.label ?? "That section";
+    facility.sections.find((row) => row.section === section)?.label ??
+    "That section";
 
   const decideSection = useCallback(
-    async (section: FacilitySectionName, decision: Decision, remarks?: string) => {
+    async (
+      section: FacilitySectionName,
+      decision: Decision,
+      remarks?: string,
+    ) => {
       const { ok, facility } = await run(
         `section:${section}`,
         () =>

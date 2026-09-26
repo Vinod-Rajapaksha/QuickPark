@@ -57,7 +57,6 @@ const SlotManagementPage: React.FC = () => {
   // Switching property must not leave a bay of the previous one open in the side panel.
   useEffect(() => {
     closeSlot();
-    setBayFilter({});
   }, [facilityId, closeSlot]);
 
   const submitStatus = async (input: SlotStatusInput): Promise<void> => {

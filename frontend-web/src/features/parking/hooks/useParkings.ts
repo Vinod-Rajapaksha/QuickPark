@@ -11,10 +11,10 @@ export const useParkings = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
     setLoadError(null);
     try {
-      setFacilities(await parkingApi.getMyFacilities());
+      const data = await parkingApi.getMyFacilities();
+      setFacilities(data);
     } catch (err) {
       setLoadError(getApiErrorMessage(err, "Failed to load your properties."));
     } finally {
@@ -23,7 +23,9 @@ export const useParkings = () => {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    Promise.resolve().then(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   const create = useCallback(

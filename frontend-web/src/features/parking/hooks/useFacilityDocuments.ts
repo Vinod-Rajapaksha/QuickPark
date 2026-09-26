@@ -15,10 +15,10 @@ export const useFacilityDocuments = (facilityId: string) => {
 
   const refresh = useCallback(async () => {
     if (!facilityId) return;
-    setIsLoading(true);
     setLoadError(null);
     try {
-      setDocuments(await parkingApi.getDocuments(facilityId));
+      const data = await parkingApi.getDocuments(facilityId);
+      setDocuments(data);
     } catch (err) {
       setLoadError(getApiErrorMessage(err, "Failed to load property documents."));
     } finally {
@@ -27,8 +27,14 @@ export const useFacilityDocuments = (facilityId: string) => {
   }, [facilityId]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    Promise.resolve().then(() => {
+      if (facilityId) {
+        void refresh();
+      } else {
+        setIsLoading(false);
+      }
+    });
+  }, [facilityId, refresh]);
 
   const upload = useCallback(
     async (type: FacilityDocumentType, file: File) => {
