@@ -1,0 +1,19 @@
+# Agent Service Dependencies
+
+# Core Framework
+fastapi==0.111.0
+uvicorn==0.30.1
+
+# Data Validation & Serialization
+pydantic==2.5.3
+pydantic-settings==2.2.1
+
+# AI & LLM Integration
+google-genai==0.3.0
+
+# Configuration & Utilities
+python-dotenv==1.0.1
+
+# Testing
+pytest==7.4.4
+httpx==0.27.0
