@@ -33,7 +33,6 @@ public class ProviderVerificationService : IProviderVerificationService
         return string.IsNullOrWhiteSpace(fromEnv) ? fallback : fromEnv!;
     }
 
-    // Store the NIC image and put the owner back into the queue as PENDING.
     public async Task<ProviderProfileResponse> UploadNicDocumentAsync(Guid userId, IFormFile file, CancellationToken ct = default)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct)

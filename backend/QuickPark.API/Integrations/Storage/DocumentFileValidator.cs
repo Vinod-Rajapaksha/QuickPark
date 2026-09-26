@@ -2,19 +2,16 @@ using Microsoft.AspNetCore.Http;
 
 namespace QuickPark.API.Integrations.Storage;
 
-// Represents an image that has passed all validation checks.
 public sealed record ValidatedImage(byte[] Bytes, string ContentType, string FileName);
 
 // Validates uploaded images for size, type, extension, and file signature.
 public static class DocumentFileValidator
 {
-    // Maximum allowed image upload size: 5 MB.
-    public const long MaxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+    public const long MaxFileSizeBytes = 5 * 1024 * 1024;
 
     private static readonly string[] AllowedContentTypes = { "image/jpeg", "image/png" };
     private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png" };
 
-    // Validate and read an uploaded image before storing it.
     public static async Task<ValidatedImage> ValidateAndReadAsync(
         IFormFile? file, string label, CancellationToken ct = default)
     {
@@ -51,11 +48,9 @@ public static class DocumentFileValidator
         return new ValidatedImage(bytes, contentType, file.FileName);
     }
 
-    // Return the standard file extension for the given content type.
     public static string ExtensionFor(string contentType) =>
         contentType == "image/png" ? "png" : "jpg";
 
-    // Verify the file's actual bytes match the claimed image type.
     private static bool HasValidImageSignature(byte[] bytes, string contentType)
     {
         if (contentType == "image/jpeg")
