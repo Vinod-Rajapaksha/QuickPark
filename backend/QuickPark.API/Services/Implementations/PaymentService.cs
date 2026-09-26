@@ -37,7 +37,7 @@ public class PaymentService : IPaymentService
             .FirstOrDefaultAsync(r => r.Id == request.ReservationId, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
 
-        if (reservation.DriverUserId != driverUserId)
+        if (reservation.DriverId != driverUserId)
         {
             throw new UnauthorizedAccessException("You can only pay for your own booking.");
         }
@@ -100,7 +100,7 @@ public class PaymentService : IPaymentService
             .FirstOrDefaultAsync(p => p.GatewayReference == reference, ct)
             ?? throw new InvalidOperationException("This payment gateway reference is not recognised.");
 
-        if (located.DriverUserId != driverUserId)
+        if (located.DriverId != driverUserId)
         {
             throw new UnauthorizedAccessException("You can only complete your own payment.");
         }
@@ -163,12 +163,12 @@ public class PaymentService : IPaymentService
             .FirstOrDefaultAsync(p => p.Id == callback.PaymentId, ct)
             ?? throw new KeyNotFoundException("Payment not found.");
 
-        if (driverUserId is Guid driver && payment.DriverUserId != driver)
+        if (driverUserId is Guid driver && payment.DriverId != driver)
         {
             throw new UnauthorizedAccessException("You can only confirm your own payment.");
         }
 
-        var viewerId = driverUserId ?? payment.DriverUserId;
+        var viewerId = driverUserId ?? payment.DriverId;
 
         if (payment.PaymentMethod != PaymentMethod.CARD)
         {
@@ -319,7 +319,7 @@ public class PaymentService : IPaymentService
     public async Task<IReadOnlyList<PaymentResponse>> ListForDriverAsync(
         Guid driverUserId, PaymentFilter? filter = null, CancellationToken ct = default)
     {
-        var query = PaymentsForResponse().Where(p => p.DriverUserId == driverUserId);
+        var query = PaymentsForResponse().Where(p => p.DriverId == driverUserId);
         return await ListAsync(ApplyFilter(query, filter), includeCommission: false, ct);
     }
 
@@ -490,7 +490,7 @@ public class PaymentService : IPaymentService
                 $"Card commission of booking {SlotRef(reservation.Id)} kept by the platform.", null);
         }
 
-        NotifyAsync(payment.DriverUserId, reservation.FacilityId,
+        NotifyAsync(payment.DriverId, reservation.FacilityId,
             isCash ? "Cash payment recorded" : "Booking paid",
             isCash
                 ? $"The parking owner confirmed your cash payment of {payment.Amount:0.00} for booking {reservation.SlotNumber}."
@@ -509,7 +509,7 @@ public class PaymentService : IPaymentService
         {
             ReservationId = reservation.Id,
             ProviderId = reservation.ProviderId,
-            DriverUserId = driverUserId,
+            DriverId = driverUserId,
             Amount = reservation.TotalAmount,
             PaymentMethod = method,
             Status = PaymentStatus.PENDING,
@@ -686,7 +686,7 @@ public class PaymentService : IPaymentService
     // The driver always views their own rows
     private async Task<Guid> ViewerAsync(Guid userId, Payment payment, CancellationToken ct)
     {
-        if (payment.DriverUserId == userId) return userId;
+        if (payment.DriverId == userId) return userId;
 
         if (await IsAdminAsync(userId, ct)) return userId;
 
@@ -712,7 +712,7 @@ public class PaymentService : IPaymentService
             PaymentId = payment.Id,
             AttemptNumber = payment.AttemptNumber,
             ReservationId = payment.ReservationId,
-            DriverUserId = payment.DriverUserId,
+            DriverId = payment.DriverId,
             ProviderId = payment.ProviderId,
             FacilityId = reservation?.FacilityId ?? Guid.Empty,
             FacilityName = reservation?.Facility?.Name ?? string.Empty,

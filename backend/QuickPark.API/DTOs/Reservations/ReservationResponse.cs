@@ -4,7 +4,7 @@ public class ReservationResponse
 {
     public Guid ReservationId { get; set; }
 
-    public Guid DriverUserId { get; set; }
+    public Guid DriverId { get; set; }
     public string DriverName { get; set; } = string.Empty;
     public string DriverPhone { get; set; } = string.Empty;
 

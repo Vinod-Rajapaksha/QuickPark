@@ -282,7 +282,7 @@ public partial class ParkingService : IParkingService
         Guid driverUserId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default)
     {
-        var query = ReservationsForResponse().Where(r => r.DriverUserId == driverUserId);
+        var query = ReservationsForResponse().Where(r => r.DriverId == driverUserId);
         var filtered = ApplyReservationFilters(query, status, from, to);
 
         var reservations = await filtered
@@ -326,7 +326,7 @@ public partial class ParkingService : IParkingService
         await EnsureReservationAccessAsync(userId, reservation, ct);
 
         var now = DateTime.UtcNow;
-        var isDriver = reservation.DriverUserId == userId;
+        var isDriver = reservation.DriverId == userId;
 
         if (reservation.Status is ReservationStatus.CANCELLED or ReservationStatus.COMPLETED
             or ReservationStatus.NOSHOW)

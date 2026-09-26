@@ -10,7 +10,7 @@ public partial class ParkingService
 {
     private async Task EnsureReservationAccessAsync(Guid userId, Reservation reservation, CancellationToken ct)
     {
-        if (reservation.DriverUserId == userId) return;
+        if (reservation.DriverId == userId) return;
 
         var provider = await _context.ParkingProviders.FirstOrDefaultAsync(p => p.UserId == userId, ct);
 

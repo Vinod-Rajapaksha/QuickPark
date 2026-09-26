@@ -30,7 +30,7 @@ public partial class ParkingService
         return new ReservationResponse
         {
             ReservationId = reservation.Id,
-            DriverUserId = reservation.DriverUserId,
+            DriverId = reservation.DriverId,
             DriverName = reservation.Driver?.FullName ?? string.Empty,
             DriverPhone = reservation.Driver?.Phone ?? string.Empty,
             FacilityId = reservation.FacilityId,

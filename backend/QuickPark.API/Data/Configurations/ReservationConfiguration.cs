@@ -24,7 +24,7 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
         builder.Property(r => r.CommissionAmount).HasPrecision(10, 2);
         builder.Property(r => r.ProviderAmount).HasPrecision(10, 2);
 
-        builder.HasIndex(r => r.DriverUserId);
+        builder.HasIndex(r => r.DriverId);
         builder.HasIndex(r => r.FacilityId);
         builder.HasIndex(r => r.ProviderId);
         builder.HasIndex(r => r.SlotId);
@@ -33,7 +33,7 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
 
         builder.HasOne(r => r.Driver)
             .WithMany()
-            .HasForeignKey(r => r.DriverUserId)
+            .HasForeignKey(r => r.DriverId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(r => r.Facility)

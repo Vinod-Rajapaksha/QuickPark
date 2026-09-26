@@ -18,7 +18,7 @@ public class Payment
     // instead of a join through the facility.
     public Guid ProviderId { get; set; }
 
-    public Guid DriverUserId { get; set; }
+    public Guid DriverId { get; set; }
 
     public int AttemptNumber { get; set; } = 1;
 
