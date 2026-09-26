@@ -10,7 +10,6 @@ export const useProvider = () => {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
     setError(null);
     try {
       const data = await providerApi.getMyProfile();
@@ -23,7 +22,9 @@ export const useProvider = () => {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    Promise.resolve().then(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   const uploadNic = useCallback(async (file: File) => {

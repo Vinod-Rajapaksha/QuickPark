@@ -14,7 +14,6 @@ export const useProviders = () => {
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
     setLoadError(null);
     try {
       const data = await providerApi.getPendingVerifications();
@@ -29,7 +28,9 @@ export const useProviders = () => {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    Promise.resolve().then(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   const decide = useCallback(

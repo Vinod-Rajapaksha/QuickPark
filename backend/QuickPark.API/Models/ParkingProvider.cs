@@ -3,10 +3,10 @@ namespace QuickPark.API.Models;
 // Parking Owner profile + identity-verification record, linked one-to-one with the User account.
 public class ParkingProvider
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid(); // PK
 
-    public Guid UserId { get; set; }
-    public User? User { get; set; }
+    public Guid UserId { get; set; } // FK → User
+    public User User { get; set; } = null!;
 
     // Owner profile details
     public string? BusinessName { get; set; }
