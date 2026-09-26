@@ -82,11 +82,13 @@ export const router = createBrowserRouter([
             element: <div className="p-4">Driver Dashboard Coming Soon</div>
           },
 
+          //Common Routes
+          { path: ROUTES.PROFILE, element: <Profile /> },
+
           // Driver Routes
           {
             element: <ProtectedRoute allowedRoles={[Role.DRIVER]} />,
             children: [
-              { path: ROUTES.PROFILE, element: <Profile /> },
               { path: ROUTES.SEARCH_PARKING, element: <div className="p-4">Search Parking - Coming Soon</div> },
               { path: ROUTES.DRIVER_RESERVATIONS, element: <div className="p-4">Driver Reservations - Coming Soon</div> },
               { path: ROUTES.BOOKING_HISTORY, element: <div className="p-4">Booking History - Coming Soon</div> },
@@ -101,10 +103,10 @@ export const router = createBrowserRouter([
               { path: ROUTES.PROVIDER_PROFILE, element: <ProviderProfilePage /> },
               { path: ROUTES.FACILITIES, element: <ParkingListPage /> },
               { path: ROUTES.FACILITY_CREATE, element: <ParkingCreatePage /> },
-              { path: "/facilities/:facilityId", element: <ParkingDetailsPage /> },
-              { path: "/facilities/:facilityId/edit", element: <ParkingEditPage /> },
-              { path: "/facilities/:facilityId/setup", element: <FacilitySetupPage /> },
-              { path: "/facilities/:facilityId/slots", element: <SlotManagementPage /> },
+              { path: ROUTES.FACILITY_DETAILS_PATTERN, element: <ParkingDetailsPage /> },
+              { path: ROUTES.FACILITY_EDIT_PATTERN, element: <ParkingEditPage /> },
+              { path: ROUTES.FACILITY_SETUP_PATTERN, element: <FacilitySetupPage /> },
+              { path: ROUTES.FACILITY_SLOTS_PATTERN, element: <SlotManagementPage /> },
               { path: ROUTES.REVENUE, element: <EarningsPage /> },
               { path: ROUTES.PROVIDER_ANALYTICS, element: <AnalyticsPage /> },
               { path: ROUTES.PROVIDER_REPORTS, element: <ProviderReportsPage /> },
@@ -129,7 +131,7 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> },
               { path: ROUTES.ADMIN_USERS, element: <UsersPage /> },
               { path: ROUTES.ADMIN_PROPERTIES, element: <ParkingFacilitiesPage /> },
-              { path: "/admin/properties/:facilityId", element: <FacilityReviewPage /> },
+              { path: ROUTES.ADMIN_PROPERTY_DETAILS_PATTERN, element: <FacilityReviewPage /> },
               { path: ROUTES.ADMIN_PROVIDERS, element: <ProvidersPage /> },
               { path: ROUTES.ADMIN_PROVIDER_APPROVALS, element: <ProviderApprovalPage /> },
               { path: ROUTES.ADMIN_COMMISSION, element: <CommissionPage /> },

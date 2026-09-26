@@ -29,6 +29,10 @@ export const ROUTES = {
   FACILITY_EDIT: (facilityId: string) => `/facilities/${facilityId}/edit`,
   FACILITY_SETUP: (facilityId: string) => `/facilities/${facilityId}/setup`,
   FACILITY_SLOTS: (facilityId: string) => `/facilities/${facilityId}/slots`,
+  FACILITY_DETAILS_PATTERN: "/facilities/:facilityId",
+  FACILITY_EDIT_PATTERN: "/facilities/:facilityId/edit",
+  FACILITY_SETUP_PATTERN: "/facilities/:facilityId/setup",
+  FACILITY_SLOTS_PATTERN: "/facilities/:facilityId/slots",
   REVENUE: "/revenue",
   PROVIDER_ANALYTICS: "/analytics",
   PROVIDER_REPORTS: "/reports",
@@ -45,6 +49,7 @@ export const ROUTES = {
   ADMIN_PROPERTIES: "/admin/properties",
   ADMIN_PROPERTY_DETAILS: (facilityId: string) =>
     `/admin/properties/${facilityId}`,
+  ADMIN_PROPERTY_DETAILS_PATTERN: "/admin/properties/:facilityId",
   ADMIN_PROVIDERS: "/admin/providers",
   ADMIN_PROVIDER_APPROVALS: "/admin/provider-approvals",
   ADMIN_COMMISSION: "/admin/commission",
