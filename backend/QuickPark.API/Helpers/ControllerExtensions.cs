@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace QuickPark.API.Helpers;
 
-// The two lines every controller action repeats: read the signed-in user out of the cookie, and
-// turn a service exception into the matching HTTP status. Kept here so one definition governs all
-// of them (§24 — the account in the token, never a route parameter, is what selects the data).
+// Signed-in user id from the cookie, and service exception → HTTP status.
 public static class ControllerExtensions
 {
     /// <summary>Resolves the authenticated user id from the auth cookie. False means the caller is not signed in.</summary>

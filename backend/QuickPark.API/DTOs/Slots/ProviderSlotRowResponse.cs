@@ -1,6 +1,7 @@
 namespace QuickPark.API.DTOs.Slots;
 
-public class SlotResponse
+// Status is what the owner set; EffectiveStatus folds in the live bookings.
+public class ProviderSlotRowResponse
 {
     public Guid SlotId { get; set; }
     public Guid FacilityId { get; set; }
@@ -11,8 +12,13 @@ public class SlotResponse
     public string BayLabel { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
+    public string EffectiveStatus { get; set; } = string.Empty;
+    public bool Bookable { get; set; }
+
     public decimal HourlyRate { get; set; }
-    public bool AvailableForPeriod { get; set; }
     public DateTime? BusyFrom { get; set; }
     public DateTime? BusyUntil { get; set; }
+
+    // Current reservation shown on the provider board row.
+    public QuickPark.API.DTOs.Reservations.ReservationResponse? Current { get; set; }
 }
