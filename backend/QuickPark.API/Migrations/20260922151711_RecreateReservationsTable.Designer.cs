@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QuickPark.API.Data;
@@ -11,9 +12,11 @@ using QuickPark.API.Data;
 namespace QuickPark.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922151711_RecreateReservationsTable")]
+    partial class RecreateReservationsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,202 +24,6 @@ namespace QuickPark.API.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("QuickPark.API.Models.Commission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("CommissionAmount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<decimal>("CommissionRate")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("GrossAmount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<Guid>("PaymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("ProviderAmount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<Guid>("ProviderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ReservationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("SettledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("SettledBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PaymentId")
-                        .IsUnique();
-
-                    b.HasIndex("ProviderId");
-
-                    b.HasIndex("ReservationId");
-
-                    b.HasIndex("SettledBy");
-
-                    b.HasIndex("ProviderId", "Status");
-
-                    b.ToTable("Commissions", (string)null);
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.Feedback", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ModeratedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ModeratedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ParkingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParkingId");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("Type");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Feedbacks");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.FeedbackKeyword", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("FeedbackId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Keyword")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FeedbackId");
-
-                    b.ToTable("FeedbackKeywords");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.FeedbackReply", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("FeedbackId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<Guid>("RepliedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReplierRole")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FeedbackId");
-
-                    b.ToTable("FeedbackReplies");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.FeedbackReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("FeedbackId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ReporterUserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FeedbackId");
-
-                    b.ToTable("FeedbackReports");
-                });
 
             modelBuilder.Entity("QuickPark.API.Models.Notification", b =>
                 {
@@ -650,169 +457,6 @@ namespace QuickPark.API.Migrations
                     b.ToTable("ParkingSlot");
                 });
 
-            modelBuilder.Entity("QuickPark.API.Models.Payment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<int>("AttemptNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("CashConfirmedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CashConfirmedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CashConfirmedByName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DriverUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("FailedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FailureReason")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("GatewayProvider")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
-
-                    b.Property<string>("GatewayReference")
-                        .HasMaxLength(400)
-                        .HasColumnType("character varying(400)");
-
-                    b.Property<string>("GatewayTransactionId")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ProviderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("RefundReason")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<DateTime?>("RefundedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("RefundedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ReservationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CashConfirmedBy");
-
-                    b.HasIndex("GatewayReference");
-
-                    b.HasIndex("GatewayTransactionId")
-                        .IsUnique();
-
-                    b.HasIndex("PaymentMethod");
-
-                    b.HasIndex("RefundedBy");
-
-                    b.HasIndex("ReservationId");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("DriverUserId", "CreatedAt");
-
-                    b.HasIndex("ProviderId", "Status");
-
-                    b.HasIndex("ReservationId", "AttemptNumber")
-                        .IsUnique();
-
-                    b.ToTable("Payments", (string)null);
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.ProviderLedger", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<Guid?>("CommissionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("PaymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProviderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Reference")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<Guid?>("ReservationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("TransactionType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CommissionId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("PaymentId");
-
-                    b.HasIndex("ReservationId");
-
-                    b.HasIndex("ProviderId", "CreatedAt");
-
-                    b.HasIndex("ProviderId", "TransactionType");
-
-                    b.ToTable("ProviderLedger", (string)null);
-                });
-
             modelBuilder.Entity("QuickPark.API.Models.Reservation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -829,12 +473,6 @@ namespace QuickPark.API.Migrations
                     b.Property<string>("CancelledBy")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("CheckedInAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("CheckedOutAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("CommissionAmount")
                         .HasColumnType("numeric");
@@ -1061,78 +699,6 @@ namespace QuickPark.API.Migrations
                     b.ToTable("VehicleTypes", (string)null);
                 });
 
-            modelBuilder.Entity("QuickPark.API.Models.Commission", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.Payment", "Payment")
-                        .WithOne("Commission")
-                        .HasForeignKey("QuickPark.API.Models.Commission", "PaymentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("QuickPark.API.Models.ParkingProvider", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("QuickPark.API.Models.Reservation", null)
-                        .WithMany()
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("QuickPark.API.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("SettledBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Payment");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.Feedback", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.FeedbackKeyword", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.Feedback", "Feedback")
-                        .WithMany("Keywords")
-                        .HasForeignKey("FeedbackId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Feedback");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.FeedbackReply", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.Feedback", "Feedback")
-                        .WithMany("Replies")
-                        .HasForeignKey("FeedbackId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Feedback");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.FeedbackReport", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.Feedback", "Feedback")
-                        .WithMany("Reports")
-                        .HasForeignKey("FeedbackId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Feedback");
-                });
-
             modelBuilder.Entity("QuickPark.API.Models.Notification", b =>
                 {
                     b.HasOne("QuickPark.API.Models.User", "User")
@@ -1226,70 +792,6 @@ namespace QuickPark.API.Migrations
                     b.Navigation("VehicleType");
                 });
 
-            modelBuilder.Entity("QuickPark.API.Models.Payment", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CashConfirmedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("QuickPark.API.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("DriverUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("QuickPark.API.Models.ParkingProvider", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("QuickPark.API.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("RefundedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("QuickPark.API.Models.Reservation", "Reservation")
-                        .WithMany()
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Reservation");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.ProviderLedger", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.Commission", null)
-                        .WithMany()
-                        .HasForeignKey("CommissionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("QuickPark.API.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("QuickPark.API.Models.Payment", "Payment")
-                        .WithMany()
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("QuickPark.API.Models.ParkingProvider", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("QuickPark.API.Models.Reservation", null)
-                        .WithMany()
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Payment");
-                });
-
             modelBuilder.Entity("QuickPark.API.Models.Reservation", b =>
                 {
                     b.HasOne("QuickPark.API.Models.User", "Driver")
@@ -1344,15 +846,6 @@ namespace QuickPark.API.Migrations
                     b.Navigation("VehicleType");
                 });
 
-            modelBuilder.Entity("QuickPark.API.Models.Feedback", b =>
-                {
-                    b.Navigation("Keywords");
-
-                    b.Navigation("Replies");
-
-                    b.Navigation("Reports");
-                });
-
             modelBuilder.Entity("QuickPark.API.Models.ParkingFacility", b =>
                 {
                     b.Navigation("Documents");
@@ -1362,11 +855,6 @@ namespace QuickPark.API.Migrations
                     b.Navigation("Slots");
 
                     b.Navigation("VehicleAllocations");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.Payment", b =>
-                {
-                    b.Navigation("Commission");
                 });
 #pragma warning restore 612, 618
         }
