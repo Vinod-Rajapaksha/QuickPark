@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { AlertTone } from "../../../components/feedback/Alert";
+import type { ToastType } from "../../../app/contexts/ToastContext";
 import { useToast } from "../../../hooks/useToast";
 import { parkingApi } from "../api/parkingApi";
 import type {
@@ -26,10 +26,10 @@ const decisionCopy = (
   decision: Decision,
   facility: ParkingFacility,
   remarks?: string,
-): { tone: AlertTone; title: string; description: string } => {
+): { tone: ToastType; title: string; description: string } => {
   if (decision === "REJECTED") {
     return {
-      tone: "warning",
+      tone: "info",
       title: `${subject} sent back`,
       description: `The owner sees your remark: “${remarks}”. The property stays out of the driver listings until every section is approved.`,
     };
@@ -109,7 +109,7 @@ export const useFacilityQueue = () => {
 
 // Detail always comes from the server so a decision is never posted against a stale row.
 export const useFacilityDetail = (facilityId: string | null) => {
-  const toast = useToast();
+  const { showToast } = useToast();
   const [review, setReview] = useState<FacilityReview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -155,13 +155,16 @@ export const useFacilityDetail = (facilityId: string | null) => {
         return { ok: true, facility: fresh?.facility ?? null };
       } catch (error) {
         // The queue is long enough to have scrolled an inline banner out of sight.
-        toast.error(failure, getApiErrorMessage(error, "The platform refused this decision."));
+        showToast(
+          `${failure} ${getApiErrorMessage(error, "The platform refused this decision.")}`,
+          "error",
+        );
         return { ok: false, facility: null };
       } finally {
         setBusyKey(null);
       }
     },
-    [facilityId, load, toast],
+    [facilityId, load, showToast],
   );
 
   const labelOf = (facility: ParkingFacility, section: FacilitySectionName) =>
@@ -187,10 +190,10 @@ export const useFacilityDetail = (facilityId: string | null) => {
         facility,
         remarks,
       );
-      toast.show(copy.tone, copy.title, copy.description);
+      showToast(`${copy.title}. ${copy.description}`, copy.tone);
       return true;
     },
-    [run, facilityId, toast],
+    [run, facilityId, showToast],
   );
 
   return {
