@@ -18,7 +18,7 @@ from app.tools.demand_metrics import (
     deterministic_narrative,
 )
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-3.5-flash"
 SYSTEM_INSTRUCTION = (
     "You are a parking analyst for a QuickPark facility owner. You are given "
     "already-calculated demand facts. Explain and prioritise them for the owner. "

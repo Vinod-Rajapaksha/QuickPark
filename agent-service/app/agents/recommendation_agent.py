@@ -12,7 +12,23 @@ from app.tools.search_parking import search_parking
 
 logger = logging.getLogger(__name__)
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-3.5-flash"
+SYSTEM_INSTRUCTION = (
+    "You are a parking recommendation assistant for QuickPark.\n"
+    "Generate recommendations for the driver based ONLY on the provided candidate data.\n"
+    "Rules:\n"
+    "- Use only parking_id values from the candidates above.\n"
+    "- Do NOT invent facilities, prices, availability, or distances.\n"
+    "- Provide a clear reason for each recommendation.\n"
+    "- List which driver preferences each recommendation matches.\n"
+    "- Set confidence between 0.0 and 1.0 based on how well the candidate matches preferences.\n"
+    "- Rank from most to least suitable.\n"
+    "- Return at most 5 recommendations.\n\n"
+    "Respond with valid JSON matching this schema:\n"
+    '{"recommendations": [{"parking_id": "...", "parking_name": "...", '
+    '"rank": 1, "reason": "...", "matched_preferences": ["..."], '
+    '"confidence": 0.9}], "summary": "..."}'
+)
 MAX_RECOMMENDATIONS = 5
 
 
@@ -263,7 +279,7 @@ class RecommendationAgent:
         self, request: RecommendationRequest, candidates: List[ParkingCandidate]
     ) -> List[ParkingRecommendation]:
         candidate_data = [
-            {
+            {k: v for k, v in {
                 "parking_id": c.facility_id,
                 "name": c.name,
                 "city": c.city,
@@ -273,36 +289,22 @@ class RecommendationAgent:
                 "has_ev_charging": c.has_ev_charging,
                 "distance_km": c.distance_km,
                 "vehicle_types": c.vehicle_types,
-            }
+            }.items() if v is not None and v != []}
             for c in candidates
         ]
 
-        user_context = {
+        user_context = {k: v for k, v in {
             "destination": request.destination,
             "ev_charging_required": request.ev_charging_required,
             "max_hourly_rate": request.max_hourly_rate,
             "vehicle_type": request.vehicle_type,
             "notes": request.notes,
-        }
+        }.items() if v is not None}
 
         prompt = (
-            "You are a parking recommendation assistant for QuickPark.\n\n"
             f"Driver preferences: {json.dumps(user_context)}\n\n"
             f"Available parking candidates (pre-ranked by availability, distance, price):\n"
-            f"{json.dumps(candidate_data, indent=2)}\n\n"
-            "Generate recommendations for the driver based ONLY on the provided candidate data.\n"
-            "Rules:\n"
-            "- Use only parking_id values from the candidates above.\n"
-            "- Do NOT invent facilities, prices, availability, or distances.\n"
-            "- Provide a clear reason for each recommendation.\n"
-            "- List which driver preferences each recommendation matches.\n"
-            "- Set confidence between 0.0 and 1.0 based on how well the candidate matches preferences.\n"
-            "- Rank from most to least suitable.\n"
-            "- Return at most 5 recommendations.\n\n"
-            "Respond with valid JSON matching this schema:\n"
-            '{"recommendations": [{"parking_id": "...", "parking_name": "...", '
-            '"rank": 1, "reason": "...", "matched_preferences": ["..."], '
-            '"confidence": 0.9}], "summary": "..."}'
+            f"{json.dumps(candidate_data, indent=2)}\n"
         )
 
         try:
@@ -310,6 +312,7 @@ class RecommendationAgent:
                 model=GEMINI_MODEL,
                 contents=prompt,
                 config=genai_types.GenerateContentConfig(
+                    system_instruction=SYSTEM_INSTRUCTION,
                     response_mime_type="application/json",
                     temperature=0.3,
                     max_output_tokens=2048,
