@@ -111,3 +111,37 @@ def test_planner_does_not_execute_tools():
     planner = PlanningAgent()
     plan = planner.create_plan("Find a parking space near SLIIT")
     assert isinstance(plan, AgentWorkflow)
+
+def test_demand_analysis_creates_single_step_plan():
+    planner = PlanningAgent()
+    plan = planner.create_plan("Analyze parking demand for the last 30 days")
+
+    assert len(plan.steps) == 1
+    assert plan.steps[0].agent == "parking_demand_agent"
+    assert plan.steps[0].action == "analyze_parking_demand"
+    assert plan.steps[0].required_tools == ["compute_demand_metrics"]
+    assert plan.steps[0].dependencies == []
+
+def test_demand_branch_wins_over_reservation_words():
+    planner = PlanningAgent()
+    plan = planner.create_plan("Analyse the reservations from last month")
+
+    assert len(plan.steps) == 1
+    assert plan.steps[0].agent == "parking_demand_agent"
+
+def test_demand_plan_is_validated_like_any_other_plan():
+    planner = PlanningAgent()
+    workflow = AgentWorkflow(
+        objective="Test",
+        steps=[
+            AgentStep(
+                step_id="1",
+                order=1,
+                agent="parking_demand_agent",
+                action="analyze_parking_demand",
+                description="t",
+                required_tools=["compute_demand_metrics"]
+            )
+        ]
+    )
+    assert planner.validate_plan(workflow) is None
