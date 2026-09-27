@@ -314,8 +314,6 @@ public partial class ParkingService : IParkingService
         return reservations.Select(MapToReservation).ToList();
     }
 
-    // Both the driver and the owner end a booking here, and the row is never deleted — it
-    // keeps the reason, who ended it and when, so the history still adds up.
     public async Task<ReservationResponse> CancelReservationAsync(
         Guid userId, Guid reservationId, string? reason, CancellationToken ct = default)
     {
@@ -355,6 +353,58 @@ public partial class ParkingService : IParkingService
         reservation.CancelledBy = $"{actor ?? "An account"} ({(isDriver ? "driver" : "property owner")})".ClampedTo(100);
         reservation.CancelledAt = now;
         reservation.UpdatedAt = now;
+
+        await _context.SaveChangesAsync(ct);
+
+        return await LoadReservationAsync(reservation.Id, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+    }
+
+    public async Task<ReservationResponse> CheckInAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+    {
+        var provider = await GetVerifiedProviderAsync(providerUserId, ct);
+
+        var reservation = await _context.Set<Reservation>()
+            .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+
+        await EnsureReservationAccessAsync(providerUserId, reservation, ct);
+
+        if (reservation.Status != ReservationStatus.CONFIRMED)
+        {
+            throw new InvalidOperationException($"Cannot check-in. Reservation is currently {reservation.Status}.");
+        }
+
+        reservation.Status = ReservationStatus.CHECKED_IN;
+        reservation.CheckedInAt = DateTime.UtcNow;
+        reservation.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+        return await LoadReservationAsync(reservation.Id, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+    }
+
+    public async Task<ReservationResponse> CheckOutAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+    {
+        var provider = await GetVerifiedProviderAsync(providerUserId, ct);
+
+        var reservation = await _context.Set<Reservation>()
+            .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+
+        await EnsureReservationAccessAsync(providerUserId, reservation, ct);
+
+        if (reservation.Status != ReservationStatus.CHECKED_IN)
+        {
+            throw new InvalidOperationException($"Cannot check-out. Reservation is currently {reservation.Status}.");
+        }
+
+        reservation.Status = ReservationStatus.CHECKED_OUT;
+        reservation.CheckedOutAt = DateTime.UtcNow;
+        reservation.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(ct);
 
