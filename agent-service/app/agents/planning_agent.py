@@ -13,7 +13,8 @@ ALLOWED_TOOLS = {
     "check_availability",
     "calculate_price",
     "validate_reservation",
-    "create_reservation"
+    "create_reservation",
+    "compute_demand_metrics"
 }
 
 class PlanningError(Exception):
@@ -27,7 +28,21 @@ class PlanningAgent:
         steps = []
         objective_lower = objective.lower()
 
-        if "reserve" in objective_lower or "reservation" in objective_lower:
+        if any(keyword in objective_lower for keyword in ("demand", "analyz", "analys")):
+            # Analysing historic bookings, not looking for a bay to park in.
+            steps = [
+                AgentStep(
+                    step_id="step_1",
+                    order=1,
+                    agent="parking_demand_agent",
+                    action="analyze_parking_demand",
+                    description="Aggregate the provider's reservations into demand metrics.",
+                    required_tools=["compute_demand_metrics"],
+                    dependencies=[],
+                    expected_output="Structured parking demand metrics and analysis."
+                )
+            ]
+        elif "reserve" in objective_lower or "reservation" in objective_lower:
             # Plan with reservation
             steps = [
                 AgentStep(
