@@ -2,16 +2,14 @@ using QuickPark.API.Enums;
 
 namespace QuickPark.API.Models;
 
-// One booking of a bay by a driver: who booked it, where, for which vehicle,
-// what it costs and how the money splits between the platform and the owner.
 public class Reservation
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    public Guid DriverId { get; set; } // FK → User
+    public Guid DriverId { get; set; }
     public User? Driver { get; set; }
 
-    public Guid FacilityId { get; set; } // FK → ParkingFacility
+    public Guid FacilityId { get; set; }
     public ParkingFacility? Facility { get; set; }
 
     // ParkingProvider.Id, copied from the facility so an owner's bookings are one indexed lookup away.
@@ -20,7 +18,7 @@ public class Reservation
     public Guid SlotId { get; set; }
     public string SlotNumber { get; set; } = string.Empty;
 
-    public Guid VehicleTypeId { get; set; } // FK → VehicleType
+    public Guid VehicleTypeId { get; set; } 
     public VehicleType? VehicleType { get; set; }
 
     public DateTime StartTime { get; set; }
