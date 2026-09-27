@@ -224,6 +224,40 @@ namespace QuickPark.API.Migrations
                     b.ToTable("FeedbackReports");
                 });
 
+            modelBuilder.Entity("QuickPark.API.Models.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FacilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("QuickPark.API.Models.ParkingFacility", b =>
                 {
                     b.Property<Guid>("Id")
@@ -558,7 +592,7 @@ namespace QuickPark.API.Migrations
 
                     b.HasIndex("FacilityId", "VehicleTypeId", "Status");
 
-                    b.ToTable("ParkingSlot");
+                    b.ToTable("ParkingSlots");
                 });
 
             modelBuilder.Entity("QuickPark.API.Models.Payment", b =>
