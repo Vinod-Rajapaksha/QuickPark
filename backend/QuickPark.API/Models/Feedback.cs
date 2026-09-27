@@ -12,6 +12,8 @@ public class Feedback
 
     public Guid? ParkingId { get; set; }
 
+    public Guid? ReservationId { get; set; }
+
     public int Rating { get; set; }
 
     public string? Comment { get; set; }
