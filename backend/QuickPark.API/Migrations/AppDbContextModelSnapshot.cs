@@ -114,6 +114,9 @@ namespace QuickPark.API.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("ReservationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -131,6 +134,9 @@ namespace QuickPark.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ParkingId");
+
+                    b.HasIndex("ReservationId")
+                        .IsUnique();
 
                     b.HasIndex("Status");
 
@@ -226,8 +232,7 @@ namespace QuickPark.API.Migrations
 
                     b.Property<string>("Body")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -238,19 +243,19 @@ namespace QuickPark.API.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "IsRead", "CreatedAt");
-
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("QuickPark.API.Models.ParkingFacility", b =>
@@ -303,22 +308,8 @@ namespace QuickPark.API.Migrations
                     b.Property<TimeOnly>("OpeningTime")
                         .HasColumnType("time without time zone");
 
-                    b.Property<string>("ProviderBusinessName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("ProviderEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
                     b.Property<Guid>("ProviderId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ProviderName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("Province")
                         .IsRequired()
@@ -351,11 +342,7 @@ namespace QuickPark.API.Migrations
 
                     b.HasIndex("District");
 
-                    b.HasIndex("ProviderEmail");
-
                     b.HasIndex("ProviderId");
-
-                    b.HasIndex("ProviderName");
 
                     b.HasIndex("Province");
 
@@ -382,20 +369,6 @@ namespace QuickPark.API.Migrations
                     b.Property<string>("FileName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.Property<string>("ProviderBusinessName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("ProviderEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("PublicId")
                         .HasMaxLength(200)
@@ -494,20 +467,6 @@ namespace QuickPark.API.Migrations
 
                     b.Property<int>("NumberOfSlots")
                         .HasColumnType("integer");
-
-                    b.Property<string>("ProviderBusinessName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("ProviderEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -609,20 +568,6 @@ namespace QuickPark.API.Migrations
                     b.Property<Guid>("FacilityId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ProviderBusinessName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("ProviderEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
                     b.Property<string>("SlotNumber")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -647,7 +592,7 @@ namespace QuickPark.API.Migrations
 
                     b.HasIndex("FacilityId", "VehicleTypeId", "Status");
 
-                    b.ToTable("ParkingSlot");
+                    b.ToTable("ParkingSlots");
                 });
 
             modelBuilder.Entity("QuickPark.API.Models.Payment", b =>
@@ -837,10 +782,12 @@ namespace QuickPark.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("CommissionAmount")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<decimal>("CommissionRate")
-                        .HasColumnType("numeric");
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -862,24 +809,11 @@ namespace QuickPark.API.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("ProviderAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("ProviderBusinessName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("ProviderEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<Guid>("ProviderId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ProviderName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
 
                     b.Property<Guid>("SlotId")
                         .HasColumnType("uuid");
@@ -908,19 +842,19 @@ namespace QuickPark.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProviderEmail");
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("FacilityId");
 
                     b.HasIndex("ProviderId");
 
-                    b.HasIndex("ProviderName");
+                    b.HasIndex("SlotId");
+
+                    b.HasIndex("StartTime");
 
                     b.HasIndex("VehicleTypeId");
 
-                    b.HasIndex("DriverId", "StartTime");
-
-                    b.HasIndex("FacilityId", "Status", "StartTime");
-
-                    b.HasIndex("SlotId", "StartTime", "EndTime");
+                    b.HasIndex("Status", "StartTime");
 
                     b.ToTable("Reservations", (string)null);
                 });
@@ -1075,12 +1009,6 @@ namespace QuickPark.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("QuickPark.API.Models.Reservation", null)
-                        .WithMany()
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("QuickPark.API.Models.User", null)
                         .WithMany()
                         .HasForeignKey("SettledBy")
@@ -1131,17 +1059,6 @@ namespace QuickPark.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Feedback");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.Notification", b =>
-                {
-                    b.HasOne("QuickPark.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("QuickPark.API.Models.ParkingFacility", b =>
@@ -1304,13 +1221,13 @@ namespace QuickPark.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("QuickPark.API.Models.ParkingProvider", "Provider")
+                    b.HasOne("QuickPark.API.Models.ParkingProvider", null)
                         .WithMany()
                         .HasForeignKey("ProviderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("QuickPark.API.Models.ParkingSlot", "Slot")
+                    b.HasOne("QuickPark.API.Models.ParkingSlot", null)
                         .WithMany()
                         .HasForeignKey("SlotId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1325,10 +1242,6 @@ namespace QuickPark.API.Migrations
                     b.Navigation("Driver");
 
                     b.Navigation("Facility");
-
-                    b.Navigation("Provider");
-
-                    b.Navigation("Slot");
 
                     b.Navigation("VehicleType");
                 });

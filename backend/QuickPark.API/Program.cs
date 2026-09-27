@@ -34,8 +34,8 @@ builder.Services.AddScoped<IParkingService, ParkingService>();
 //feedback services
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IParkingUsageValidator, ParkingUsageValidator>();
-builder.Services.AddScoped<IFeedbackReplyService,FeedbackReplyService>();
-builder.Services.AddScoped<IFeedbackReportService,FeedbackReportService>();
+builder.Services.AddScoped<IFeedbackReplyService, FeedbackReplyService>();
+builder.Services.AddScoped<IFeedbackReportService, FeedbackReportService>();
 builder.Services.AddScoped<IParkingAccessValidator, ParkingAccessValidator>();
 
 // Configure CORS
