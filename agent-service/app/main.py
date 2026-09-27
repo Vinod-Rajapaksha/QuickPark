@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.routes.planning import router as planning_router
 from app.config.settings import settings
+from app.api.routes.validation import router as validation_router
 
 app = FastAPI(
     title="QuickPark Agent Service",
@@ -23,3 +24,5 @@ app.include_router(planning_router, prefix="/api/planning", tags=["Planning"])
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=settings.AGENT_SERVICE_PORT, reload=True)
+
+app.include_router(validation_router,prefix="/api/validation",tags=["Validation"],)
