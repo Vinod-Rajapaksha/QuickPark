@@ -100,9 +100,6 @@ public class ReservationsController : ControllerBase
         }
     }
 
-    // Both the driver and the owner end a booking here, and the row is never deleted — it
-    // keeps the reason, who ended it and when, so the history still adds up.
-
     [HttpPost("{id:guid}/cancel")]
     [EndpointSummary("Cancel a booking and free its bay")]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
