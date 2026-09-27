@@ -12,7 +12,8 @@ class ProviderScannerScreen extends ConsumerStatefulWidget {
   const ProviderScannerScreen({super.key});
 
   @override
-  ConsumerState<ProviderScannerScreen> createState() => _ProviderScannerScreenState();
+  ConsumerState<ProviderScannerScreen> createState() =>
+      _ProviderScannerScreenState();
 }
 
 class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
@@ -63,7 +64,8 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
         AppErrorHandler.showErrorModal(
           context: context,
           title: 'Invalid QR Code',
-          message: 'The scanned code is not associated with any active reservation. Please try again.',
+          message:
+              'The scanned code is not associated with any active reservation. Please try again.',
           onRetry: () {
             if (mounted) {
               _isScannerActive = true;
@@ -77,7 +79,8 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
         AppErrorHandler.showErrorModal(
           context: context,
           title: 'Verification Failed',
-          message: 'Unable to verify QR code. Please check your network connection and try again.',
+          message:
+              'Unable to verify QR code. Please check your network connection and try again.',
           onRetry: () {
             if (mounted) {
               _isScannerActive = true;
@@ -171,7 +174,9 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
       onVisibilityChanged: (info) {
         if (info.visibleFraction == 0) {
           _scannerController.stop();
-        } else if (info.visibleFraction > 0 && _isScannerActive && !_isProcessing) {
+        } else if (info.visibleFraction > 0 &&
+            _isScannerActive &&
+            !_isProcessing) {
           _scannerController.start();
         }
       },
@@ -181,7 +186,10 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
           systemOverlayStyle: SystemUiOverlayStyle.dark,
           title: const Text(
             'Scan QR Code',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
           backgroundColor: Colors.white,
           elevation: 0,
@@ -191,10 +199,13 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              
+
               // Instruction Text
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(20),
@@ -210,9 +221,9 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // Scanner Box Container
               Center(
                 child: Container(
@@ -223,7 +234,7 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -250,7 +261,7 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
                   ),
                 ),
               ),
-              
+
               const Spacer(),
             ],
           ),

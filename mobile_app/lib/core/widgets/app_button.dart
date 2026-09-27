@@ -43,33 +43,30 @@ class AppButton extends StatelessWidget {
             ? SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(
-                  color: fg,
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(color: fg, strokeWidth: 2),
               )
             : icon != null
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(icon, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
                     label,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                ],
+              )
+            : Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }

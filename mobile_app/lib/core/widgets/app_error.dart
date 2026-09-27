@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'app_button.dart';
 
 class AppErrorHandler {
-  static void showSnackBar(BuildContext context, String message, {bool isError = true}) {
+  static void showSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = true,
+  }) {
     if (!context.mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

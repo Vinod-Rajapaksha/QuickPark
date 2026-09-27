@@ -9,14 +9,14 @@ class ViewEditSheet extends StatefulWidget {
   final bool initialEditMode;
 
   const ViewEditSheet({
-    Key? key,
+    super.key,
     required this.title,
     required this.viewContent,
     required this.editContent,
     this.onEditPressed,
     this.onSavePressed,
     this.initialEditMode = false,
-  }) : super(key: key);
+  });
 
   static Future<T?> show<T>({
     required BuildContext context,
@@ -123,9 +123,7 @@ class _ViewEditSheetState extends State<ViewEditSheet> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-          ),
+          bottom: BorderSide(color: Theme.of(context).dividerColor),
         ),
       ),
       child: Row(
@@ -134,9 +132,9 @@ class _ViewEditSheetState extends State<ViewEditSheet> {
           Expanded(
             child: Text(
               widget.title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
           ),

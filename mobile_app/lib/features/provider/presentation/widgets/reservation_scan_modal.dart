@@ -19,27 +19,27 @@ class ReservationScanModal extends StatelessWidget {
   Widget _buildStatusChip(String status) {
     Color bgColor;
     Color textColor;
-    
+
     switch (status.toUpperCase()) {
       case 'CONFIRMED':
-        bgColor = Colors.blue.withOpacity(0.1);
+        bgColor = Colors.blue.withValues(alpha: 0.1);
         textColor = Colors.blue.shade700;
         break;
       case 'CHECKED_IN':
-        bgColor = Colors.orange.withOpacity(0.1);
+        bgColor = Colors.orange.withValues(alpha: 0.1);
         textColor = Colors.orange.shade700;
         break;
       case 'CHECKED_OUT':
       case 'COMPLETED':
-        bgColor = Colors.green.withOpacity(0.1);
+        bgColor = Colors.green.withValues(alpha: 0.1);
         textColor = Colors.green.shade700;
         break;
       case 'CANCELLED':
-        bgColor = Colors.red.withOpacity(0.1);
+        bgColor = Colors.red.withValues(alpha: 0.1);
         textColor = Colors.red.shade700;
         break;
       default:
-        bgColor = Colors.grey.withOpacity(0.1);
+        bgColor = Colors.grey.withValues(alpha: 0.1);
         textColor = Colors.grey.shade700;
     }
 
@@ -70,7 +70,7 @@ class ReservationScanModal extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, size: 20, color: Colors.grey.shade700),
@@ -134,7 +134,7 @@ class ReservationScanModal extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -163,24 +163,24 @@ class ReservationScanModal extends StatelessWidget {
                 child: Column(
                   children: [
                     _buildDetailItem(
-                      Icons.person_outline, 
-                      'Driver', 
-                      data['driver']?['fullName'] ?? 'N/A'
+                      Icons.person_outline,
+                      'Driver',
+                      data['driver']?['fullName'] ?? 'N/A',
                     ),
                     _buildDetailItem(
-                      Icons.directions_car_outlined, 
-                      'Vehicle Type', 
-                      data['vehicleType']?['name'] ?? 'N/A'
+                      Icons.directions_car_outlined,
+                      'Vehicle Type',
+                      data['vehicleType']?['name'] ?? 'N/A',
                     ),
                     _buildDetailItem(
-                      Icons.local_parking_outlined, 
-                      'Slot', 
-                      data['slotNumber'] ?? 'N/A'
+                      Icons.local_parking_outlined,
+                      'Slot',
+                      data['slotNumber'] ?? 'N/A',
                     ),
                     _buildDetailItem(
-                      Icons.access_time, 
-                      'Duration', 
-                      '${data['startTime'] ?? 'N/A'} - ${data['endTime'] ?? 'N/A'}'
+                      Icons.access_time,
+                      'Duration',
+                      '${data['startTime'] ?? 'N/A'} - ${data['endTime'] ?? 'N/A'}',
                     ),
                   ],
                 ),
@@ -214,7 +214,11 @@ class ReservationScanModal extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.grey.shade600,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'No actions available for status: $status',
