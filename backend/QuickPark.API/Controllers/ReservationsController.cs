@@ -181,7 +181,9 @@ public class ReservationsController : ControllerBase
         {
             error = BadRequest(new
             {
-                message = "status must be one of PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, COMPLETED, NOSHOW."
+
+                message = "status must be one of PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, COMPLETED, CANCELLED, NOSHOW."
+
             });
             return false;
         }

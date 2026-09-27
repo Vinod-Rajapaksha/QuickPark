@@ -38,4 +38,9 @@ public interface IFeedbackService
     Task RestoreAsync(
         Guid id);
 
+    Task<List<FeedbackResponse>> GetMyParkingFeedbackAsync(
+    Guid userId);
+
+    Task<bool> ShouldShowSystemFeedbackPromptAsync(
+    Guid userId);
 }

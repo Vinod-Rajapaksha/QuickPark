@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QuickPark.API.Data;
@@ -11,9 +12,11 @@ using QuickPark.API.Data;
 namespace QuickPark.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260927085431_AddReservationFeedbackFlow")]
+    partial class AddReservationFeedbackFlow
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -222,40 +225,6 @@ namespace QuickPark.API.Migrations
                     b.HasIndex("FeedbackId");
 
                     b.ToTable("FeedbackReports");
-                });
-
-            modelBuilder.Entity("QuickPark.API.Models.Notification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("FacilityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("QuickPark.API.Models.ParkingFacility", b =>
@@ -592,7 +561,7 @@ namespace QuickPark.API.Migrations
 
                     b.HasIndex("FacilityId", "VehicleTypeId", "Status");
 
-                    b.ToTable("ParkingSlots");
+                    b.ToTable("ParkingSlot");
                 });
 
             modelBuilder.Entity("QuickPark.API.Models.Payment", b =>

@@ -54,6 +54,9 @@ public class FeedbackConfiguration
             .HasForeignKey(x => x.FeedbackId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasIndex(x => x.ReservationId)
+            .IsUnique();
+
     }
 
 }
