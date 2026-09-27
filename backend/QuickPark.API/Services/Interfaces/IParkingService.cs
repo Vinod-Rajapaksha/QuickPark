@@ -29,6 +29,11 @@ public interface IParkingService
     Task<ReservationResponse> CancelReservationAsync(
         Guid userId, Guid reservationId, string? reason, CancellationToken ct = default);
 
+    Task<ReservationResponse> CheckInAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default);
+    Task<ReservationResponse> CheckOutAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default);
+
     Task<IReadOnlyList<ParkingFacilityDocumentResponse>> GetFacilityDocumentsAsync(
         Guid providerUserId, Guid facilityId, CancellationToken ct = default);
     Task<ParkingFacilityDocumentResponse> UploadDocumentAsync(
