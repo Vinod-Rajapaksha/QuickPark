@@ -224,7 +224,7 @@ public partial class ParkingService : IParkingService
     private const int MaxCancelReasonLength = 300;
 
     public async Task<ReservationResponse> CreateReservationAsync(
-        Guid driverUserId, CreateReservationRequest request, CancellationToken ct = default)
+        Guid driverId, CreateReservationRequest request, CancellationToken ct = default)
     {
         var start = request.StartTime.AsUtc();
         var end = request.EndTime.AsUtc();
@@ -256,7 +256,7 @@ public partial class ParkingService : IParkingService
             ? await GetBookableSlotAsync(facility, chosen, allocation.VehicleTypeId, start, end, ct)
             : await AssignFreeSlotAsync(facility, allocation.VehicleTypeId, start, end, ct);
 
-        var reservation = BuildReservation(driverUserId, facility, slot, allocation, start, end);
+        var reservation = BuildReservation(driverId, facility, slot, allocation, start, end);
 
         _context.Set<Reservation>().Add(reservation);
         await _context.SaveChangesAsync(ct);
@@ -279,10 +279,10 @@ public partial class ParkingService : IParkingService
     }
 
     public async Task<IReadOnlyList<ReservationResponse>> GetDriverReservationsAsync(
-        Guid driverUserId, ReservationStatus? status, DateTime? from, DateTime? to,
+        Guid driverId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default)
     {
-        var query = ReservationsForResponse().Where(r => r.DriverId == driverUserId);
+        var query = ReservationsForResponse().Where(r => r.DriverId == driverId);
         var filtered = ApplyReservationFilters(query, status, from, to);
 
         var reservations = await filtered
@@ -410,6 +410,7 @@ public partial class ParkingService : IParkingService
 
         return await LoadReservationAsync(reservation.Id, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
+
     }
 
     public async Task<IReadOnlyList<ParkingFacilityDocumentResponse>> GetFacilityDocumentsAsync(

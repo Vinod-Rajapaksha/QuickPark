@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QuickPark.API.Models;
-using QuickPark.API.Data.Configurations; 
+using QuickPark.API.Data.Configurations;
 
 namespace QuickPark.API.Data;
 
@@ -15,8 +15,10 @@ public class AppDbContext : DbContext
 
     public DbSet<Feedback> Feedbacks { get; set; }
     public DbSet<FeedbackKeyword> FeedbackKeywords { get; set; }
-    public DbSet<FeedbackReport> FeedbackReports {get;set;} = null!;
-    public DbSet<FeedbackReply> FeedbackReplies {get;set;} = null!;
+    public DbSet<FeedbackReport> FeedbackReports { get; set; } = null!;
+    public DbSet<FeedbackReply> FeedbackReplies { get; set; } = null!;
+
+    public DbSet<Reservation> Reservations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,7 +43,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(
            new FeedbackReportConfiguration()
         );
-        
+
         modelBuilder.ApplyConfiguration(
             new FeedbackReplyConfiguration()
         );

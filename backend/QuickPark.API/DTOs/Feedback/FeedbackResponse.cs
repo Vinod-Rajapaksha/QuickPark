@@ -7,12 +7,13 @@ public class FeedbackResponse
     public Guid Id { get; set; }
 
     public string UserName { get; set; }
-    = string.Empty;
+        = string.Empty;
 
     public FeedbackType Type { get; set; }
 
-    // Needed when frontend separates:
     public Guid? ParkingId { get; set; }
+
+    public Guid? ReservationId { get; set; }
 
     public int Rating { get; set; }
 
@@ -21,8 +22,12 @@ public class FeedbackResponse
     public FeedbackStatus Status { get; set; }
 
     public List<FeedbackKeywordType> Keywords { get; set; }
-    = new();
+        = new();
 
     public List<FeedbackReplyResponse> Replies { get; set; }
-    = new();
+        = new();
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
 }

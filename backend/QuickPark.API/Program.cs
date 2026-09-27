@@ -29,13 +29,13 @@ builder.Services.AddScoped<DbSeeder>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IProviderVerificationService, ProviderVerificationService>();
-builder.Services.AddScoped<IParkingService, ParkingService>();
+// builder.Services.AddScoped<IParkingService, ParkingService>();
 
 //feedback services
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IParkingUsageValidator, ParkingUsageValidator>();
-builder.Services.AddScoped<IFeedbackReplyService,FeedbackReplyService>();
-builder.Services.AddScoped<IFeedbackReportService,FeedbackReportService>();
+builder.Services.AddScoped<IFeedbackReplyService, FeedbackReplyService>();
+builder.Services.AddScoped<IFeedbackReportService, FeedbackReportService>();
 builder.Services.AddScoped<IParkingAccessValidator, ParkingAccessValidator>();
 
 // Configure CORS

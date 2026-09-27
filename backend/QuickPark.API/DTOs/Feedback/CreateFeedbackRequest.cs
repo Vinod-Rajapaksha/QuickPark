@@ -8,10 +8,11 @@ public class CreateFeedbackRequest
 
     public Guid? ParkingId { get; set; }
 
+    public Guid? ReservationId { get; set; }
+
     public int Rating { get; set; }
 
     public string? Comment { get; set; }
 
     public List<FeedbackKeywordType>? Keywords { get; set; }
-
 }

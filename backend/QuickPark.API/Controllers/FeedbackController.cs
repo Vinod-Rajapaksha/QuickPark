@@ -161,4 +161,27 @@ public class FeedbackController : ControllerBase
 
     }
 
+    [Authorize(Roles = "DRIVER")]
+    [HttpGet("my-parking")]
+    public async Task<IActionResult> GetMyParkingFeedback()
+    {
+        return Ok(
+            await _service.GetMyParkingFeedbackAsync(
+                GetUserId()));
+    }
+
+    [Authorize(Roles = "DRIVER")]
+    [HttpGet("system-prompt")]
+    public async Task<IActionResult> ShouldShowSystemPrompt()
+    {
+        var shouldShow =
+            await _service
+                .ShouldShowSystemFeedbackPromptAsync(
+                    GetUserId());
+
+        return Ok(new
+        {
+            shouldShow
+        });
+    }
 }
