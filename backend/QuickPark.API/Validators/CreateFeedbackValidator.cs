@@ -9,7 +9,6 @@ public class CreateFeedbackValidator
 {
     public CreateFeedbackValidator()
     {
-
         RuleFor(x => x.Type)
             .IsInEnum();
 
@@ -17,19 +16,24 @@ public class CreateFeedbackValidator
             .InclusiveBetween(1, 5);
 
         RuleFor(x => x.Comment)
-            .NotEmpty()
             .MaximumLength(1000);
 
         RuleFor(x => x.ParkingId)
             .NotNull()
             .When(x => x.Type == FeedbackType.PARKING)
             .WithMessage(
-            "Parking id is required for parking feedback");
+                "Parking id is required for parking feedback.");
+
+        RuleFor(x => x.ReservationId)
+            .NotNull()
+            .When(x => x.Type == FeedbackType.PARKING)
+            .WithMessage(
+                "Reservation id is required for parking feedback.");
 
         RuleFor(x => x.Keywords)
             .Must(x => x == null || x.Count <= 5)
             .WithMessage(
-            "Maximum 5 keywords allowed");
+                "Maximum 5 keywords allowed.");
 
         RuleForEach(x => x.Keywords)
             .IsInEnum();
@@ -37,29 +41,30 @@ public class CreateFeedbackValidator
         RuleFor(x => x)
             .Custom((request, context) =>
             {
+                if (request.Type != FeedbackType.SYSTEM)
+                    return;
 
-                if (request.Type == FeedbackType.SYSTEM)
+                if (request.ParkingId != null)
                 {
-
-                    if (request.ParkingId != null)
-                    {
-                        context.AddFailure(
+                    context.AddFailure(
                         "ParkingId",
-                        "System feedback cannot have parking id");
-                    }
-
-                    if (request.Keywords != null &&
-                       request.Keywords.Any())
-                    {
-                        context.AddFailure(
-                        "Keywords",
-                        "System feedback cannot contain keywords");
-                    }
-
+                        "System feedback cannot have parking id.");
                 }
 
+                if (request.ReservationId != null)
+                {
+                    context.AddFailure(
+                        "ReservationId",
+                        "System feedback cannot have reservation id.");
+                }
+
+                if (request.Keywords != null &&
+                    request.Keywords.Any())
+                {
+                    context.AddFailure(
+                        "Keywords",
+                        "System feedback cannot contain keywords.");
+                }
             });
-
     }
-
 }

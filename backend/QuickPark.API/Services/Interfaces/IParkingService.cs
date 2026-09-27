@@ -17,17 +17,22 @@ public interface IParkingService
     Task<ParkingResponse?> GetApprovedFacilityAsync(Guid facilityId, CancellationToken ct = default);
 
     Task<ReservationResponse> CreateReservationAsync(
-        Guid driverUserId, CreateReservationRequest request, CancellationToken ct = default);
+        Guid driverId, CreateReservationRequest request, CancellationToken ct = default);
     Task<ReservationResponse?> GetReservationAsync(
         Guid userId, Guid reservationId, CancellationToken ct = default);
     Task<IReadOnlyList<ReservationResponse>> GetDriverReservationsAsync(
-        Guid driverUserId, ReservationStatus? status, DateTime? from, DateTime? to,
+        Guid driverId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default);
     Task<IReadOnlyList<ReservationResponse>> GetProviderReservationsAsync(
         Guid providerUserId, Guid? facilityId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default);
     Task<ReservationResponse> CancelReservationAsync(
         Guid userId, Guid reservationId, string? reason, CancellationToken ct = default);
+
+    Task<ReservationResponse> CheckInAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default);
+    Task<ReservationResponse> CheckOutAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default);
 
     Task<IReadOnlyList<ParkingFacilityDocumentResponse>> GetFacilityDocumentsAsync(
         Guid providerUserId, Guid facilityId, CancellationToken ct = default);
@@ -81,4 +86,5 @@ public interface IParkingService
     Task<VehiclePricingAdminResponse> SaveVehiclePricingAsync(
         Guid vehicleTypeId, SaveVehiclePricingRequest request, CancellationToken ct = default);
     Task DeleteVehiclePricingAsync(Guid vehicleTypeId, CancellationToken ct = default);
+
 }

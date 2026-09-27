@@ -7,8 +7,6 @@ using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.API.Controllers;
 
-// It runs on IParkingService because that service
-// owns the approved facilities, generated slots and per-vehicle-type rates a booking needs.
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -102,8 +100,6 @@ public class ReservationsController : ControllerBase
         }
     }
 
-    // Both the driver and the owner end a booking here, and the row is never deleted — it
-    // keeps the reason, who ended it and when, so the history still adds up.
     [HttpPost("{id:guid}/cancel")]
     [EndpointSummary("Cancel a booking and free its bay")]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
@@ -127,6 +123,50 @@ public class ReservationsController : ControllerBase
         }
     }
 
+    [HttpPost("{id:guid}/check-in")]
+    [Authorize(Roles = OwnerRole)]
+    [EndpointSummary("Check-in a confirmed reservation")]
+    [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CheckIn(Guid id, CancellationToken ct)
+    {
+        if (!TryGetCurrentUserId(out var userId)) return Unauthorized();
+
+        try
+        {
+            var reservation = await _parkingService.CheckInAsync(userId, id, ct);
+            return Ok(reservation);
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
+    [HttpPost("{id:guid}/check-out")]
+    [Authorize(Roles = OwnerRole)]
+    [EndpointSummary("Check-out a checked-in reservation")]
+    [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CheckOut(Guid id, CancellationToken ct)
+    {
+        if (!TryGetCurrentUserId(out var userId)) return Unauthorized();
+
+        try
+        {
+            var reservation = await _parkingService.CheckOutAsync(userId, id, ct);
+            return Ok(reservation);
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
     // ---- Helpers ----
 
     private bool TryParseStatus(string? status, out ReservationStatus? parsed, out IActionResult? error)
@@ -141,7 +181,9 @@ public class ReservationsController : ControllerBase
         {
             error = BadRequest(new
             {
-                message = "status must be one of PENDING, CONFIRMED, CANCELLED, COMPLETED, NOSHOW."
+
+                message = "status must be one of PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, COMPLETED, CANCELLED, NOSHOW."
+
             });
             return false;
         }

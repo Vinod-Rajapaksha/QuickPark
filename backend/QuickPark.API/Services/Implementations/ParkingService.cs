@@ -224,7 +224,7 @@ public partial class ParkingService : IParkingService
     private const int MaxCancelReasonLength = 300;
 
     public async Task<ReservationResponse> CreateReservationAsync(
-        Guid driverUserId, CreateReservationRequest request, CancellationToken ct = default)
+        Guid driverId, CreateReservationRequest request, CancellationToken ct = default)
     {
         var start = request.StartTime.AsUtc();
         var end = request.EndTime.AsUtc();
@@ -256,7 +256,7 @@ public partial class ParkingService : IParkingService
             ? await GetBookableSlotAsync(facility, chosen, allocation.VehicleTypeId, start, end, ct)
             : await AssignFreeSlotAsync(facility, allocation.VehicleTypeId, start, end, ct);
 
-        var reservation = BuildReservation(driverUserId, facility, slot, allocation, start, end);
+        var reservation = BuildReservation(driverId, facility, slot, allocation, start, end);
 
         _context.Set<Reservation>().Add(reservation);
         await _context.SaveChangesAsync(ct);
@@ -279,10 +279,10 @@ public partial class ParkingService : IParkingService
     }
 
     public async Task<IReadOnlyList<ReservationResponse>> GetDriverReservationsAsync(
-        Guid driverUserId, ReservationStatus? status, DateTime? from, DateTime? to,
+        Guid driverId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default)
     {
-        var query = ReservationsForResponse().Where(r => r.DriverId == driverUserId);
+        var query = ReservationsForResponse().Where(r => r.DriverId == driverId);
         var filtered = ApplyReservationFilters(query, status, from, to);
 
         var reservations = await filtered
@@ -314,8 +314,6 @@ public partial class ParkingService : IParkingService
         return reservations.Select(MapToReservation).ToList();
     }
 
-    // Both the driver and the owner end a booking here, and the row is never deleted — it
-    // keeps the reason, who ended it and when, so the history still adds up.
     public async Task<ReservationResponse> CancelReservationAsync(
         Guid userId, Guid reservationId, string? reason, CancellationToken ct = default)
     {
@@ -360,6 +358,59 @@ public partial class ParkingService : IParkingService
 
         return await LoadReservationAsync(reservation.Id, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
+    }
+
+    public async Task<ReservationResponse> CheckInAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+    {
+        var provider = await GetVerifiedProviderAsync(providerUserId, ct);
+
+        var reservation = await _context.Set<Reservation>()
+            .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+
+        await EnsureReservationAccessAsync(providerUserId, reservation, ct);
+
+        if (reservation.Status != ReservationStatus.CONFIRMED)
+        {
+            throw new InvalidOperationException($"Cannot check-in. Reservation is currently {reservation.Status}.");
+        }
+
+        reservation.Status = ReservationStatus.CHECKED_IN;
+        reservation.CheckedInAt = DateTime.UtcNow;
+        reservation.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+        return await LoadReservationAsync(reservation.Id, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+    }
+
+    public async Task<ReservationResponse> CheckOutAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+    {
+        var provider = await GetVerifiedProviderAsync(providerUserId, ct);
+
+        var reservation = await _context.Set<Reservation>()
+            .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+
+        await EnsureReservationAccessAsync(providerUserId, reservation, ct);
+
+        if (reservation.Status != ReservationStatus.CHECKED_IN)
+        {
+            throw new InvalidOperationException($"Cannot check-out. Reservation is currently {reservation.Status}.");
+        }
+
+        reservation.Status = ReservationStatus.CHECKED_OUT;
+        reservation.CheckedOutAt = DateTime.UtcNow;
+        reservation.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+        return await LoadReservationAsync(reservation.Id, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+
     }
 
     public async Task<IReadOnlyList<ParkingFacilityDocumentResponse>> GetFacilityDocumentsAsync(
