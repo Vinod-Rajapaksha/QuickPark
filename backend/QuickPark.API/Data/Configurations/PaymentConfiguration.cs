@@ -27,7 +27,7 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.Status);
         builder.HasIndex(p => p.PaymentMethod);
         builder.HasIndex(p => new { p.ProviderId, p.Status });
-        builder.HasIndex(p => new { p.DriverUserId, p.CreatedAt });
+        builder.HasIndex(p => new { p.DriverId, p.CreatedAt });
 
         builder.HasIndex(p => p.GatewayTransactionId).IsUnique();
         builder.HasIndex(p => new { p.ReservationId, p.AttemptNumber }).IsUnique();
@@ -52,7 +52,7 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasOne<User>()
             .WithMany()
-            .HasForeignKey(p => p.DriverUserId)
+            .HasForeignKey(p => p.DriverId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Confirmed by an account

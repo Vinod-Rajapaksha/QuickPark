@@ -1,7 +1,7 @@
 // Mirrors the API's ReservationResponse. The gate columns are what the action buttons read.
 export interface Reservation {
   reservationId: string;
-  driverUserId: string;
+  driverId: string;
   driverName: string;
   driverPhone: string;
   facilityId: string;

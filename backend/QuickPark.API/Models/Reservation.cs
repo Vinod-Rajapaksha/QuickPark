@@ -8,7 +8,7 @@ public class Reservation
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    public Guid DriverUserId { get; set; } // FK → User
+    public Guid DriverId { get; set; } // FK → User
     public User? Driver { get; set; }
 
     public Guid FacilityId { get; set; } // FK → ParkingFacility

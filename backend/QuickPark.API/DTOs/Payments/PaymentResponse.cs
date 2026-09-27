@@ -6,7 +6,7 @@ public class PaymentResponse
     public int AttemptNumber { get; set; }
 
     public Guid ReservationId { get; set; }
-    public Guid DriverUserId { get; set; }
+    public Guid DriverId { get; set; }
     public Guid ProviderId { get; set; }
     public Guid FacilityId { get; set; }
     public string FacilityName { get; set; } = string.Empty;

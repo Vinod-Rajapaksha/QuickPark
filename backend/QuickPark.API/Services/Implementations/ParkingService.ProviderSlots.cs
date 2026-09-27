@@ -151,7 +151,7 @@ public partial class ParkingService
 
         return new Reservation
         {
-            DriverUserId = driverUserId,
+            DriverId = driverUserId,
             FacilityId = facility.Id,
             ProviderId = facility.ProviderId,
             SlotId = slot.Id,
