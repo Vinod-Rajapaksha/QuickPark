@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.api.routes.demand import router as demand_router
 from app.api.routes.planning import router as planning_router
 from app.config.settings import settings
 from app.api.routes.validation import router as validation_router
@@ -20,6 +21,7 @@ def health_check():
     }
 
 app.include_router(planning_router, prefix="/api/planning", tags=["Planning"])
+app.include_router(demand_router, prefix="/api/demand", tags=["Demand"])
 
 if __name__ == "__main__":
     import uvicorn
