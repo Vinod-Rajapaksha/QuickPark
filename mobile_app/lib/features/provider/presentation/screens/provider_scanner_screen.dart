@@ -3,10 +3,77 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_app/core/network/api_client.dart';
 import 'package:mobile_app/features/provider/presentation/widgets/reservation_scan_modal.dart';
 import 'package:mobile_app/core/widgets/app_error.dart';
 import 'package:mobile_app/core/widgets/app_loader.dart';
+
+class ScannerOverlay extends CustomPainter {
+  final Rect scanWindow;
+  final double borderRadius;
+
+  ScannerOverlay({required this.scanWindow, this.borderRadius = 24.0});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final cutoutPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(scanWindow, Radius.circular(borderRadius)));
+
+    final backgroundPaint = Paint()
+      ..color = Colors.black.withOpacity(0.65)
+      ..style = PaintingStyle.fill;
+
+    final overlayPath = Path.combine(PathOperation.difference, backgroundPath, cutoutPath);
+    canvas.drawPath(overlayPath, backgroundPaint);
+
+    final borderPaint = Paint()
+      ..color = Colors.blueAccent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round;
+
+    final cornerLength = 40.0;
+    
+    final cornerRadius = Radius.circular(borderRadius);
+    
+    // Top Left
+    final topLeftPath = Path()
+      ..moveTo(scanWindow.left, scanWindow.top + cornerLength)
+      ..lineTo(scanWindow.left, scanWindow.top + borderRadius)
+      ..arcToPoint(Offset(scanWindow.left + borderRadius, scanWindow.top), radius: cornerRadius, clockwise: true)
+      ..lineTo(scanWindow.left + cornerLength, scanWindow.top);
+    canvas.drawPath(topLeftPath, borderPaint);
+
+    // Top Right
+    final topRightPath = Path()
+      ..moveTo(scanWindow.right - cornerLength, scanWindow.top)
+      ..lineTo(scanWindow.right - borderRadius, scanWindow.top)
+      ..arcToPoint(Offset(scanWindow.right, scanWindow.top + borderRadius), radius: cornerRadius, clockwise: true)
+      ..lineTo(scanWindow.right, scanWindow.top + cornerLength);
+    canvas.drawPath(topRightPath, borderPaint);
+
+    // Bottom Right
+    final bottomRightPath = Path()
+      ..moveTo(scanWindow.right, scanWindow.bottom - cornerLength)
+      ..lineTo(scanWindow.right, scanWindow.bottom - borderRadius)
+      ..arcToPoint(Offset(scanWindow.right - borderRadius, scanWindow.bottom), radius: cornerRadius, clockwise: true)
+      ..lineTo(scanWindow.right - cornerLength, scanWindow.bottom);
+    canvas.drawPath(bottomRightPath, borderPaint);
+
+    // Bottom Left
+    final bottomLeftPath = Path()
+      ..moveTo(scanWindow.left + cornerLength, scanWindow.bottom)
+      ..lineTo(scanWindow.left + borderRadius, scanWindow.bottom)
+      ..arcToPoint(Offset(scanWindow.left, scanWindow.bottom - borderRadius), radius: cornerRadius, clockwise: true)
+      ..lineTo(scanWindow.left, scanWindow.bottom - cornerLength);
+    canvas.drawPath(bottomLeftPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
 class ProviderScannerScreen extends ConsumerStatefulWidget {
   const ProviderScannerScreen({super.key});
@@ -25,6 +92,7 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
 
   bool _isProcessing = false;
   bool _isScannerActive = true;
+  bool _isTorchOn = false;
 
   @override
   void dispose() {
@@ -167,8 +235,74 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
     }
   }
 
+  Future<void> _toggleTorch() async {
+    await _scannerController.toggleTorch();
+    setState(() {
+      _isTorchOn = !_isTorchOn;
+    });
+  }
+
+  Future<void> _scanFromGallery() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final BarcodeCapture? barcodeCapture = await _scannerController.analyzeImage(image.path);
+      if (barcodeCapture != null && barcodeCapture.barcodes.isNotEmpty) {
+        _handleBarcode(barcodeCapture);
+      } else {
+        if (mounted) {
+          AppErrorHandler.showSnackBar(
+            context,
+            'No QR Code found in the image.',
+            isError: true,
+          );
+        }
+      }
+    }
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isActive ? Colors.blueAccent : Colors.white24,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+    final scanWindowWidth = screenSize.width * 0.75;
+    final scanWindow = Rect.fromCenter(
+      center: screenSize.center(const Offset(0, -50)),
+      width: scanWindowWidth,
+      height: scanWindowWidth,
+    );
+
     return VisibilityDetector(
       key: const Key('scanner-visibility'),
       onVisibilityChanged: (info) {
@@ -181,90 +315,90 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black,
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
-          systemOverlayStyle: SystemUiOverlayStyle.dark,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           title: const Text(
             'Scan QR Code',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.white,
             ),
           ),
-          backgroundColor: Colors.white,
-          elevation: 0,
           centerTitle: true,
         ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
-
-              // Instruction Text
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            MobileScanner(
+              controller: _scannerController,
+              scanWindow: scanWindow,
+              onDetect: _handleBarcode,
+            ),
+            CustomPaint(
+              painter: ScannerOverlay(scanWindow: scanWindow),
+            ),
+            if (_isProcessing)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _isScannerActive
-                      ? 'Align QR Code inside the frame'
-                      : 'Camera is paused to save battery',
-                  style: TextStyle(
-                    color: Colors.blue.shade800,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                color: Colors.black54,
+                child: const Center(
+                  child: AppLoader(color: Colors.blueAccent, size: 50),
                 ),
               ),
-
-              const SizedBox(height: 40),
-
-              // Scanner Box Container
-              Center(
-                child: Container(
-                  width: 260,
-                  height: 260,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+            // Floating controls
+            Positioned(
+              bottom: 160,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildControlButton(
+                    icon: Icons.image_outlined,
+                    label: 'Gallery',
+                    onTap: _scanFromGallery,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        MobileScanner(
-                          controller: _scannerController,
-                          onDetect: _handleBarcode,
-                        ),
-                        if (_isProcessing)
-                          Container(
-                            color: Colors.black54,
-                            child: const Center(
-                              child: AppLoader(color: Colors.white, size: 40),
-                            ),
-                          ),
-                      ],
+                  _buildControlButton(
+                    icon: _isTorchOn ? Icons.flash_on : Icons.flash_off,
+                    label: 'Flash',
+                    onTap: _toggleTorch,
+                    isActive: _isTorchOn,
+                  ),
+                ],
+              ),
+            ),
+            // Instruction Text
+            Positioned(
+              top: scanWindow.top - 90,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _isScannerActive
+                        ? 'Align QR Code inside the frame'
+                        : 'Camera paused',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
                 ),
               ),
-
-              const Spacer(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
