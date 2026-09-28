@@ -41,9 +41,18 @@ export const parkingApi = {
   searchApproved: async (
     filter: ParkingLocationFilter = {},
   ): Promise<ParkingFacility[]> => {
-    const params: Record<string, string | number> = {};
+    const params: Record<string, string | number | boolean> = {};
+    if (filter.name) params.name = filter.name;
     if (filter.province) params.province = filter.province;
     if (filter.district) params.district = filter.district;
+    if (filter.city) params.city = filter.city;
+    if (filter.hasEvCharging) params.hasEvCharging = true;
+    if (filter.minHourlyRate !== undefined && filter.minHourlyRate !== null) {
+      params.minHourlyRate = filter.minHourlyRate;
+    }
+    if (filter.maxHourlyRate !== undefined && filter.maxHourlyRate !== null) {
+      params.maxHourlyRate = filter.maxHourlyRate;
+    }
     // One number on its own is refused by the server, so send the pair or nothing.
     if (filter.latitude !== null && filter.latitude !== undefined &&
         filter.longitude !== null && filter.longitude !== undefined) {
