@@ -29,6 +29,7 @@ public interface IParkingService
     Task<ReservationResponse> CancelReservationAsync(
         Guid userId, Guid reservationId, string? reason, CancellationToken ct = default);
 
+    // Gate movements the property owner makes; a booking left the owner's hands once it is checked out.
     Task<ReservationResponse> CheckInAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct = default);
     Task<ReservationResponse> CheckOutAsync(
