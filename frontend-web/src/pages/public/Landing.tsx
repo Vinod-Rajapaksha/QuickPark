@@ -4,6 +4,7 @@ import { ArrowRight, MapPin, Shield, Zap, Clock, Smartphone, Headset, Rocket } f
 import { Link } from 'react-router-dom';
 import Button from '../../components/common/Button/Button';
 import Card from '../../components/common/Card/Card';
+import { FeedbackSection } from '../../features/feedback/components/public/FeedbackSection';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
@@ -143,6 +144,8 @@ export const Landing: React.FC = () => {
           </motion.div>
         </div>
       </section>
+      {/* Feedback Section */}
+      <FeedbackSection />
 
       {/* CTA Section */}
       <section className="py-24 relative overflow-hidden">

@@ -39,6 +39,11 @@ import PaymentsPage from '../../pages/admin/PaymentsPage';
 import ProviderApprovalPage from '../../pages/admin/ProviderApprovalPage';
 import ParkingFacilitiesPage from '../../pages/admin/ParkingFacilitiesPage';
 import FacilityReviewPage from '../../pages/admin/FacilityReviewPage';
+import FeedbackManagementPage from '../../pages/admin/FeedbackManagementPage';
+
+//Driver pages
+import FeedbackPage from '../../pages/driver/FeedbackPage';
+
 
 import { ProtectedRoute } from './ProtectedRoute';
 import { ROUTES } from './routeConstants';
@@ -92,6 +97,7 @@ export const router = createBrowserRouter([
               { path: ROUTES.SEARCH_PARKING, element: <div className="p-4">Search Parking - Coming Soon</div> },
               { path: ROUTES.DRIVER_RESERVATIONS, element: <div className="p-4">Driver Reservations - Coming Soon</div> },
               { path: ROUTES.BOOKING_HISTORY, element: <div className="p-4">Booking History - Coming Soon</div> },
+              {path: ROUTES.DRIVER_FEEDBACK,element: <FeedbackPage />},
             ]
           },
 
@@ -128,6 +134,7 @@ export const router = createBrowserRouter([
           {
             element: <ProtectedRoute allowedRoles={[Role.PLATFORM_ADMIN]} />,
             children: [
+
               { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> },
               { path: ROUTES.ADMIN_USERS, element: <UsersPage /> },
               { path: ROUTES.ADMIN_PROPERTIES, element: <ParkingFacilitiesPage /> },
@@ -141,6 +148,7 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_STAFF, element: <StaffManagementPage /> },
               { path: ROUTES.ADMIN_AGENTS, element: <AgentMonitoringPage /> },
               { path: ROUTES.ADMIN_PAYMENTS, element: <PaymentsPage /> },
+              {path: ROUTES.ADMIN_FEEDBACK,element: <FeedbackManagementPage />},
             ]
           }
         ]
