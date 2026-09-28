@@ -1,6 +1,6 @@
 from typing import Any, Dict
 from app.agents.recommendation_agent import RecommendationAgent, RecommendationRequest
-from app.agents.validation_agent import ValidationAgent, ValidationRequest
+from app.agents.validation_agent import ValidationAgent
 
 class ParkingRecommendationWorkflow:
     def __init__(self):
@@ -17,11 +17,11 @@ class ParkingRecommendationWorkflow:
 
         # Step 2: Validate the top recommendation
         top_rec = rec_response.recommendations[0]
-        val_request = ValidationRequest(
-            parking_id=top_rec.parking_id,
-            action="validate_recommendation"
+        val_response = self.validation_agent.validate(
+            agent="recommendation_agent",
+            action="validate_recommendation",
+            output=top_rec.model_dump()
         )
-        val_response = self.validation_agent.validate(val_request)
 
         return {
             "status": "success",
