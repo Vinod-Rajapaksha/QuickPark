@@ -54,3 +54,29 @@ export const defaultStartValue = (offsetMinutes = 0): string => {
     value.getDate(),
   )}T${pad(value.getHours())}:${pad(value.getMinutes())}`;
 };
+
+const DATE_TIME_FORMAT = new Intl.DateTimeFormat("en-LK", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+});
+
+// The server stamps every instant in UTC; a driver reads their own clock.
+export const formatDateTime = (value: string | null): string => {
+  if (!value) return "—";
+  const time = Date.parse(value);
+  return Number.isNaN(time) ? "—" : DATE_TIME_FORMAT.format(new Date(time));
+};
+
+// Mirrors the server: a driver may cancel their own booking until its start time has passed.
+export const canDriverCancel = (
+  reservation: Reservation,
+  now: Date = new Date(),
+): boolean => {
+  if (reservation.status !== "PENDING" && reservation.status !== "CONFIRMED") return false;
+  const start = Date.parse(reservation.startTime);
+  return !Number.isNaN(start) && start > now.getTime();
+};
