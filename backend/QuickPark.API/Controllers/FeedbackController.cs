@@ -107,6 +107,15 @@ public class FeedbackController : ControllerBase
     }
 
     [Authorize(Roles = "PLATFORM_ADMIN")]
+    [HttpGet("hidden")]
+    public async Task<IActionResult> GetHidden()
+    {
+        return Ok(
+            await _service.GetHiddenAsync()
+        );
+    }
+
+    [Authorize(Roles = "PLATFORM_ADMIN")]
     [HttpGet("reports")]
     public async Task<IActionResult> GetReports()
     {
