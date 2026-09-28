@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
 import { feedbackAdminApi } from "../api/feedbackAdminApi";
 import { feedbackReplyApi } from "../api/feedbackReplyApi";
-
 import type { Feedback, FeedbackReport } from "../types/feedbackTypes";
 
 export const useAdminFeedback = () => {
@@ -20,10 +18,6 @@ export const useAdminFeedback = () => {
 
   const [error, setError] = useState<string | null>(null);
 
-  /*
-   * Load all feedback required by
-   * the admin feedback management page.
-   */
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -50,9 +44,6 @@ export const useAdminFeedback = () => {
     }
   }, []);
 
-  /*
-   * Load admin feedback when the hook mounts.
-   */
   useEffect(() => {
     const timerId = window.setTimeout(() => {
       void fetchData();
@@ -63,13 +54,6 @@ export const useAdminFeedback = () => {
     };
   }, [fetchData]);
 
-  /*
-   * Combine pending, active and hidden feedback.
-   *
-   * Map prevents duplicate feedback records
-   * from appearing if multiple endpoints
-   * return the same feedback.
-   */
   const feedbacks = useMemo(() => {
     const feedbackMap = new Map<string, Feedback>();
 
@@ -82,10 +66,6 @@ export const useAdminFeedback = () => {
     return Array.from(feedbackMap.values());
   }, [activeFeedbacks, pendingFeedbacks, hiddenFeedbacks]);
 
-  /*
-   * Common wrapper for moderation actions.
-   * Reload feedback after the action succeeds.
-   */
   const runAction = async (action: () => Promise<void>) => {
     try {
       setIsActionLoading(true);

@@ -1,5 +1,4 @@
 import { axiosClient } from "../../../services/api/axiosClient";
-
 import type {
   CreateSystemFeedbackRequest,
   Feedback,
@@ -7,35 +6,17 @@ import type {
   UpdateFeedbackRequest,
   FeedbackKeywordType,
 } from "../types/feedbackTypes";
-
 import {
   mapFeedbackFromApi,
   mapFeedbackListFromApi,
 } from "../utils/feedbackMapper";
 
 const FEEDBACK_ENDPOINT = "/Feedback";
-
-/*
- * Backend enum values
- *
- * FeedbackType:
- * PARKING = 0
- * SYSTEM = 1
- */
 const FeedbackTypeApiValue = {
   PARKING: 0,
   SYSTEM: 1,
 } as const;
 
-/*
- * Backend FeedbackKeywordType:
- *
- * SAFE = 0
- * CLEAN = 1
- * USER_FRIENDLY = 2
- * GOOD_LOCATION = 3
- * AFFORDABLE = 4
- */
 const FeedbackKeywordApiValue: Record<FeedbackKeywordType, number> = {
   SAFE: 0,
   CLEAN: 1,

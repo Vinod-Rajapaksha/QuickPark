@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
 import { feedbackApi } from "../api/feedbackApi";
-
 import type {
   CreateSystemFeedbackRequest,
   Feedback,
@@ -16,9 +14,6 @@ export const useFeedback = () => {
 
   const [error, setError] = useState<string | null>(null);
 
-  /*
-   * Load feedback from the API.
-   */
   const fetchFeedbacks = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -36,10 +31,6 @@ export const useFeedback = () => {
     }
   }, []);
 
-  /*
-   * Load feedback when the component
-   * using this hook is mounted.
-   */
   useEffect(() => {
     const timerId = window.setTimeout(() => {
       void fetchFeedbacks();
@@ -50,10 +41,6 @@ export const useFeedback = () => {
     };
   }, [fetchFeedbacks]);
 
-  /*
-   * Only approved SYSTEM feedback
-   * should be displayed publicly.
-   */
   const approvedSystemFeedbacks = useMemo(
     () =>
       feedbacks.filter(
@@ -63,13 +50,6 @@ export const useFeedback = () => {
     [feedbacks],
   );
 
-  /*
-   * Submit new system feedback.
-   *
-   * Newly submitted feedback is pending
-   * approval and therefore should not
-   * immediately appear publicly.
-   */
   const createSystemFeedback = async (request: CreateSystemFeedbackRequest) => {
     try {
       setIsSubmitting(true);

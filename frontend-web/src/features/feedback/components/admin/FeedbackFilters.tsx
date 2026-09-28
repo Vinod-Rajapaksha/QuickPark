@@ -56,10 +56,7 @@ export const FeedbackFilters = ({
         <option value="HIDDEN">
           Hidden
         </option>
-
-        <option value="REMOVED">
-          Removed
-        </option>
+      
       </select>
     </div>
   );

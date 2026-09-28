@@ -1,7 +1,5 @@
 import { axiosClient } from "../../../services/api/axiosClient";
-
 import type { Feedback, FeedbackReport } from "../types/feedbackTypes";
-
 import { mapFeedbackListFromApi } from "../utils/feedbackMapper";
 
 const FEEDBACK_ENDPOINT = "/Feedback";

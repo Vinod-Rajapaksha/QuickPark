@@ -1,7 +1,6 @@
 import {useState,type FormEvent,} from "react";
 import {Heart,Star,} from "lucide-react";
 import Button from "../../../../components/common/Button/Button";
-
 import type {
   CreateSystemFeedbackRequest,
 } from "../../types/feedbackTypes";
