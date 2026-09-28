@@ -1,5 +1,5 @@
 namespace QuickPark.API.Enums;
-
+// Represents the status of a reservation.
 public enum ReservationStatus
 {
     PENDING,
