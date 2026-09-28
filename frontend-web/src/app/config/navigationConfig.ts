@@ -52,6 +52,12 @@ export const navigationConfig: NavigationItem[] = [
     roles: [Role.DRIVER],
     icon: "History",
   },
+  {
+    label: "Feedback & Ratings",
+    path: ROUTES.DRIVER_FEEDBACK,
+    roles: [Role.DRIVER],
+    icon: "MessageSquareText",
+  },
 
   // Parking_Owner
   {
@@ -123,5 +129,11 @@ export const navigationConfig: NavigationItem[] = [
     path: ROUTES.ADMIN_COMMISSION,
     roles: [Role.PLATFORM_ADMIN],
     icon: "BadgeDollarSign",
+  },
+  {
+    label: "Feedback",
+    path: ROUTES.ADMIN_FEEDBACK,
+    roles: [Role.PLATFORM_ADMIN],
+    icon: "MessageSquareText",
   },
 ];
