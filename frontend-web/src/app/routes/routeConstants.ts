@@ -16,9 +16,15 @@ export const ROUTES = {
   PROFILE: "/profile",
 
   // Driver routes
+  PARKING_DISCOVERY: "/parking-discovery",
+  PARKING_DISCOVERY_NAME: "/parking-discovery/name",
+  PARKING_DISCOVERY_DESTINATION: "/parking-discovery/destination",
+  PARKING_DISCOVERY_NEARBY: "/parking-discovery/nearby",
   SEARCH_PARKING: "/search",
   DRIVER_RESERVATIONS: "/reservations",
   BOOKING_HISTORY: "/history",
+   RESERVATION_CREATE: (facilityId: string) => `/reservations/create/${facilityId}`,
+  RESERVATION_CREATE_PATTERN: "/reservations/create/:facilityId",
 
   // Provider routes
   PROVIDER_DASHBOARD: "/provider/dashboard",
