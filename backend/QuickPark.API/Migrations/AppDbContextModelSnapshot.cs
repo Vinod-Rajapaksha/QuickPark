@@ -855,12 +855,6 @@ namespace QuickPark.API.Migrations
                     b.HasIndex("VehicleTypeId");
 
                     b.HasIndex("Status", "StartTime");
-                    
-                    b.HasIndex("DriverId", "StartTime");
-
-                    b.HasIndex("FacilityId", "Status", "StartTime");
-
-                    b.HasIndex("SlotId", "StartTime", "EndTime");
 
                     b.ToTable("Reservations", (string)null);
                 });
