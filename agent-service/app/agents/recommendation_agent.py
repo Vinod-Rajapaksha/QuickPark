@@ -12,7 +12,7 @@ from app.tools.search_parking import search_parking
 
 logger = logging.getLogger(__name__)
 
-GEMINI_MODEL = "gemini-3.5-flash"
+GEMINI_MODEL = settings.GEMINI_MODEL
 SYSTEM_INSTRUCTION = (
     "You are a parking recommendation assistant for QuickPark.\n"
     "Generate recommendations for the driver based ONLY on the provided candidate data.\n"
@@ -308,16 +308,19 @@ class RecommendationAgent:
         )
 
         try:
-            response = self.gemini_client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=SYSTEM_INSTRUCTION,
-                    response_mime_type="application/json",
-                    temperature=0.3,
-                    max_output_tokens=2048,
-                ),
-            )
+            def api_call(client):
+                return client.models.generate_content(
+                    model=GEMINI_MODEL,
+                    contents=prompt,
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=SYSTEM_INSTRUCTION,
+                        response_mime_type="application/json",
+                        temperature=0.3,
+                        max_output_tokens=2048,
+                    ),
+                )
+            from app.utils.api_executor import execute_with_api_key_rotation
+            response = execute_with_api_key_rotation(api_call)
         except Exception as e:
             error_msg = str(e)
             if "API key" in error_msg or "permission" in error_msg.lower():
