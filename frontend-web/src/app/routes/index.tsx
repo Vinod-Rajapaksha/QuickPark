@@ -20,6 +20,7 @@ import ProviderReportsPage from '../../pages/provider/ReportsPage';
 import ProviderReservationsPage from '../../pages/provider/ReservationsPage';
 import ParkingDetailsPage from '../../pages/provider/ParkingDetailsPage';
 import ParkingEditPage from '../../pages/provider/ParkingEditPage';
+import ProviderReservationApprovalPage from '../../pages/provider/ProviderReservationApprovalPage';
 
 // Staff pages
 import StaffDashboardPage from '../../pages/staff/StaffDashboardPage';
@@ -111,6 +112,7 @@ export const router = createBrowserRouter([
               { path: ROUTES.PROVIDER_ANALYTICS, element: <AnalyticsPage /> },
               { path: ROUTES.PROVIDER_REPORTS, element: <ProviderReportsPage /> },
               { path: ROUTES.PROVIDER_RESERVATIONS, element: <ProviderReservationsPage /> },
+              { path: ROUTES.PROVIDER_RESERVATION_APPROVAL, element: <ProviderReservationApprovalPage /> },
             ]
           },
 
