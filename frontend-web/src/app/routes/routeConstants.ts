@@ -37,6 +37,7 @@ export const ROUTES = {
   PROVIDER_ANALYTICS: "/analytics",
   PROVIDER_REPORTS: "/reports",
   PROVIDER_RESERVATIONS: "/reservations",
+  PROVIDER_RESERVATION_APPROVAL: "/provider/reservations/approval",
 
   // Staff routes
   STAFF_DASHBOARD: "/staff/dashboard",
