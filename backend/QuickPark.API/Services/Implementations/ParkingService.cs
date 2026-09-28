@@ -177,6 +177,7 @@ public partial class ParkingService : IParkingService
         var province = request.Province.TrimToNull();
         var district = request.District.TrimToNull();
         var city = request.City.TrimToNull();
+        var name = request.Name.TrimToNull();
 
         var reference = ValidateReferencePoint(request.Latitude, request.Longitude, request.RadiusKm);
 
@@ -185,7 +186,13 @@ public partial class ParkingService : IParkingService
 
         if (province != null) query = query.Where(f => f.Province.ToLower() == province.ToLower());
         if (district != null) query = query.Where(f => f.District.ToLower() == district.ToLower());
-        if (city != null) query = query.Where(f => f.City.ToLower() == city.ToLower());
+        if (city != null) query = query.Where(f => f.City.ToLower().Contains(city.ToLower()));
+        if (name != null) query = query.Where(f => f.Name.ToLower().Contains(name.ToLower()));
+        if (request.HasEvCharging) query = query.Where(f => f.HasEvCharging);
+        if (request.MinHourlyRate is decimal minRate)
+            query = query.Where(f => f.VehicleAllocations.Any(a => a.HourlyRate >= minRate));
+        if (request.MaxHourlyRate is decimal maxRate)
+            query = query.Where(f => f.VehicleAllocations.Any(a => a.HourlyRate <= maxRate));
 
         var facilities = await query
             .OrderBy(f => f.Name)
@@ -360,25 +367,18 @@ public partial class ParkingService : IParkingService
             ?? throw new KeyNotFoundException("Reservation not found.");
     }
 
+    // The driver is at the gate, so only the owner of the property the booking was made at can let them in.
     public async Task<ReservationResponse> CheckInAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct = default)
     {
-        var provider = await GetVerifiedProviderAsync(providerUserId, ct);
+        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
 
-        var reservation = await _context.Set<Reservation>()
-            .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
-            ?? throw new KeyNotFoundException("Reservation not found.");
+        EnsureCanMove(reservation.Status, ReservationStatus.CHECKED_IN);
 
-        await EnsureReservationAccessAsync(providerUserId, reservation, ct);
-
-        if (reservation.Status != ReservationStatus.CONFIRMED)
-        {
-            throw new InvalidOperationException($"Cannot check-in. Reservation is currently {reservation.Status}.");
-        }
-
+        var now = DateTime.UtcNow;
         reservation.Status = ReservationStatus.CHECKED_IN;
-        reservation.CheckedInAt = DateTime.UtcNow;
-        reservation.UpdatedAt = DateTime.UtcNow;
+        reservation.CheckedInAt = now;
+        reservation.UpdatedAt = now;
 
         await _context.SaveChangesAsync(ct);
 
@@ -389,28 +389,53 @@ public partial class ParkingService : IParkingService
     public async Task<ReservationResponse> CheckOutAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct = default)
     {
+        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+
+        EnsureCanMove(reservation.Status, ReservationStatus.CHECKED_OUT);
+
+        var now = DateTime.UtcNow;
+        reservation.Status = ReservationStatus.CHECKED_OUT;
+        reservation.CheckedOutAt = now;
+        reservation.UpdatedAt = now;
+
+        await _context.SaveChangesAsync(ct);
+
+        return await LoadReservationAsync(reservation.Id, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+    }
+
+    // Loads the booking behind the owner check, so no gate path can authorize from the caller's id alone.
+    private async Task<Reservation> LoadProviderReservationAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct)
+    {
         var provider = await GetVerifiedProviderAsync(providerUserId, ct);
 
         var reservation = await _context.Set<Reservation>()
             .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
 
-        await EnsureReservationAccessAsync(providerUserId, reservation, ct);
+        // Checked against the property rather than the ProviderId copied onto the booking, so a
+        // transferred property cannot leave a booking gateable by its previous owner.
+        await EnsureFacilityBelongsToProviderAsync(provider, reservation.FacilityId, ct);
 
-        if (reservation.Status != ReservationStatus.CHECKED_IN)
+        return reservation;
+    }
+
+    private static void EnsureCanMove(ReservationStatus from, ReservationStatus to)
+    {
+        var legal = (from, to) switch
         {
-            throw new InvalidOperationException($"Cannot check-out. Reservation is currently {reservation.Status}.");
+            (ReservationStatus.CONFIRMED, ReservationStatus.CHECKED_IN) => true,
+            (ReservationStatus.CHECKED_IN, ReservationStatus.CHECKED_OUT) => true,
+            _ => false
+        };
+
+        if (!legal)
+        {
+            throw new InvalidOperationException(
+                $"A booking that is {from.ToString().ToLowerInvariant()} cannot become " +
+                $"{to.ToString().ToLowerInvariant()}.");
         }
-
-        reservation.Status = ReservationStatus.CHECKED_OUT;
-        reservation.CheckedOutAt = DateTime.UtcNow;
-        reservation.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync(ct);
-
-        return await LoadReservationAsync(reservation.Id, ct)
-            ?? throw new KeyNotFoundException("Reservation not found.");
-
     }
 
     public async Task<IReadOnlyList<ParkingFacilityDocumentResponse>> GetFacilityDocumentsAsync(
