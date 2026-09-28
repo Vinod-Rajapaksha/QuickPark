@@ -34,3 +34,30 @@ export interface Reservation {
 }
 
 export type BookingGateAction = "CONFIRM" | "CHECK_IN" | "CHECK_OUT" | "NO_SHOW";
+
+// Mirrors the API's CreateReservationRequest. The driver is never named here: the server reads the
+// account from the access token. Leaving slotId empty lets the server assign the lowest free bay.
+export interface CreateReservationInput {
+  facilityId: string;
+  vehicleTypeId: string;
+  slotId?: string | null;
+  startTime: string;
+  endTime: string;
+}
+
+// Mirrors the API's SlotResponse for GET /api/parkingFacilities/{id}/slots, which answers only for
+// an approved property and needs both from and to (or neither) to judge a period.
+export interface DriverSlot {
+  slotId: string;
+  facilityId: string;
+  slotNumber: string;
+  vehicleTypeId: string;
+  vehicleTypeName: string;
+  bayLabel: string;
+  // What the owner set: AVAILABLE, MAINTENANCE or DISABLED.
+  status: string;
+  availableForPeriod: boolean;
+  hourlyRate: number;
+  busyFrom: string | null;
+  busyUntil: string | null;
+}
