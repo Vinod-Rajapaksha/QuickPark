@@ -66,12 +66,6 @@ export default function FeedbackManagementPage() {
   const [confirmAction, setConfirmAction] =
     useState<ConfirmAction>(null);
 
-  /*
-   * Platform Admin Feedback Management
-   * displays SYSTEM feedback only.
-   *
-   * PARKING feedback is intentionally excluded.
-   */
   const systemFeedbacks = useMemo(
     () =>
       feedbacks.filter(
@@ -81,10 +75,6 @@ export default function FeedbackManagementPage() {
     [feedbacks]
   );
 
-  /*
-   * Search and status filtering are applied
-   * only to SYSTEM feedback.
-   */
   const filteredFeedbacks = useMemo(() => {
     const search =
       filters.search
