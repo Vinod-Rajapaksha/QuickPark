@@ -1,66 +1,104 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { feedbackAdminApi } from "../api/feedbackAdminApi";
 import { feedbackReplyApi } from "../api/feedbackReplyApi";
+
 import type { Feedback, FeedbackReport } from "../types/feedbackTypes";
 
 export const useAdminFeedback = () => {
   const [activeFeedbacks, setActiveFeedbacks] = useState<Feedback[]>([]);
+
   const [pendingFeedbacks, setPendingFeedbacks] = useState<Feedback[]>([]);
+
+  const [hiddenFeedbacks, setHiddenFeedbacks] = useState<Feedback[]>([]);
+
   const [reports, setReports] = useState<FeedbackReport[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
+
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
+  /*
+   * Load all feedback required by
+   * the admin feedback management page.
+   */
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const [activeData, pendingData, reportData] = await Promise.all([
-        feedbackAdminApi.getActive(),
-        feedbackAdminApi.getPending(),
-        feedbackAdminApi.getReports(),
-      ]);
+      const [activeData, pendingData, hiddenData, reportData] =
+        await Promise.all([
+          feedbackAdminApi.getActive(),
+          feedbackAdminApi.getPending(),
+          feedbackAdminApi.getHidden(),
+          feedbackAdminApi.getReports(),
+        ]);
 
       setActiveFeedbacks(activeData);
       setPendingFeedbacks(pendingData);
+      setHiddenFeedbacks(hiddenData);
       setReports(reportData);
-    } catch {
+    } catch (error) {
+      console.error("Failed to load admin feedback:", error);
+
       setError("Unable to load feedback management data.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  /*
+   * Load admin feedback when the hook mounts.
+   */
   useEffect(() => {
-    const loadData = async () => {
-      await fetchData();
-    };
+    const timerId = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
 
-    void loadData();
+    return () => {
+      window.clearTimeout(timerId);
+    };
   }, [fetchData]);
 
+  /*
+   * Combine pending, active and hidden feedback.
+   *
+   * Map prevents duplicate feedback records
+   * from appearing if multiple endpoints
+   * return the same feedback.
+   */
   const feedbacks = useMemo(() => {
-    const map = new Map<string, Feedback>();
+    const feedbackMap = new Map<string, Feedback>();
 
-    [...pendingFeedbacks, ...activeFeedbacks].forEach((feedback) => {
-      map.set(feedback.id, feedback);
-    });
+    [...pendingFeedbacks, ...activeFeedbacks, ...hiddenFeedbacks].forEach(
+      (feedback) => {
+        feedbackMap.set(feedback.id, feedback);
+      },
+    );
 
-    return Array.from(map.values());
-  }, [activeFeedbacks, pendingFeedbacks]);
+    return Array.from(feedbackMap.values());
+  }, [activeFeedbacks, pendingFeedbacks, hiddenFeedbacks]);
 
+  /*
+   * Common wrapper for moderation actions.
+   * Reload feedback after the action succeeds.
+   */
   const runAction = async (action: () => Promise<void>) => {
     try {
       setIsActionLoading(true);
       setError(null);
 
       await action();
+
       await fetchData();
     } catch (error) {
+      console.error("Feedback moderation action failed:", error);
+
       setError("The feedback action could not be completed.");
+
       throw error;
     } finally {
       setIsActionLoading(false);
@@ -95,7 +133,10 @@ export const useAdminFeedback = () => {
 
       await fetchData();
     } catch (error) {
+      console.error("Failed to send feedback reply:", error);
+
       setError("Unable to send reply.");
+
       throw error;
     } finally {
       setIsActionLoading(false);
@@ -104,8 +145,10 @@ export const useAdminFeedback = () => {
 
   return {
     feedbacks,
+
     activeFeedbacks,
     pendingFeedbacks,
+    hiddenFeedbacks,
     reports,
 
     isLoading,
@@ -113,6 +156,7 @@ export const useAdminFeedback = () => {
     error,
 
     fetchData,
+
     approveFeedback,
     hideFeedback,
     restoreFeedback,

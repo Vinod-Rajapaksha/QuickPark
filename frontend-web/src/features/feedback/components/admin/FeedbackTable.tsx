@@ -1,6 +1,14 @@
-import {Eye,EyeOff,MessageSquareReply,Trash2,} from 'lucide-react';
-import  Button  from '../../../../components/common/Button/Button';
+import {
+  Eye,
+  EyeOff,
+  MessageSquareReply,
+  Trash2,
+} from 'lucide-react';
+
+import Button from '../../../../components/common/Button/Button';
+
 import type { Feedback } from '../../types/feedbackTypes';
+
 import { FeedbackStatusBadge } from '../shared/FeedbackStatusBadge';
 import { StarRating } from '../shared/StarRating';
 
@@ -13,6 +21,8 @@ interface FeedbackTableProps {
 
   onHide: (feedback: Feedback) => void;
 
+  onRestore: (feedback: Feedback) => void;
+
   onDelete: (feedback: Feedback) => void;
 }
 
@@ -21,22 +31,23 @@ export const FeedbackTable = ({
   onView,
   onReply,
   onHide,
+  onRestore,
   onDelete,
 }: FeedbackTableProps) => {
   if (feedbacks.length === 0) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-      <h3 className="font-semibold text-slate-900">
-        No feedback found
-      </h3>
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+        <h3 className="font-semibold text-slate-900">
+          No feedback found
+        </h3>
 
-      <p className="mt-2 text-sm text-slate-500">
-        There is no feedback matching the selected filters.
-      </p>
-    </div>
-  );
-}
-  
+        <p className="mt-2 text-sm text-slate-500">
+          There is no feedback matching the selected filters.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div className="overflow-x-auto">
@@ -146,6 +157,20 @@ export const FeedbackTable = ({
                         title="Hide"
                       >
                         <EyeOff size={16} />
+                      </Button>
+                    )}
+
+                    {feedback.status ===
+                      'HIDDEN' && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          onRestore(feedback)
+                        }
+                        title="Make visible"
+                      >
+                        <Eye size={16} />
                       </Button>
                     )}
 

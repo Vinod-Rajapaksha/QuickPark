@@ -1,15 +1,19 @@
-import {MessageCircleMore,ParkingCircle,} from 'lucide-react';
-import  Modal  from '../../../../components/common/Modal/Modal';
-import { Badge } from '../../../../components/common/Badge/Badge';
-import type { Feedback } from '../../types/feedbackTypes';
-import { FeedbackStatusBadge } from '../shared/FeedbackStatusBadge';
-import { StarRating } from '../shared/StarRating';
+import {
+  MessageCircleMore,
+  ParkingCircle,
+} from "lucide-react";
+
+import Modal from "../../../../components/common/Modal/Modal";
+import { Badge } from "../../../../components/common/Badge/Badge";
+
+import type { Feedback } from "../../types/feedbackTypes";
+
+import { FeedbackStatusBadge } from "../shared/FeedbackStatusBadge";
+import { StarRating } from "../shared/StarRating";
 
 interface FeedbackDetailsDialogProps {
   feedback: Feedback | null;
-
   isOpen: boolean;
-
   onClose: () => void;
 }
 
@@ -29,6 +33,7 @@ export const FeedbackDetailsDialog = ({
       title="Feedback Details"
     >
       <div className="space-y-6">
+        {/* User and Status */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-slate-500">
@@ -45,6 +50,7 @@ export const FeedbackDetailsDialog = ({
           />
         </div>
 
+        {/* Rating and Comment */}
         <div className="rounded-xl bg-slate-50 p-4">
           <div className="mb-3 flex items-center justify-between gap-4">
             <span className="text-sm font-medium text-slate-700">
@@ -58,10 +64,11 @@ export const FeedbackDetailsDialog = ({
 
           <p className="whitespace-pre-wrap text-sm leading-7 text-slate-600">
             {feedback.comment ||
-              'No comment provided.'}
+              "No comment provided."}
           </p>
         </div>
 
+        {/* Feedback Type */}
         <div>
           <p className="mb-2 text-sm font-medium text-slate-700">
             Type
@@ -72,6 +79,7 @@ export const FeedbackDetailsDialog = ({
           </Badge>
         </div>
 
+        {/* Parking Information */}
         {feedback.parkingId && (
           <div className="flex items-start gap-3 rounded-xl border border-slate-200 p-4">
             <ParkingCircle className="mt-0.5 h-5 w-5 text-slate-400" />
@@ -88,7 +96,8 @@ export const FeedbackDetailsDialog = ({
           </div>
         )}
 
-        {feedback.keywords.length > 0 && (
+        {/* Keywords */}
+        {(feedback.keywords?.length ?? 0) > 0 && (
           <div>
             <p className="mb-3 text-sm font-medium text-slate-700">
               Keywords
@@ -99,16 +108,17 @@ export const FeedbackDetailsDialog = ({
                 (keyword) => (
                   <Badge key={keyword}>
                     {keyword.replaceAll(
-                      '_',
-                      ' '
+                      "_",
+                      " ",
                     )}
                   </Badge>
-                )
+                ),
               )}
             </div>
           </div>
         )}
 
+        {/* Replies */}
         <div>
           <div className="mb-3 flex items-center gap-2">
             <MessageCircleMore
@@ -121,7 +131,8 @@ export const FeedbackDetailsDialog = ({
             </h4>
           </div>
 
-          (feedback.replies?.length ?? 0) === 0? (
+          {(feedback.replies?.length ?? 0) ===
+          0 ? (
             <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
               No replies yet.
             </p>
@@ -135,12 +146,15 @@ export const FeedbackDetailsDialog = ({
                   >
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <span className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                        {reply.role}
+                        {reply.role.replaceAll(
+                          "_",
+                          " ",
+                        )}
                       </span>
 
                       <span className="text-xs text-slate-400">
                         {new Date(
-                          reply.createdAt
+                          reply.createdAt,
                         ).toLocaleString()}
                       </span>
                     </div>
@@ -149,10 +163,10 @@ export const FeedbackDetailsDialog = ({
                       {reply.message}
                     </p>
                   </div>
-                )
+                ),
               )}
             </div>
-          )
+          )}
         </div>
       </div>
     </Modal>

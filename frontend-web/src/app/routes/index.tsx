@@ -41,6 +41,9 @@ import ParkingFacilitiesPage from '../../pages/admin/ParkingFacilitiesPage';
 import FacilityReviewPage from '../../pages/admin/FacilityReviewPage';
 import FeedbackManagementPage from '../../pages/admin/FeedbackManagementPage';
 
+//Driver pages
+import FeedbackPage from '../../pages/driver/FeedbackPage';
+
 
 import { ProtectedRoute } from './ProtectedRoute';
 import { ROUTES } from './routeConstants';
@@ -94,6 +97,7 @@ export const router = createBrowserRouter([
               { path: ROUTES.SEARCH_PARKING, element: <div className="p-4">Search Parking - Coming Soon</div> },
               { path: ROUTES.DRIVER_RESERVATIONS, element: <div className="p-4">Driver Reservations - Coming Soon</div> },
               { path: ROUTES.BOOKING_HISTORY, element: <div className="p-4">Booking History - Coming Soon</div> },
+              {path: ROUTES.DRIVER_FEEDBACK,element: <FeedbackPage />},
             ]
           },
 

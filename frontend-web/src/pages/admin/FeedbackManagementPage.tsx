@@ -44,6 +44,7 @@ export default function FeedbackManagementPage() {
     approveFeedback,
     hideFeedback,
     removeFeedback,
+    restoreFeedback,
     replyToFeedback,
   } = useAdminFeedback();
 
@@ -156,6 +157,12 @@ export default function FeedbackManagementPage() {
     setConfirmAction(null);
   };
 
+  const handleRestore = async (
+    feedback: Feedback,
+  ) => {
+    await restoreFeedback(feedback.id);
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-[500px] items-center justify-center">
@@ -253,6 +260,7 @@ export default function FeedbackManagementPage() {
         }
         onView={openDetails}
         onReply={openModeration}
+        onRestore={handleRestore}
         onHide={(feedback) =>
           setConfirmAction({
             type: 'HIDE',

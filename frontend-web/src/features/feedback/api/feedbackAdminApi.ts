@@ -1,21 +1,28 @@
 import { axiosClient } from "../../../services/api/axiosClient";
+
 import type { Feedback, FeedbackReport } from "../types/feedbackTypes";
+
+import { mapFeedbackListFromApi } from "../utils/feedbackMapper";
 
 const FEEDBACK_ENDPOINT = "/Feedback";
 
 export const feedbackAdminApi = {
   getActive: async (): Promise<Feedback[]> => {
-    const response = await axiosClient.get<Feedback[]>(FEEDBACK_ENDPOINT);
+    const response = await axiosClient.get(FEEDBACK_ENDPOINT);
 
-    return response.data;
+    return mapFeedbackListFromApi(response.data);
   },
 
   getPending: async (): Promise<Feedback[]> => {
-    const response = await axiosClient.get<Feedback[]>(
-      `${FEEDBACK_ENDPOINT}/pending`,
-    );
+    const response = await axiosClient.get(`${FEEDBACK_ENDPOINT}/pending`);
 
-    return response.data;
+    return mapFeedbackListFromApi(response.data);
+  },
+
+  getHidden: async (): Promise<Feedback[]> => {
+    const response = await axiosClient.get(`${FEEDBACK_ENDPOINT}/hidden`);
+
+    return mapFeedbackListFromApi(response.data);
   },
 
   getReports: async (): Promise<FeedbackReport[]> => {
