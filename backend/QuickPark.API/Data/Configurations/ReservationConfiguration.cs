@@ -5,6 +5,7 @@ using QuickPark.API.Models;
 
 namespace QuickPark.API.Data.Configurations;
 
+// Configuration for the Reservation entity.   
 public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
 {
     public void Configure(EntityTypeBuilder<Reservation> builder)
