@@ -10,7 +10,7 @@ from google.genai import types as genai_types
 
 logger = logging.getLogger(__name__)
 
-GEMINI_MODEL = "gemini-3.5-flash"
+GEMINI_MODEL = settings.GEMINI_MODEL
 SYSTEM_INSTRUCTION = (
     "You are QuickPark's intelligent parking assistant. Your job is to help drivers find the perfect "
     "parking spot, check availability, calculate prices, and make reservations. \n\n"
@@ -19,7 +19,8 @@ SYSTEM_INSTRUCTION = (
     "2. If you do not have enough information to find parking (e.g., location, vehicle type), ask for it clearly.\n"
     "3. Never make up prices, distances, or parking facility names. If you don't know, inform the user.\n"
     "4. Do not offer services outside the scope of parking, such as driving directions or general knowledge.\n"
-    "5. Keep responses short and directly address the user's request."
+    "5. Keep responses short and directly address the user's request.\n"
+    "6. Format lists properly. Always use new lines to separate numbered or bulleted items for readability."
 )
 
 ALLOWED_AGENTS = {
@@ -47,14 +48,14 @@ reservation_tool = genai_types.Tool(
             name="request_reservation_approval",
             description="Call this function when the user explicitly wants to book or reserve a parking spot. Do not call this if they are just asking for recommendations.",
             parameters=genai_types.Schema(
-                type=genai_types.Type.OBJECT,
+                type="OBJECT",
                 properties={
-                    "facility_id": genai_types.Schema(type=genai_types.Type.STRING, description="UUID of the facility to book"),
-                    "facility_name": genai_types.Schema(type=genai_types.Type.STRING, description="Name of the facility"),
-                    "start_time": genai_types.Schema(type=genai_types.Type.STRING, description="ISO format start time"),
-                    "end_time": genai_types.Schema(type=genai_types.Type.STRING, description="ISO format end time"),
-                    "vehicle_type": genai_types.Schema(type=genai_types.Type.STRING, description="Type of vehicle (e.g., CAR, MOTORCYCLE)"),
-                    "estimated_price": genai_types.Schema(type=genai_types.Type.NUMBER, description="Estimated price in LKR"),
+                    "facility_id": genai_types.Schema(type="STRING", description="UUID of the facility to book"),
+                    "facility_name": genai_types.Schema(type="STRING", description="Name of the facility"),
+                    "start_time": genai_types.Schema(type="STRING", description="ISO format start time"),
+                    "end_time": genai_types.Schema(type="STRING", description="ISO format end time"),
+                    "vehicle_type": genai_types.Schema(type="STRING", description="Type of vehicle (e.g., CAR, MOTORCYCLE)"),
+                    "estimated_price": genai_types.Schema(type="NUMBER", description="Estimated price in LKR"),
                 },
                 required=["facility_id", "facility_name", "start_time", "end_time", "vehicle_type", "estimated_price"]
             )
@@ -74,11 +75,11 @@ class PlanningAgent:
         """
         Processes a user message and returns a dict with the AI response and potential actions.
         """
-        if not self.client:
+        from app.utils.api_key_manager import api_key_manager
+        if not api_key_manager.get_all_keys():
             return {"text": "System Error: AI service is currently unavailable.", "action_type": None, "action_payload": None}
-
         contents = []
-        MAX_HISTORY = 10
+        MAX_HISTORY = 4
         recent_history = history[-MAX_HISTORY:] if len(history) > MAX_HISTORY else history
         
         for msg in recent_history:
@@ -98,25 +99,32 @@ class PlanningAgent:
         )
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=contents,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=SYSTEM_INSTRUCTION,
-                    temperature=0.7,
-                    tools=[reservation_tool]
-                ),
-            )
+            def api_call(client):
+                return client.models.generate_content(
+                    model=self.model_name,
+                    contents=contents,
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=SYSTEM_INSTRUCTION,
+                        temperature=0.3,
+                        max_output_tokens=300,
+                        tools=[reservation_tool]
+                    ),
+                )
+            
+            from app.utils.api_executor import execute_with_api_key_rotation
+            response = execute_with_api_key_rotation(api_call)
             
             # Check for function calls
-            if response.function_calls:
-                call = response.function_calls[0]
-                if call.name == "request_reservation_approval":
-                    return {
-                        "text": "I can help with that! Please review and confirm your reservation details below.",
-                        "action_type": "reservation_approval",
-                        "action_payload": call.args
-                    }
+            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if part.function_call:
+                        call = part.function_call
+                        if call.name == "request_reservation_approval":
+                            return {
+                                "text": "I can help with that! Please review and confirm your reservation details below.",
+                                "action_type": "reservation_approval",
+                                "action_payload": call.args
+                            }
                     
             return {"text": response.text, "action_type": None, "action_payload": None}
         except Exception as e:
