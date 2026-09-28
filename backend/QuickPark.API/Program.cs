@@ -7,6 +7,7 @@ using System.Text;
 using QuickPark.API.Services.Interfaces;
 using QuickPark.API.Services.Implementations;
 
+// Configure the WebApplication builder
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
