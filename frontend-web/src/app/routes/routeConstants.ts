@@ -19,6 +19,7 @@ export const ROUTES = {
   SEARCH_PARKING: "/search",
   DRIVER_RESERVATIONS: "/reservations",
   BOOKING_HISTORY: "/history",
+  DRIVER_FEEDBACK: "/feedback",
 
   // Provider routes
   PROVIDER_DASHBOARD: "/provider/dashboard",
@@ -59,6 +60,7 @@ export const ROUTES = {
   ADMIN_STAFF: "/admin/staff",
   ADMIN_AGENTS: "/admin/agents",
   ADMIN_PAYMENTS: "/admin/payments",
+  ADMIN_FEEDBACK: "/admin/feedback",
 
   // Helper functions
   facilityDetailsPath: (facilityId: string) => `/facilities/${facilityId}`,

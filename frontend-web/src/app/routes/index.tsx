@@ -39,6 +39,8 @@ import PaymentsPage from '../../pages/admin/PaymentsPage';
 import ProviderApprovalPage from '../../pages/admin/ProviderApprovalPage';
 import ParkingFacilitiesPage from '../../pages/admin/ParkingFacilitiesPage';
 import FacilityReviewPage from '../../pages/admin/FacilityReviewPage';
+import FeedbackManagementPage from '../../pages/admin/FeedbackManagementPage';
+
 
 import { ProtectedRoute } from './ProtectedRoute';
 import { ROUTES } from './routeConstants';
@@ -128,6 +130,7 @@ export const router = createBrowserRouter([
           {
             element: <ProtectedRoute allowedRoles={[Role.PLATFORM_ADMIN]} />,
             children: [
+
               { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> },
               { path: ROUTES.ADMIN_USERS, element: <UsersPage /> },
               { path: ROUTES.ADMIN_PROPERTIES, element: <ParkingFacilitiesPage /> },
@@ -141,6 +144,7 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_STAFF, element: <StaffManagementPage /> },
               { path: ROUTES.ADMIN_AGENTS, element: <AgentMonitoringPage /> },
               { path: ROUTES.ADMIN_PAYMENTS, element: <PaymentsPage /> },
+              {path: ROUTES.ADMIN_FEEDBACK,element: <FeedbackManagementPage />},
             ]
           }
         ]
