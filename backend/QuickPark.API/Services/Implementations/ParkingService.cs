@@ -177,6 +177,7 @@ public partial class ParkingService : IParkingService
         var province = request.Province.TrimToNull();
         var district = request.District.TrimToNull();
         var city = request.City.TrimToNull();
+        var name = request.Name.TrimToNull();
 
         var reference = ValidateReferencePoint(request.Latitude, request.Longitude, request.RadiusKm);
 
@@ -185,7 +186,13 @@ public partial class ParkingService : IParkingService
 
         if (province != null) query = query.Where(f => f.Province.ToLower() == province.ToLower());
         if (district != null) query = query.Where(f => f.District.ToLower() == district.ToLower());
-        if (city != null) query = query.Where(f => f.City.ToLower() == city.ToLower());
+        if (city != null) query = query.Where(f => f.City.ToLower().Contains(city.ToLower()));
+        if (name != null) query = query.Where(f => f.Name.ToLower().Contains(name.ToLower()));
+        if (request.HasEvCharging) query = query.Where(f => f.HasEvCharging);
+        if (request.MinHourlyRate is decimal minRate)
+            query = query.Where(f => f.VehicleAllocations.Any(a => a.HourlyRate >= minRate));
+        if (request.MaxHourlyRate is decimal maxRate)
+            query = query.Where(f => f.VehicleAllocations.Any(a => a.HourlyRate <= maxRate));
 
         var facilities = await query
             .OrderBy(f => f.Name)
