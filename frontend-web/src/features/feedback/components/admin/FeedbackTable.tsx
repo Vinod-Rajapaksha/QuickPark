@@ -146,8 +146,8 @@ export const FeedbackTable = ({
                       />
                     </Button>
 
-                    {feedback.status ===
-                      'ACTIVE' && (
+                    {feedback.status !== 'HIDDEN' &&
+                      feedback.status !== 'REMOVED' && (
                       <Button
                         variant="secondary"
                         size="sm"
