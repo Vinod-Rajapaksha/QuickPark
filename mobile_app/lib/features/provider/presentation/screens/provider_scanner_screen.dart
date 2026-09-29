@@ -17,15 +17,22 @@ class ScannerOverlay extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     final cutoutPath = Path()
-      ..addRRect(RRect.fromRectAndRadius(scanWindow, Radius.circular(borderRadius)));
+      ..addRRect(
+        RRect.fromRectAndRadius(scanWindow, Radius.circular(borderRadius)),
+      );
 
     final backgroundPaint = Paint()
-      ..color = Colors.black.withOpacity(0.65)
+      ..color = Colors.black.withValues(alpha: 0.65)
       ..style = PaintingStyle.fill;
 
-    final overlayPath = Path.combine(PathOperation.difference, backgroundPath, cutoutPath);
+    final overlayPath = Path.combine(
+      PathOperation.difference,
+      backgroundPath,
+      cutoutPath,
+    );
     canvas.drawPath(overlayPath, backgroundPaint);
 
     final borderPaint = Paint()
@@ -35,14 +42,18 @@ class ScannerOverlay extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final cornerLength = 40.0;
-    
+
     final cornerRadius = Radius.circular(borderRadius);
-    
+
     // Top Left
     final topLeftPath = Path()
       ..moveTo(scanWindow.left, scanWindow.top + cornerLength)
       ..lineTo(scanWindow.left, scanWindow.top + borderRadius)
-      ..arcToPoint(Offset(scanWindow.left + borderRadius, scanWindow.top), radius: cornerRadius, clockwise: true)
+      ..arcToPoint(
+        Offset(scanWindow.left + borderRadius, scanWindow.top),
+        radius: cornerRadius,
+        clockwise: true,
+      )
       ..lineTo(scanWindow.left + cornerLength, scanWindow.top);
     canvas.drawPath(topLeftPath, borderPaint);
 
@@ -50,7 +61,11 @@ class ScannerOverlay extends CustomPainter {
     final topRightPath = Path()
       ..moveTo(scanWindow.right - cornerLength, scanWindow.top)
       ..lineTo(scanWindow.right - borderRadius, scanWindow.top)
-      ..arcToPoint(Offset(scanWindow.right, scanWindow.top + borderRadius), radius: cornerRadius, clockwise: true)
+      ..arcToPoint(
+        Offset(scanWindow.right, scanWindow.top + borderRadius),
+        radius: cornerRadius,
+        clockwise: true,
+      )
       ..lineTo(scanWindow.right, scanWindow.top + cornerLength);
     canvas.drawPath(topRightPath, borderPaint);
 
@@ -58,7 +73,11 @@ class ScannerOverlay extends CustomPainter {
     final bottomRightPath = Path()
       ..moveTo(scanWindow.right, scanWindow.bottom - cornerLength)
       ..lineTo(scanWindow.right, scanWindow.bottom - borderRadius)
-      ..arcToPoint(Offset(scanWindow.right - borderRadius, scanWindow.bottom), radius: cornerRadius, clockwise: true)
+      ..arcToPoint(
+        Offset(scanWindow.right - borderRadius, scanWindow.bottom),
+        radius: cornerRadius,
+        clockwise: true,
+      )
       ..lineTo(scanWindow.right - cornerLength, scanWindow.bottom);
     canvas.drawPath(bottomRightPath, borderPaint);
 
@@ -66,7 +85,11 @@ class ScannerOverlay extends CustomPainter {
     final bottomLeftPath = Path()
       ..moveTo(scanWindow.left + cornerLength, scanWindow.bottom)
       ..lineTo(scanWindow.left + borderRadius, scanWindow.bottom)
-      ..arcToPoint(Offset(scanWindow.left, scanWindow.bottom - borderRadius), radius: cornerRadius, clockwise: true)
+      ..arcToPoint(
+        Offset(scanWindow.left, scanWindow.bottom - borderRadius),
+        radius: cornerRadius,
+        clockwise: true,
+      )
       ..lineTo(scanWindow.left, scanWindow.bottom - cornerLength);
     canvas.drawPath(bottomLeftPath, borderPaint);
   }
@@ -246,7 +269,8 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      final BarcodeCapture? barcodeCapture = await _scannerController.analyzeImage(image.path);
+      final BarcodeCapture? barcodeCapture = await _scannerController
+          .analyzeImage(image.path);
       if (barcodeCapture != null && barcodeCapture.barcodes.isNotEmpty) {
         _handleBarcode(barcodeCapture);
       } else {
@@ -323,10 +347,7 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
           elevation: 0,
           title: const Text(
             'Scan QR Code',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           centerTitle: true,
         ),
@@ -338,9 +359,7 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
               scanWindow: scanWindow,
               onDetect: _handleBarcode,
             ),
-            CustomPaint(
-              painter: ScannerOverlay(scanWindow: scanWindow),
-            ),
+            CustomPaint(painter: ScannerOverlay(scanWindow: scanWindow)),
             if (_isProcessing)
               Container(
                 color: Colors.black54,
