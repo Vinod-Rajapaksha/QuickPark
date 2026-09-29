@@ -653,7 +653,9 @@ public class FeedbackService : IFeedbackService
             .Select(x => new FeedbackResponse
             {
                 Id = x.Id,
-                UserName = x.User.FullName,
+                UserName = x.User != null
+                    ? x.User.FullName
+                    : "Unknown User",
                 Type = x.Type,
                 ParkingId = x.ParkingId,
                 ReservationId = x.ReservationId,
