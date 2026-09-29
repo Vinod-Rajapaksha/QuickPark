@@ -22,12 +22,12 @@ public class Payment
 
     public int AttemptNumber { get; set; } = 1;
 
+    public PaymentStage Stage { get; set; } = PaymentStage.PARKING_CHARGE;
+
     public decimal Amount { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public PaymentStatus Status { get; set; } = PaymentStatus.PENDING;
 
-    // What the gateway was called, what it named the transaction, and the checkout reference it
-    // issued. TransactionId is unique, so a replayed webhook cannot pay twice (§31).
     public string GatewayProvider { get; set; } = string.Empty;
     public string? GatewayTransactionId { get; set; }
     public string? GatewayReference { get; set; }

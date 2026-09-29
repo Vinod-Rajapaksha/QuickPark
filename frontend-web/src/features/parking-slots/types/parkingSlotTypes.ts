@@ -1,6 +1,5 @@
 import type { ParkingFacility } from "../../parking/types/parkingTypes";
 
-// How the bay board sees the booking holding a bay; the server sends the whole booking.
 export interface SlotBooking {
   reservationId: string;
   driverName: string;
@@ -8,9 +7,9 @@ export interface SlotBooking {
   endTime: string;
 }
 
-// Owner-set states are AVAILABLE, MAINTENANCE, DISABLED; RESERVED and OCCUPIED are derived.
 export const SlotState = {
   AVAILABLE: "AVAILABLE",
+  PENDING: "PENDING",
   RESERVED: "RESERVED",
   OCCUPIED: "OCCUPIED",
   MAINTENANCE: "MAINTENANCE",
@@ -19,7 +18,6 @@ export const SlotState = {
 
 export type SlotState = typeof SlotState[keyof typeof SlotState];
 
-// The three states a bay can actually be sent to.
 export const OwnerSlotState = {
   AVAILABLE: "AVAILABLE",
   MAINTENANCE: "MAINTENANCE",
@@ -29,10 +27,10 @@ export const OwnerSlotState = {
 export type OwnerSlotState =
   typeof OwnerSlotState[keyof typeof OwnerSlotState];
 
-// Total counts bays in the layout, so a retired bay never inflates what a driver can book.
 export interface SlotBoardCounts {
   total: number;
   available: number;
+  pending: number;
   reserved: number;
   occupied: number;
   maintenance: number;
@@ -47,7 +45,6 @@ export interface SlotTypeCount {
   available: number;
 }
 
-// One bay. status is what the owner set, effectiveState is what the card shows.
 export interface ParkingSlotRow {
   slotId: string;
   facilityId: string;
@@ -64,21 +61,18 @@ export interface ParkingSlotRow {
   current: SlotBooking | null;
 }
 
-// Everything one screen of the board needs.
 export interface SlotBoard {
   facility: ParkingFacility;
   counts: SlotBoardCounts;
   slots: ParkingSlotRow[];
 }
 
-// One bay opened from the board, with what is waiting for it and what it carried.
 export interface ParkingSlotDetails {
   slot: ParkingSlotRow;
   upcoming: SlotBooking[];
   history: SlotBooking[];
 }
 
-// The board's two filters, plus the period the owner is asking about.
 export interface SlotBoardFilter {
   vehicleTypeId?: string;
   status?: SlotState | "";
@@ -86,7 +80,6 @@ export interface SlotBoardFilter {
   to?: string;
 }
 
-// The state change a bay is sent to.
 export interface SlotStatusInput {
   status: OwnerSlotState;
   reason?: string;

@@ -5,6 +5,9 @@ public class ProviderSlotCountsResponse
 {
     public int Total { get; set; }
     public int Available { get; set; }
+
+    // Bays held by a booking whose fee has not settled; they are held, but never reserved.
+    public int Pending { get; set; }
     public int Reserved { get; set; }
     public int Occupied { get; set; }
     public int Maintenance { get; set; }
