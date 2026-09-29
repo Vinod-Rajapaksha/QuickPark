@@ -373,6 +373,34 @@ public partial class ParkingService : IParkingService
         return await LoadReservationAsync(reservation.Id, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
     }
+
+    public async Task<ReservationResponse> ApproveReservationAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+    {
+        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+        
+        if (reservation.Status != ReservationStatus.PENDING)
+        {
+            throw new InvalidOperationException($"Cannot approve a reservation that is {reservation.Status.ToString().ToLowerInvariant()}.");
+        }
+
+        reservation.IsApprovedByProvider = true;
+        reservation.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+
+        return MapToReservation(reservation);
+    }
+
+    public async Task SendProviderMessageAsync(
+        Guid providerUserId, Guid reservationId, string message, CancellationToken ct = default)
+    {
+        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+
+        await Task.CompletedTask;
+    }
+
     public async Task<ReservationResponse> CheckInAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct = default)
     {
@@ -409,7 +437,6 @@ public partial class ParkingService : IParkingService
             ?? throw new KeyNotFoundException("Reservation not found.");
     }
 
-    // Loads the booking behind the owner check, so no gate path can authorize from the caller's id alone.
     private async Task<Reservation> LoadProviderReservationAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct)
     {
@@ -419,8 +446,6 @@ public partial class ParkingService : IParkingService
             .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
 
-        // Checked against the property rather than the ProviderId copied onto the booking, so a
-        // transferred property cannot leave a booking gateable by its previous owner.
         await EnsureFacilityBelongsToProviderAsync(provider, reservation.FacilityId, ct);
 
         return reservation;

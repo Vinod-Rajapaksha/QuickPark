@@ -10,7 +10,6 @@ export interface NavigationItem {
 
 export const navigationConfig: NavigationItem[] = [
   // Common
-
   {
     label: "Dashboard",
     path: ROUTES.DASHBOARD,
@@ -72,6 +71,12 @@ export const navigationConfig: NavigationItem[] = [
     path: ROUTES.FACILITIES,
     roles: [Role.PARKING_OWNER],
     icon: "Building",
+  },
+  {
+    label: "Approvals",
+    path: ROUTES.PROVIDER_RESERVATION_APPROVAL,
+    roles: [Role.PARKING_OWNER],
+    icon: "CheckSquare",
   },
   {
     label: "Revenue",

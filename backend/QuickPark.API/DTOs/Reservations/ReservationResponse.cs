@@ -33,6 +33,8 @@ public class ReservationResponse
     public decimal ProviderAmount { get; set; }
 
     public string Status { get; set; } = string.Empty;
+    public bool IsApprovedByProvider { get; set; }
+    public bool IsAgentBooking { get; set; }
 
     public DateTime? CheckedInAt { get; set; }
     public DateTime? CheckedOutAt { get; set; }

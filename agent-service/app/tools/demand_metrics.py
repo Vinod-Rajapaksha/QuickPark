@@ -200,5 +200,5 @@ def build_prompt_facts(metrics: DemandMetricsResult, facility_names: Sequence[st
         "QuickPark parking demand facts, calculated deterministically. "
         f"Provider facilities in scope: {context}. "
         "Interpret only these values; never invent or recompute numbers.\n"
-        f"{metrics.model_dump_json()}"
+        f"{metrics.model_dump_json(exclude_none=True, exclude_defaults=True)}"
     )

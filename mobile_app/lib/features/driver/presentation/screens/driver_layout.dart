@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/nav_bar.dart';
+import '../../../agent/presentation/widgets/agent_bubble_fab.dart';
 
 class DriverLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -20,6 +21,7 @@ class DriverLayout extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: navigationShell,
+      floatingActionButton: const AgentBubbleFAB(),
       bottomNavigationBar: NavBar(
         currentIndex: navigationShell.currentIndex,
         onTap: _goBranch,

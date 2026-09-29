@@ -52,6 +52,8 @@ public partial class ParkingService
             CommissionAmount = reservation.CommissionAmount,
             ProviderAmount = reservation.ProviderAmount,
             Status = reservation.Status.ToString(),
+            IsApprovedByProvider = reservation.IsApprovedByProvider,
+            IsAgentBooking = reservation.IsAgentBooking,
             CheckedInAt = reservation.CheckedInAt,
             CheckedOutAt = reservation.CheckedOutAt,
             CancelReason = reservation.CancelReason,
