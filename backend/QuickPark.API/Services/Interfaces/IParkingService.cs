@@ -28,8 +28,12 @@ public interface IParkingService
         CancellationToken ct = default);
     Task<ReservationResponse> CancelReservationAsync(
         Guid userId, Guid reservationId, string? reason, CancellationToken ct = default);
+        
+    Task<ReservationResponse> ApproveReservationAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default);
+    Task SendProviderMessageAsync(
+        Guid providerUserId, Guid reservationId, string message, CancellationToken ct = default);
 
-    // Gate movements the property owner makes; a booking left the owner's hands once it is checked out.
     Task<ReservationResponse> CheckInAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct = default);
     Task<ReservationResponse> CheckOutAsync(
@@ -58,22 +62,17 @@ public interface IParkingService
     Task<ProviderSlotRowResponse> UpdateSlotStatusAsync(
         Guid providerUserId, Guid slotId, UpdateSlotRequest request, CancellationToken ct = default);
 
-    // `provider` narrows by name/email/company; each row carries its owner.
     Task<IReadOnlyList<FacilityQueueRowResponse>> GetFacilitiesForReviewAsync(
         ParkingStatus? status, string? provider, CancellationToken ct = default);
     Task<FacilityReviewResponse?> GetFacilityReviewAsync(Guid facilityId, CancellationToken ct = default);
-
-    // One click over the whole property: the same answer for every section.
     Task<ParkingResponse> ReviewFacilityAsync(
         Guid adminUserId, Guid facilityId, ParkingStatus decision, string? rejectionReason,
         CancellationToken ct = default);
 
-    // Decides one section; the property is live only when all four are approved.
     Task<ParkingResponse> ReviewFacilitySectionAsync(
         Guid adminUserId, Guid facilityId, FacilitySection section, ParkingStatus decision,
         string? remarks, CancellationToken ct = default);
 
-    // Re-stamps an owner's identity copies after a profile change.
     Task<ProviderIdentitySyncResponse> SyncProviderIdentityAsync(
         Guid providerUserId, CancellationToken ct = default);
 
