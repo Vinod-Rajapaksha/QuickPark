@@ -12,7 +12,6 @@ public class Reservation
     public Guid FacilityId { get; set; }
     public ParkingFacility? Facility { get; set; }
 
-    // ParkingProvider.Id, copied from the facility so an owner's bookings are one indexed lookup away.
     public Guid ProviderId { get; set; }
 
     public Guid SlotId { get; set; }
@@ -32,6 +31,8 @@ public class Reservation
     public decimal ProviderAmount { get; set; }
 
     public ReservationStatus Status { get; set; } = ReservationStatus.PENDING;
+    public bool IsApprovedByProvider { get; set; } = false;
+    public bool IsAgentBooking { get; set; } = false;
 
     public DateTime? CheckedInAt { get; set; }
     public DateTime? CheckedOutAt { get; set; }
