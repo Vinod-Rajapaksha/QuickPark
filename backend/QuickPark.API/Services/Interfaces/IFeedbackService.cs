@@ -33,6 +33,8 @@ public interface IFeedbackService
 
     Task<List<FeedbackResponse>> GetPendingAsync();
 
+    Task<List<FeedbackResponse>> GetHiddenAsync();
+
     Task<List<FeedbackReportResponse>> GetReportsAsync();
 
     Task RestoreAsync(
