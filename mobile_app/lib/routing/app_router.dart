@@ -5,11 +5,11 @@ import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/onboarding/presentation/screens/onboarding_screen.dart';
-import '../features/home/presentation/screens/home_screen.dart';
 import '../core/storage/local_storage_service.dart';
 
 // Driver Screens
 import '../features/driver/presentation/screens/driver_layout.dart';
+import '../features/driver/presentation/screens/driver_home_screen.dart';
 import '../features/driver/presentation/screens/driver_bookings_screen.dart';
 import '../features/driver/presentation/screens/driver_profile_screen.dart';
 
@@ -18,6 +18,7 @@ import '../features/provider/presentation/screens/provider_layout.dart';
 import '../features/provider/presentation/screens/provider_dashboard_screen.dart';
 import '../features/provider/presentation/screens/provider_scanner_screen.dart';
 import '../features/provider/presentation/screens/provider_profile_screen.dart';
+import '../features/provider/presentation/screens/provider_reservation_approval_screen.dart';
 
 // Admin Screens
 import '../features/admin/presentation/screens/admin_layout.dart';
@@ -42,10 +43,12 @@ String _getInitialRoute(int? role) {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
-  final hasSeenOnboarding = ref.watch(localStorageProvider).hasSeenOnboarding;
+  final initialHasSeenOnboarding = ref
+      .read(localStorageProvider)
+      .hasSeenOnboarding;
 
   final isAuth = authState.status == AuthStatus.authenticated;
-  final initialLocation = hasSeenOnboarding
+  final initialLocation = initialHasSeenOnboarding
       ? (isAuth ? _getInitialRoute(authState.user?.role) : '/login')
       : '/onboarding';
 
@@ -53,20 +56,23 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: initialLocation,
     redirect: (context, state) {
+      final currentHasSeenOnboarding = ref
+          .read(localStorageProvider)
+          .hasSeenOnboarding;
       final isAuth = authState.status == AuthStatus.authenticated;
       final isLoggingIn =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
-      if (!hasSeenOnboarding && !isOnboarding) {
+      if (!currentHasSeenOnboarding && !isOnboarding) {
         return '/onboarding';
       }
-      if (hasSeenOnboarding && isOnboarding) {
+      if (currentHasSeenOnboarding && isOnboarding) {
         return isAuth ? _getInitialRoute(authState.user?.role) : '/login';
       }
 
-      if (!isAuth && !isLoggingIn && hasSeenOnboarding) {
+      if (!isAuth && !isLoggingIn && currentHasSeenOnboarding) {
         return '/login';
       }
       if (isAuth && isLoggingIn) {
@@ -112,7 +118,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/driver/home',
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => const DriverHomeScreen(),
               ),
             ],
           ),
@@ -153,6 +159,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/provider/scanner',
                 builder: (context, state) => const ProviderScannerScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/provider/reservations/approval',
+                builder: (context, state) =>
+                    const ProviderReservationApprovalScreen(),
               ),
             ],
           ),

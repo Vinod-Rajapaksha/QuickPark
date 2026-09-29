@@ -18,7 +18,7 @@ from app.tools.demand_metrics import (
     deterministic_narrative,
 )
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = settings.GEMINI_MODEL
 SYSTEM_INSTRUCTION = (
     "You are a parking analyst for a QuickPark facility owner. You are given "
     "already-calculated demand facts. Explain and prioritise them for the owner. "
@@ -35,24 +35,23 @@ class DemandAnalysisError(Exception):
 
 def gemini_narrator(facts: str) -> Optional[NarrativeAnalysis]:
     """Optional interpretation layer. Any failure degrades to the deterministic report."""
-    api_key = settings.GOOGLE_API_KEY
-    if not api_key:
-        return None
-
     try:
         from google import genai
         from google.genai import types
+        from app.utils.api_executor import execute_with_api_key_rotation
 
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=facts,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
-                response_mime_type="application/json",
-                response_schema=NarrativeAnalysis,
-            ),
-        )
+        def api_call(client):
+            return client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=facts,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                    response_schema=NarrativeAnalysis,
+                ),
+            )
+        
+        response = execute_with_api_key_rotation(api_call)
         parsed = getattr(response, "parsed", None)
         if isinstance(parsed, dict):
             parsed = NarrativeAnalysis.model_validate(parsed)
