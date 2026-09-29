@@ -152,7 +152,7 @@ public partial class ParkingService
         Math.Max(1, (int)Math.Ceiling((end - start).TotalMinutes / 60d));
 
     private static Reservation BuildReservation(
-        Guid driverUserId, ParkingFacility facility, ParkingSlot slot,
+        Guid driverId, ParkingFacility facility, ParkingSlot slot,
         ParkingFacilityVehicleType allocation, DateTime start, DateTime end)
     {
         var hours = BookingHours(start, end);
@@ -161,7 +161,7 @@ public partial class ParkingService
 
         return new Reservation
         {
-            DriverId = driverUserId,
+            DriverId = driverId,
             FacilityId = facility.Id,
             ProviderId = facility.ProviderId,
             SlotId = slot.Id,
