@@ -16,9 +16,16 @@ export const ROUTES = {
   PROFILE: "/profile",
 
   // Driver routes
+  PARKING_DISCOVERY: "/parking-discovery",
+  PARKING_DISCOVERY_NAME: "/parking-discovery/name",
+  PARKING_DISCOVERY_DESTINATION: "/parking-discovery/destination",
+  PARKING_DISCOVERY_NEARBY: "/parking-discovery/nearby",
   SEARCH_PARKING: "/search",
   DRIVER_RESERVATIONS: "/reservations",
   BOOKING_HISTORY: "/history",
+  RESERVATION_CREATE: (facilityId: string) =>
+    `/reservations/create/${facilityId}`,
+  RESERVATION_CREATE_PATTERN: "/reservations/create/:facilityId",
   DRIVER_FEEDBACK: "/feedback",
 
   // Provider routes
@@ -70,7 +77,8 @@ export const ROUTES = {
   facilityEditPath: (facilityId: string) => `/facilities/${facilityId}/edit`,
   facilitySetupPath: (facilityId: string) => `/facilities/${facilityId}/setup`,
   facilitySlotsPath: (facilityId: string) => `/facilities/${facilityId}/slots`,
-  facilityRevenuePath: (facilityId: string) => `/facilities/${facilityId}/revenue`,
+  facilityRevenuePath: (facilityId: string) =>
+    `/facilities/${facilityId}/revenue`,
   adminPropertyPath: (facilityId: string) => `/admin/properties/${facilityId}`,
 } as const;
 
