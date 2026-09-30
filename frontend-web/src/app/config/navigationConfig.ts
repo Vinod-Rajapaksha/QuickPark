@@ -36,7 +36,7 @@ export const navigationConfig: NavigationItem[] = [
   // Driver
   {
     label: "Search Parking",
-    path: ROUTES.SEARCH_PARKING,
+    path: ROUTES.PARKING_DISCOVERY,
     roles: [Role.DRIVER],
     icon: "Search",
   },
