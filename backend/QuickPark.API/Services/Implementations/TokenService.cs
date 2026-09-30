@@ -14,7 +14,7 @@ public class TokenService : ITokenService
     public TokenService(IConfiguration configuration)
     {
         _configuration = configuration;
-        var secret = _configuration["Jwt:Key"];
+        var secret = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing from configuration");
         _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
     }
 
