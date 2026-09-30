@@ -82,188 +82,220 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      CupertinoIcons.car_detailed,
-                      size: 60,
-                      color: primaryColor,
-                    ),
-                  ),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 40.0,
                 ),
-                const SizedBox(height: 32),
-                Text(
-                  "Welcome Back",
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Sign in to continue your journey",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 48),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: "Email Address",
-                    prefixIcon: Icon(CupertinoIcons.mail, color: primaryColor),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _login(),
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    prefixIcon: Icon(CupertinoIcons.lock, color: primaryColor),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? CupertinoIcons.eye_slash
-                            : CupertinoIcons.eye,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.5,
-                        ),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      _showToast(
-                        'Reset password feature coming soon.',
-                        isError: false,
-                      );
-                    },
-                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                    child: const Text("Forgot Password?"),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: authState.status == AuthStatus.loading
-                      ? null
-                      : _login,
-                  child: authState.status == AuthStatus.loading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
+                child: Center(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              CupertinoIcons.car_detailed,
+                              size: 60,
+                              color: primaryColor,
+                            ),
                           ),
-                        )
-                      : const Text("Sign In", style: TextStyle(fontSize: 18)),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        "OR",
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.5,
+                        ),
+                        const SizedBox(height: 32),
+                        Text(
+                          "Welcome Back",
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          fontWeight: FontWeight.bold,
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: authState.status == AuthStatus.loading
-                      ? null
-                      : _loginWithGoogle,
-                  icon: const Icon(CupertinoIcons.globe),
-                  label: const Text(
-                    "Continue with Google",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
-                    minimumSize: const Size(double.infinity, 56),
-                    side: BorderSide(color: Colors.grey.shade300, width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account?",
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.6,
+                        const SizedBox(height: 8),
+                        Text(
+                          "Sign in to continue your journey",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        fontSize: 16,
-                      ),
+                        const SizedBox(height: 48),
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: "Email Address",
+                            prefixIcon: Icon(
+                              CupertinoIcons.mail,
+                              color: primaryColor,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: !_isPasswordVisible,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _login(),
+                          decoration: InputDecoration(
+                            labelText: "Password",
+                            prefixIcon: Icon(
+                              CupertinoIcons.lock,
+                              color: primaryColor,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? CupertinoIcons.eye_slash
+                                    : CupertinoIcons.eye,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              _showToast(
+                                'Reset password feature coming soon.',
+                                isError: false,
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: const Text("Forgot Password?"),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: authState.status == AuthStatus.loading
+                              ? null
+                              : _login,
+                          child: authState.status == AuthStatus.loading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                  ),
+                                )
+                              : const Text(
+                                  "Sign In",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Text(
+                                "OR",
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        OutlinedButton.icon(
+                          onPressed: authState.status == AuthStatus.loading
+                              ? null
+                              : _loginWithGoogle,
+                          icon: const Icon(CupertinoIcons.globe),
+                          label: const Text(
+                            "Continue with Google",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onSurface,
+                            minimumSize: const Size(double.infinity, 56),
+                            side: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't have an account?",
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
+                                fontSize: 16,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => context.push('/register'),
+                              child: const Text(
+                                "Create one",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: () => context.push('/register'),
-                      child: const Text(
-                        "Create one",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

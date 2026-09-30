@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<ParkingFacilitySectionReview> ParkingFacilitySectionReviews { get; set; }
     public DbSet<ParkingFacilityVehicleType> ParkingFacilityVehicleTypes { get; set; }
     public DbSet<ParkingSlot> ParkingSlots { get; set; }
+    public DbSet<ParkingStaff> ParkingStaff { get; set; }
 
     public DbSet<Reservation> Reservations { get; set; }
 

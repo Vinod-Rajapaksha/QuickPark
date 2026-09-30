@@ -30,6 +30,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IProviderVerificationService, ProviderVerificationService>();
 builder.Services.AddScoped<IParkingService, ParkingService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
 
 //feedback services
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();

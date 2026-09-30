@@ -14,6 +14,7 @@ public class ReservationsController : ControllerBase
 {
     private const string DriverRole = "DRIVER";
     private const string OwnerRole = "PARKING_OWNER";
+    private const string StaffRole = "PARKING_STAFF";
 
     private readonly IParkingService _parkingService;
 
@@ -59,9 +60,8 @@ public class ReservationsController : ControllerBase
         }
     }
 
-    // Parking Owner booking list, optionally narrowed to one property.
     [HttpGet("provider")]
-    [Authorize(Roles = OwnerRole)]
+    [Authorize(Roles = OwnerRole + "," + StaffRole)]
     public async Task<IActionResult> GetProviderReservations(
         [FromQuery] Guid? facilityId, [FromQuery] string? status,
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct)
@@ -123,8 +123,76 @@ public class ReservationsController : ControllerBase
         }
     }
 
-    [HttpPost("{id:guid}/check-in")]
+    [HttpPost("{id:guid}/approve")]
     [Authorize(Roles = OwnerRole)]
+    [EndpointSummary("Approve a pending reservation by provider")]
+    [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Approve(Guid id, CancellationToken ct)
+    {
+        if (!TryGetCurrentUserId(out var userId)) return Unauthorized();
+
+        try
+        {
+            var reservation = await _parkingService.ApproveReservationAsync(userId, id, ct);
+            return Ok(reservation);
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = OwnerRole)]
+    [EndpointSummary("Reject a pending reservation by provider")]
+    [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Reject(
+        Guid id, [FromBody] CancelReservationRequest? request, CancellationToken ct)
+    {
+        if (!TryGetCurrentUserId(out var userId)) return Unauthorized();
+
+        try
+        {
+            var reservation = await _parkingService.CancelReservationAsync(userId, id, request?.Reason, ct);
+            return Ok(reservation);
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
+    [HttpPost("{id:guid}/message")]
+    [Authorize(Roles = OwnerRole)]
+    [EndpointSummary("Send a message to the driver via Agent")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SendMessage(
+        Guid id, [FromBody] QuickPark.API.DTOs.Reservations.SendProviderMessageRequest request, CancellationToken ct)
+    {
+        if (!TryGetCurrentUserId(out var userId)) return Unauthorized();
+
+        try
+        {
+            await _parkingService.SendProviderMessageAsync(userId, id, request.Message, ct);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
+    [HttpPost("{id:guid}/check-in")]
+    [Authorize(Roles = OwnerRole + "," + StaffRole)]
     [EndpointSummary("Check-in a confirmed reservation")]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -146,7 +214,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/check-out")]
-    [Authorize(Roles = OwnerRole)]
+    [Authorize(Roles = OwnerRole + "," + StaffRole)]
     [EndpointSummary("Check-out a checked-in reservation")]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

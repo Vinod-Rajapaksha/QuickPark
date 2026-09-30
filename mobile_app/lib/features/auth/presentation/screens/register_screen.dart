@@ -93,280 +93,275 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: Icon(
-              CupertinoIcons.back,
-              color: theme.colorScheme.onSurface,
-              size: 20,
-            ),
-            onPressed: () => context.pop(),
-          ),
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header Icon & Title
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Icon(
-                        CupertinoIcons.person_badge_plus,
-                        size: 32,
-                        color: primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Create Account",
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: theme.colorScheme.onSurface,
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 24.0,
+                ),
+                child: Center(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header Icon & Title
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              CupertinoIcons.person_solid,
+                              size: 60,
+                              color: primaryColor,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Join QuickPark & park smarter today",
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.6,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          "Create Account",
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Join QuickPark & park smarter today",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Role Selector Switch
+                        Text(
+                          "SELECT YOUR ROLE",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _RoleCard(
+                                title: "Driver",
+                                subtitle: "Find & park",
+                                icon: CupertinoIcons.car_detailed,
+                                isSelected: _selectedRole == 0,
+                                onTap: () => setState(() => _selectedRole = 0),
+                                primaryColor: primaryColor,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _RoleCard(
+                                title: "Provider",
+                                subtitle: "Rent spots",
+                                icon: CupertinoIcons.house_alt,
+                                isSelected: _selectedRole == 1,
+                                onTap: () => setState(() => _selectedRole = 1),
+                                primaryColor: primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 28),
 
-                // Role Selector Switch
-                Text(
-                  "SELECT YOUR ROLE",
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        // Form Fields
+                        TextFormField(
+                          controller: _fullNameController,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: "Full Name",
+                            prefixIcon: Icon(
+                              CupertinoIcons.person,
+                              color: primaryColor,
+                            ),
+                          ),
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Please enter your name'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: "Email Address",
+                            prefixIcon: Icon(
+                              CupertinoIcons.mail,
+                              color: primaryColor,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: "Phone Number",
+                                  prefixIcon: Icon(
+                                    CupertinoIcons.phone,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
+                                    ? 'Required'
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _nicController,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: "NIC Number",
+                                  prefixIcon: Icon(
+                                    CupertinoIcons.creditcard,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
+                                    ? 'Required'
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: !_isPasswordVisible,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _register(),
+                          decoration: InputDecoration(
+                            labelText: "Password",
+                            prefixIcon: Icon(
+                              CupertinoIcons.lock,
+                              color: primaryColor,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? CupertinoIcons.eye_slash
+                                    : CupertinoIcons.eye,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a password';
+                            }
+                            if (value.length < 6) {
+                              return 'Must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Register Button
+                        ElevatedButton(
+                          onPressed: authState.status == AuthStatus.loading
+                              ? null
+                              : _register,
+                          child: authState.status == AuthStatus.loading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                  ),
+                                )
+                              : const Text(
+                                  "Create Account",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Already have an account?",
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
+                                fontSize: 15,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => context.pop(),
+                              child: const Text(
+                                "Sign In",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _RoleCard(
-                        title: "Driver",
-                        subtitle: "Find & park",
-                        icon: CupertinoIcons.car_detailed,
-                        isSelected: _selectedRole == 0,
-                        onTap: () => setState(() => _selectedRole = 0),
-                        primaryColor: primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _RoleCard(
-                        title: "Provider",
-                        subtitle: "Rent spots",
-                        icon: CupertinoIcons.house_alt,
-                        isSelected: _selectedRole == 1,
-                        onTap: () => setState(() => _selectedRole = 1),
-                        primaryColor: primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
-
-                // Form Fields
-                TextFormField(
-                  controller: _fullNameController,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: "Full Name",
-                    prefixIcon: Icon(
-                      CupertinoIcons.person,
-                      color: primaryColor,
-                    ),
-                  ),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Please enter your name'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: "Email Address",
-                    prefixIcon: Icon(CupertinoIcons.mail, color: primaryColor),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          labelText: "Phone Number",
-                          prefixIcon: Icon(
-                            CupertinoIcons.phone,
-                            color: primaryColor,
-                          ),
-                        ),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                            ? 'Required'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _nicController,
-                        textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          labelText: "NIC Number",
-                          prefixIcon: Icon(
-                            CupertinoIcons.creditcard,
-                            color: primaryColor,
-                          ),
-                        ),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                            ? 'Required'
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _register(),
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    prefixIcon: Icon(CupertinoIcons.lock, color: primaryColor),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? CupertinoIcons.eye_slash
-                            : CupertinoIcons.eye,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.5,
-                        ),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 6) {
-                      return 'Must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
-
-                // Register Button
-                ElevatedButton(
-                  onPressed: authState.status == AuthStatus.loading
-                      ? null
-                      : _register,
-                  child: authState.status == AuthStatus.loading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
-                          ),
-                        )
-                      : const Text(
-                          "Create Account",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                ),
-                const SizedBox(height: 20),
-
-                // Footer navigate to Sign in
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Already have an account?",
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.6,
-                        ),
-                        fontSize: 15,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

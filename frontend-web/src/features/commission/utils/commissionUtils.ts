@@ -2,6 +2,7 @@ import { bayLabel, formatMoney, formatPercent } from "../../parking/utils/parkin
 import type {
   PricingDraft,
   PricingDraftErrors,
+  SaveVehiclePricingInput,
   SaveVehicleTypeInput,
   VehiclePricingConfig,
   VehicleTypeConfig,
@@ -9,13 +10,11 @@ import type {
   VehicleTypeDraftErrors,
 } from "../types/commissionTypes";
 
-// The server's own ceilings, repeated here so the admin sees it before the request fails.
 export const MAX_SLOT_CODE_LENGTH = 10;
 export const MAX_BAY_METERS = 20;
 export const MAX_PRICE = 100000;
 export const MAX_COMMISSION_PERCENT = 100;
 
-// SlotCode prefixes the generated slot numbers, so it is upper-case alphanumerics like the server stores it.
 export const normaliseCode = (value: string): string =>
   value.replace(/[^a-z0-9]/gi, "").toUpperCase();
 
@@ -23,7 +22,6 @@ export const hasErrors = <T extends Record<string, string | undefined>>(
   errors: T,
 ): boolean => Object.values(errors).some((message) => Boolean(message));
 
-// An unparseable entry is NaN rather than null, so a row can tell blank from mistyped.
 const parseNumber = (raw: string): number => Number(raw.trim());
 
 const parseBaySide = (raw: string): number | null => {
@@ -33,7 +31,6 @@ const parseBaySide = (raw: string): number | null => {
   return Number.isFinite(value) && value > 0 && value <= MAX_BAY_METERS ? value : Number.NaN;
 };
 
-// null is a bound the admin has not read yet, NaN one that is out of the server's window.
 const parsePrice = (raw: string): number | null => {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -100,7 +97,6 @@ export const validatePricingDraft = (draft: PricingDraft): PricingDraftErrors =>
   else if (commission < 0 || commission > MAX_COMMISSION_PERCENT)
     errors.commissionRate = `Commission must be between 0 and ${MAX_COMMISSION_PERCENT} percent.`;
 
-  // Reported against the maximum because that is the field the admin just changed.
   if (
     !errors.minimumPrice &&
     !errors.maximumPrice &&
@@ -141,7 +137,13 @@ export const toVehicleTypeInput = (draft: VehicleTypeDraft): SaveVehicleTypeInpu
   };
 };
 
-// What the owner will see from this row, so the admin reads the same figure the provider does.
+export const toPricingInput = (draft: PricingDraft): SaveVehiclePricingInput => ({
+  minimumPrice: Number(draft.minimumPrice),
+  maximumPrice: Number(draft.maximumPrice),
+  commissionRate: Number(draft.commissionRate),
+  isActive: draft.isActive,
+});
+
 export const providerSummary = (
   pricing: VehiclePricingConfig | undefined,
   type: VehicleTypeConfig,

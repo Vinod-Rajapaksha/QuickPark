@@ -44,9 +44,9 @@ public class ReportService : IReportService
             CashCommissionDue = Sum(cash.Where(r => r.CommissionStatus == CommissionStatus.DUE)
                 .Select(r => r.CommissionAmount)),
             CashCommissionsOutstanding = cash.Count(r => r.CommissionStatus == CommissionStatus.DUE),
-            BookingsPaid = paid.Count,
-            BookingsCard = card.Count,
-            BookingsCash = cash.Count,
+            BookingsPaid = Bookings(paid),
+            BookingsCard = Bookings(card),
+            BookingsCash = Bookings(cash),
             PendingCashConfirmations = rows.Count(PendingCash),
             FailedPayments = rows.Count(r => r.Status == PaymentStatus.FAILED),
             CancelledPayments = rows.Count(r => r.Status == PaymentStatus.CANCELLED),
@@ -143,12 +143,26 @@ public class ReportService : IReportService
     }
 
     public async Task<RevenueOverviewResponse> GetProviderRevenueAsync(
-        Guid providerUserId, DateTime? from, DateTime? to, bool byProperty, CancellationToken ct = default)
+        Guid providerUserId, DateTime? from, DateTime? to, bool byProperty,
+        Guid? facilityId = null, CancellationToken ct = default)
     {
         var provider = await RequireProviderAsync(providerUserId, ct);
-        var rows = Window(await MoneyRowsAsync(p => p.ProviderId == provider.Id, ct), from, to);
 
-        return BuildOverview(rows, byProperty, from);
+        List<MoneyRow> rows;
+
+        if (facilityId is Guid facility)
+        {
+            // Refused before a single row is read, so another owner's property never even reaches the totals.
+            await EnsureFacilityBelongsToProviderAsync(provider, facility, ct);
+            rows = await MoneyRowsAsync(
+                p => p.ProviderId == provider.Id && p.Reservation!.FacilityId == facility, ct);
+        }
+        else
+        {
+            rows = await MoneyRowsAsync(p => p.ProviderId == provider.Id, ct);
+        }
+
+        return BuildOverview(Window(rows, from, to), byProperty, from);
     }
 
     public async Task<RevenueOverviewResponse> GetPlatformRevenueAsync(
@@ -176,6 +190,7 @@ public class ReportService : IReportService
                 r.Method == PaymentMethod.CASH && r.CommissionStatus == CommissionStatus.DUE)
                 .Select(r => r.CommissionAmount)),
             PaidPayments = paid.Count,
+            BookingsPaid = Bookings(paid),
             CardPayments = kept.Count(r => r.Method == PaymentMethod.CARD),
             CashPayments = kept.Count(r => r.Method == PaymentMethod.CASH),
             FailedPayments = rows.Count(r => r.Status == PaymentStatus.FAILED),
@@ -210,6 +225,21 @@ public class ReportService : IReportService
                 CashAmount = Sum(g.Where(r => r.Method == PaymentMethod.CASH).Select(r => r.Amount)),
                 Payments = g.Count()
             })
+            .ToList();
+
+        overview.ByVehicleType = kept
+            .GroupBy(r => new { r.VehicleTypeId, r.VehicleTypeName })
+            .Select(g => new RevenueVehicleTypeResponse
+            {
+                VehicleTypeId = g.Key.VehicleTypeId,
+                VehicleTypeName = g.Key.VehicleTypeName,
+                Amount = Sum(g.Select(r => r.Amount)),
+                Commission = Sum(g.Select(r => r.CommissionAmount)),
+                ProviderAmount = Sum(g.Select(r => r.ProviderAmount)),
+                Payments = g.Count(),
+                BookedHours = HeldHours(g)
+            })
+            .OrderByDescending(v => v.Amount)
             .ToList();
 
         if (byProperty)
@@ -276,6 +306,9 @@ public class ReportService : IReportService
                 FacilityId = p.Reservation.FacilityId,
                 FacilityName = p.Reservation.Facility != null ? p.Reservation.Facility.Name : string.Empty,
                 SlotNumber = p.Reservation.SlotNumber,
+                VehicleTypeId = p.Reservation.VehicleTypeId,
+                VehicleTypeName = p.Reservation.VehicleType != null ? p.Reservation.VehicleType.Name : string.Empty,
+                Hours = p.Reservation.Hours,
                 CommissionId = p.Commission == null ? null : p.Commission.Id,
                 CommissionRate = p.Commission == null ? null : p.Commission.CommissionRate,
                 CommissionAmount = p.Commission == null ? null : p.Commission.CommissionAmount,
@@ -324,6 +357,19 @@ public class ReportService : IReportService
             .FirstOrDefaultAsync(p => p.UserId == providerUserId, ct)
         ?? throw new UnauthorizedAccessException("This account is not a parking owner.");
 
+    // The same ownership wall the property screens use, read from the facility rather than any id a booking copied.
+    private async Task EnsureFacilityBelongsToProviderAsync(
+        ParkingProvider provider, Guid facilityId, CancellationToken ct)
+    {
+        var owns = await _context.Set<ParkingFacility>()
+            .AnyAsync(f => f.Id == facilityId && f.ProviderId == provider.Id, ct);
+
+        if (!owns)
+        {
+            throw new UnauthorizedAccessException("You can only read reports for your own parking properties.");
+        }
+    }
+
     private async Task RequireAdminAsync(Guid userId, CancellationToken ct)
     {
         if (!await _context.Users.AnyAsync(u => u.Id == userId && u.Role == UserRole.PLATFORM_ADMIN, ct))
@@ -347,6 +393,14 @@ public class ReportService : IReportService
     private static decimal Sum(IEnumerable<decimal?> amounts) => amounts.Sum(a => a ?? 0m);
 
     private static decimal Sum(IEnumerable<decimal> amounts) => amounts.Sum();
+
+    // Two settled payments are still one car in one bay, so a booking is counted by its booking.
+    private static int Bookings(IEnumerable<MoneyRow> rows) =>
+        rows.Select(r => r.ReservationId).Distinct().Count();
+
+    // Same reason for the hours: the booking held the bay for its window once, however many rows paid for it.
+    private static int HeldHours(IEnumerable<MoneyRow> rows) =>
+        rows.GroupBy(r => r.ReservationId).Sum(g => g.First().Hours);
 
     private static bool PendingCash(MoneyRow row) =>
         row.Method == PaymentMethod.CASH &&
@@ -382,6 +436,9 @@ public class ReportService : IReportService
         public Guid FacilityId { get; set; }
         public string FacilityName { get; set; } = string.Empty;
         public string SlotNumber { get; set; } = string.Empty;
+        public Guid VehicleTypeId { get; set; }
+        public string VehicleTypeName { get; set; } = string.Empty;
+        public int Hours { get; set; }
         public Guid? CommissionId { get; set; }
         public decimal? CommissionRate { get; set; }
         public decimal? CommissionAmount { get; set; }

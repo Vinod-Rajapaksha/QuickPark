@@ -26,3 +26,27 @@ class ParkingService:
             return None
         wanted = str(facility_id)
         return next((f for f in facilities if f.facility_id == wanted), None)
+
+    def search_facilities(
+        self,
+        city: Optional[str] = None,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        radius_km: Optional[float] = None,
+        ev_only: Optional[bool] = None,
+        max_hourly_rate: Optional[float] = None,
+        min_hourly_rate: Optional[float] = None,
+    ) -> list:
+        params = {}
+        if city: params["city"] = city
+        if latitude: params["latitude"] = latitude
+        if longitude: params["longitude"] = longitude
+        if radius_km: params["radiusKm"] = radius_km
+        if ev_only is not None: params["evOnly"] = str(ev_only).lower()
+        if max_hourly_rate: params["maxHourlyRate"] = max_hourly_rate
+        if min_hourly_rate: params["minHourlyRate"] = min_hourly_rate
+
+        try:
+            return self._client.get("/ParkingFacilities/search", params=params)
+        except Exception as e:
+            return []

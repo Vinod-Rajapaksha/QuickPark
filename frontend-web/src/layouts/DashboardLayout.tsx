@@ -4,6 +4,9 @@ import { navigationConfig } from '../app/config/navigationConfig';
 import { useState } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import TopBar from '../components/layout/TopBar';
+import { Role } from "../features/auth/types/authTypes";
+import { FeedbackPromptManager } from "../features/feedback/components/driver/FeedbackPromptManager";
+import { FloatingAgent } from "../features/agent/components/FloatingAgent";
 
 const DashboardLayout = () => {
   const { user, logoutUser } = useAuth();
@@ -17,6 +20,13 @@ const DashboardLayout = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
+
+      {user.role === Role.DRIVER && (
+        <>
+          <FeedbackPromptManager />
+          <FloatingAgent />
+        </>
+      )}
       
       <Sidebar 
         isSidebarOpen={isSidebarOpen} 

@@ -28,13 +28,14 @@ public class ReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetProviderRevenue(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to,
-        [FromQuery] bool byProperty, CancellationToken ct)
+        [FromQuery] bool byProperty, [FromQuery] Guid? facilityId = null,
+        CancellationToken ct = default)
     {
         if (!this.TryGetUserId(out var userId)) return Unauthorized();
 
         try
         {
-            return Ok(await Reports().GetProviderRevenueAsync(userId, from, to, byProperty, ct));
+            return Ok(await Reports().GetProviderRevenueAsync(userId, from, to, byProperty, facilityId, ct));
         }
         catch (Exception ex)
         {

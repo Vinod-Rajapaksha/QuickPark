@@ -66,10 +66,10 @@ public partial class ParkingService
         var all = (await bookings.ToListAsync(ct)).AsReadOnly();
 
         var live = all
-            .Where(r => r.Status is ReservationStatus.PENDING or ReservationStatus.CONFIRMED)
+            .Where(r => HoldsNow(r, now, DateTime.MaxValue))
             .ToList();
         var ended = all
-            .Where(r => r.Status is not (ReservationStatus.PENDING or ReservationStatus.CONFIRMED))
+            .Where(r => !HoldsNow(r, now, DateTime.MaxValue))
             .OrderByDescending(r => r.StartTime)
             .Take(10)
             .ToList();
@@ -86,18 +86,28 @@ public partial class ParkingService
     }
 
     public async Task<ProviderSlotRowResponse> UpdateSlotStatusAsync(
-        Guid providerUserId, Guid slotId, UpdateSlotRequest request, CancellationToken ct = default)
+        Guid userId, Guid slotId, UpdateSlotRequest request, CancellationToken ct = default)
     {
-        var (facility, slot) = await GetOwnedSlotAsync(providerUserId, slotId, ct);
+        var (facility, slot) = await GetStaffOrOwnerSlotAsync(userId, slotId, ct);
         var wanted = ParseOwnerSlotStatus(request.Status);
         var now = DateTime.UtcNow;
+
+        // A car inside the bay is the gate's to let out, not the owner's to free, so no manual state
+        // change — not even "back in service" — is allowed while one is checked in.
+        var parked = await _context.Set<Reservation>()
+            .AnyAsync(r => r.SlotId == slot.Id && r.Status == ReservationStatus.CHECKED_IN, ct);
+
+        if (parked)
+        {
+            throw new InvalidOperationException(
+                $"{slot.SlotNumber} has a vehicle in it. Check the driver out before changing its state.");
+        }
 
         if (wanted != SlotStatus.AVAILABLE)
         {
             var holding = await _context.Set<Reservation>()
-                .Where(r => r.SlotId == slot.Id &&
-                            (r.Status == ReservationStatus.PENDING || r.Status == ReservationStatus.CONFIRMED) &&
-                            r.EndTime > now)
+                .Where(r => r.SlotId == slot.Id)
+                .Where(HoldsSlot(now, DateTime.MaxValue))
                 .OrderBy(r => r.StartTime)
                 .FirstOrDefaultAsync(ct);
 
@@ -178,9 +188,8 @@ public partial class ParkingService
         await LockSlotAsync(slot.Id, ct);
 
         var query = _context.Set<Reservation>()
-            .Where(r => r.SlotId == slot.Id &&
-                        (r.Status == ReservationStatus.PENDING || r.Status == ReservationStatus.CONFIRMED) &&
-                        r.StartTime < end && r.EndTime > start);
+            .Where(r => r.SlotId == slot.Id)
+            .Where(HoldsSlot(start, end));
 
         if (exceptReservationId is Guid except) query = query.Where(r => r.Id != except);
 
@@ -189,8 +198,11 @@ public partial class ParkingService
         if (clash is not null)
         {
             throw new InvalidOperationException(
-                $"{slot.SlotNumber} is already booked from {clash.StartTime:HH:mm} to {clash.EndTime:HH:mm} UTC " +
-                "for that period. Choose another bay or another time.");
+                clash.Status == ReservationStatus.CHECKED_IN
+                    ? $"{slot.SlotNumber} has a vehicle in it until the driver is checked out. " +
+                      "Choose another bay or another time."
+                    : $"{slot.SlotNumber} is already booked from {clash.StartTime:HH:mm} to " +
+                      $"{clash.EndTime:HH:mm} UTC for that period. Choose another bay or another time.");
         }
     }
 
@@ -275,9 +287,8 @@ public partial class ParkingService
 
         var bookings = await ReservationsForResponse()
             .AsNoTracking()
-            .Where(r => ids.Contains(r.SlotId) &&
-                        (r.Status == ReservationStatus.PENDING || r.Status == ReservationStatus.CONFIRMED) &&
-                        r.EndTime > windowStart)
+            .Where(r => ids.Contains(r.SlotId))
+            .Where(HoldsSlot(windowStart, DateTime.MaxValue))
             .OrderBy(r => r.StartTime)
             .ToListAsync(ct);
 
@@ -298,22 +309,17 @@ public partial class ParkingService
         DateTime windowStart, DateTime windowEnd, DateTime now)
     {
         var openWindow = windowEnd > windowStart;
-        var relevant = bookings
-            .Where(r => r.EndTime > windowStart && (!openWindow || r.StartTime < windowEnd))
-            .ToList();
+        var to = openWindow ? windowEnd : DateTime.MaxValue;
 
-        var current = relevant.FirstOrDefault(r => r.StartTime <= now && r.EndTime > now)
+        // Every booking holding the bay over the period being looked at, including one whose booked
+        // window has already run out — a car that is still inside has no end time that frees the bay.
+        var relevant = bookings.Where(r => HoldsNow(r, windowStart, to)).ToList();
+
+        var current = relevant.FirstOrDefault(r => r.Status == ReservationStatus.CHECKED_IN)
+            ?? relevant.FirstOrDefault(r => r.StartTime <= now && r.EndTime > now)
             ?? relevant.FirstOrDefault();
 
-        var effective = slot.Status switch
-        {
-            SlotStatus.DISABLED => nameof(SlotStatus.DISABLED),
-            SlotStatus.MAINTENANCE => nameof(SlotStatus.MAINTENANCE),
-            _ when current is null => nameof(SlotStatus.AVAILABLE),
-            _ => current.StartTime <= now && current.EndTime > now
-                ? nameof(SlotStatus.OCCUPIED)
-                : nameof(SlotStatus.RESERVED)
-        };
+        var effective = EffectiveSlotStatus(slot.Status, current?.Status);
 
         return new ProviderSlotRowResponse
         {
@@ -325,8 +331,7 @@ public partial class ParkingService
             BayLabel = BayLabel(slot.BayLengthMeters, slot.BayWidthMeters),
             Status = slot.Status.ToString(),
             EffectiveStatus = effective,
-            Bookable = slot.Status == SlotStatus.AVAILABLE &&
-                        (!openWindow || relevant.Count == 0),
+            Bookable = effective == nameof(SlotStatus.AVAILABLE),
             HourlyRate = rates.TryGetValue(slot.VehicleTypeId, out var rate) ? rate : 0m,
             BusyFrom = current?.StartTime,
             BusyUntil = current?.EndTime,
@@ -341,6 +346,8 @@ public partial class ParkingService
             Available = rows.Count(r => r.EffectiveStatus == nameof(SlotStatus.AVAILABLE)),
             Reserved = rows.Count(r => r.EffectiveStatus == nameof(SlotStatus.RESERVED)),
             Occupied = rows.Count(r => r.EffectiveStatus == nameof(SlotStatus.OCCUPIED)),
+            // Bays held by a booking whose fee has not settled; never tallied as reserved.
+            Pending = rows.Count(r => r.EffectiveStatus == nameof(ReservationStatus.PENDING)),
             Maintenance = rows.Count(r => r.Status == nameof(SlotStatus.MAINTENANCE)),
             Disabled = rows.Count(r => r.Status == nameof(SlotStatus.DISABLED)),
             ByVehicleType = rows
@@ -362,7 +369,7 @@ public partial class ParkingService
         var trimmed = status.TrimToNull()?.ToUpperInvariant();
         if (trimmed is null or "ALL") return null;
 
-        var allowed = new[] { "AVAILABLE", "RESERVED", "OCCUPIED", "MAINTENANCE", "DISABLED" };
+        var allowed = new[] { "AVAILABLE", "PENDING", "RESERVED", "OCCUPIED", "MAINTENANCE", "DISABLED" };
         if (!allowed.Contains(trimmed))
         {
             throw new InvalidOperationException(
@@ -384,5 +391,53 @@ public partial class ParkingService
         }
 
         return parsed;
+    }
+
+    private async Task<(ParkingFacility Facility, ParkingSlot Slot)> GetStaffOrOwnerSlotAsync(
+    Guid userId,
+    Guid slotId,
+    CancellationToken ct)
+    {
+        var slot = await _context.ParkingSlots
+            .Include(x => x.Facility)
+            .Include(x => x.VehicleType)
+            .FirstOrDefaultAsync(
+                x => x.Id == slotId,
+                ct);
+
+        if (slot == null)
+        {
+            throw new KeyNotFoundException(
+                "Parking slot not found.");
+        }
+
+        var facility = slot.Facility;
+
+        var provider = await _context.ParkingProviders
+            .FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                ct);
+
+        if (provider != null &&
+            facility.ProviderId == provider.Id)
+        {
+            return (facility, slot);
+        }
+
+        var staff = await _context.ParkingStaff
+            .FirstOrDefaultAsync(
+                x =>
+                x.UserId == userId &&
+                x.FacilityId == facility.Id &&
+                x.IsActive,
+                ct);
+
+        if (staff != null)
+        {
+            return (facility, slot);
+        }
+
+        throw new UnauthorizedAccessException(
+            "You do not have access to manage slots in this branch.");
     }
 }
