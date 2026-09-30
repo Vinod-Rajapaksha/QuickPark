@@ -11,6 +11,8 @@ public interface IPaymentService
 
     Task<PaymentResponse> ConfirmCardAsync(Guid driverUserId, ConfirmCardPaymentRequest request, CancellationToken ct = default);
 
+    Task<PaymentResponse> ConfirmExternalAsync(Guid driverUserId, Guid reservationId, string transactionId, CancellationToken ct = default);
+
     Task<PaymentResponse> HandleGatewayCallbackAsync(string? callbackToken, CancellationToken ct = default);
 
     Task<PaymentResponse> ConfirmCashAsync(
