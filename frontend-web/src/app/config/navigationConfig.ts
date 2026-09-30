@@ -99,6 +99,12 @@ export const navigationConfig: NavigationItem[] = [
     icon: "Clock",
   },
   {
+    label: "QR Scanner",
+    path: ROUTES.QR_SCANNER,
+    roles: [Role.PARKING_STAFF, Role.PARKING_OWNER],
+    icon: "ScanLine",
+  },
+  {
     label: "Support",
     path: ROUTES.SUPPORT,
     roles: [Role.PARKING_STAFF],
