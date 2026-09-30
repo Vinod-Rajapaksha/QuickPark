@@ -44,7 +44,6 @@ const TABS: Array<{ id: WizardTab; label: string }> = [
   { id: "review", label: "Review & submit" },
 ];
 
-// <input type="time"> and the form schema both use HH:MM; the API sends HH:MM:SS.
 const toFormTime = (value: string): string => value.slice(0, 5);
 
 const detailsOf = (facility: ParkingFacility) => ({
@@ -85,7 +84,11 @@ export const FacilitySetupPage: React.FC = () => {
     upload,
     remove,
   } = useFacilityDocuments(facilityId);
-  const { options, isLoading: isLoadingOptions } = useRegistrationOptions();
+  const {
+    options,
+    isLoading: isLoadingOptions,
+    loadError: optionsError,
+  } = useRegistrationOptions();
 
   const facility = facilities.find((item) => item.facilityId === facilityId);
 
@@ -302,6 +305,16 @@ export const FacilitySetupPage: React.FC = () => {
           {isLoadingOptions ? (
             <div className="flex justify-center py-10">
               <Spinner size="md" />
+            </div>
+          ) : optionsError ? (
+            <div className="space-y-2 py-2">
+              <p className="text-sm text-red-600" role="alert">
+                {optionsError}
+              </p>
+              <p className="text-sm text-slate-500">
+                The vehicle types could not be read, so no list is shown below. Reload this
+                page to try again.
+              </p>
             </div>
           ) : (
             <AllocationEditor

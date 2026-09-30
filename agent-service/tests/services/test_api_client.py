@@ -26,7 +26,7 @@ def test_get_sends_the_bearer_token_and_query():
 
 
 def test_missing_token_never_reaches_the_network():
-    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+    def handler(request: httpx.Request) -> httpx.Response:
         raise AssertionError("must not be called")
 
     with pytest.raises(ApiError) as exc:

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using QuickPark.API.Enums;
 using QuickPark.API.Models;
 
 namespace QuickPark.API.Data.Configurations;
@@ -13,6 +14,11 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.Property(p => p.PaymentMethod).HasConversion<string>().IsRequired();
         builder.Property(p => p.Status).HasConversion<string>().IsRequired();
+
+        // Text like the method and the status, so a booking's fee and its parking charge are tellable
+        // apart in the table. The default is the rows that predate the split, all of which paid the stay.
+        builder.Property(p => p.Stage).HasConversion<string>().IsRequired()
+            .HasDefaultValue(PaymentStage.PARKING_CHARGE);
 
         builder.Property(p => p.Amount).HasPrecision(10, 2);
 

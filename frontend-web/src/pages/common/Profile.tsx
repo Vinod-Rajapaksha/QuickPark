@@ -8,9 +8,10 @@ import ProfileHeader from "../../features/profile/components/ProfileHeader";
 import ProfileDetailsForm from "../../features/profile/components/ProfileDetailsForm";
 import ProfileSecurityTab from "../../features/profile/components/ProfileSecurityTab";
 import { profileSchema, type ProfileFormValues } from "../../features/profile/schemas/profileSchemas";
+import { updateUser } from "../../features/users/api/userApi";
 
 export const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, checkSession } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<"details" | "security">("details");
   const [isEditing, setIsEditing] = useState(false);
@@ -32,10 +33,16 @@ export const Profile: React.FC = () => {
   });
 
   const onSubmit = async (data: ProfileFormValues) => {
+    if (!user) return;
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      console.log("Profile updated", data);
+      await updateUser(user.id, {
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        nic: data.nic,
+      });
+      await checkSession();
       showToast("Profile updated successfully", "success");
       setIsEditing(false);
     } catch (error) {

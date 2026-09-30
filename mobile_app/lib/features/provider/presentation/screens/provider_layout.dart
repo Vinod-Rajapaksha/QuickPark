@@ -35,6 +35,11 @@ class ProviderLayout extends StatelessWidget {
             label: 'Scan',
           ),
           NavBarItem(
+            icon: CupertinoIcons.checkmark_square,
+            activeIcon: CupertinoIcons.checkmark_square_fill,
+            label: 'Approvals',
+          ),
+          NavBarItem(
             icon: CupertinoIcons.person,
             activeIcon: CupertinoIcons.person_solid,
             label: 'Profile',

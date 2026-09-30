@@ -670,6 +670,12 @@ namespace QuickPark.API.Migrations
                     b.Property<Guid>("ReservationId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PARKING_CHARGE");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -808,6 +814,12 @@ namespace QuickPark.API.Migrations
                     b.Property<int>("Hours")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsAgentBooking")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsApprovedByProvider")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("ProviderAmount")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
@@ -855,12 +867,6 @@ namespace QuickPark.API.Migrations
                     b.HasIndex("VehicleTypeId");
 
                     b.HasIndex("Status", "StartTime");
-                    
-                    b.HasIndex("DriverId", "StartTime");
-
-                    b.HasIndex("FacilityId", "Status", "StartTime");
-
-                    b.HasIndex("SlotId", "StartTime", "EndTime");
 
                     b.ToTable("Reservations", (string)null);
                 });

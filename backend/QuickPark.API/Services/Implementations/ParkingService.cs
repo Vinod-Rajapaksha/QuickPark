@@ -353,6 +353,13 @@ public partial class ParkingService : IParkingService
             throw new InvalidOperationException($"This reservation is already {reservation.Status.ToString().ToLowerInvariant()}.");
         }
 
+        // Cancelling releases the bay, and a bay with a car in it is only ever freed by a checkout.
+        if (reservation.Status == ReservationStatus.CHECKED_IN)
+        {
+            throw new InvalidOperationException(
+                "A vehicle is in the bay, so this booking can only be ended by checking the driver out.");
+        }
+
         if (isDriver && reservation.StartTime <= now)
         {
             throw new InvalidOperationException("This reservation has already started and can no longer be cancelled.");
@@ -381,7 +388,33 @@ public partial class ParkingService : IParkingService
             ?? throw new KeyNotFoundException("Reservation not found.");
     }
 
-    // The driver is at the gate, so only the owner of the property the booking was made at can let them in.
+    public async Task<ReservationResponse> ApproveReservationAsync(
+        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+    {
+        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+        
+        if (reservation.Status != ReservationStatus.PENDING)
+        {
+            throw new InvalidOperationException($"Cannot approve a reservation that is {reservation.Status.ToString().ToLowerInvariant()}.");
+        }
+
+        reservation.IsApprovedByProvider = true;
+        reservation.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+
+        return MapToReservation(reservation);
+    }
+
+    public async Task SendProviderMessageAsync(
+        Guid providerUserId, Guid reservationId, string message, CancellationToken ct = default)
+    {
+        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+
+        await Task.CompletedTask;
+    }
+
     public async Task<ReservationResponse> CheckInAsync(
         Guid userId, Guid reservationId, CancellationToken ct = default)
     {
@@ -418,7 +451,6 @@ public partial class ParkingService : IParkingService
             ?? throw new KeyNotFoundException("Reservation not found.");
     }
 
-    // Loads the booking behind the owner check, so no gate path can authorize from the caller's id alone.
     private async Task<Reservation> LoadProviderReservationAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct)
     {
@@ -428,8 +460,6 @@ public partial class ParkingService : IParkingService
             .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
 
-        // Checked against the property rather than the ProviderId copied onto the booking, so a
-        // transferred property cannot leave a booking gateable by its previous owner.
         await EnsureFacilityBelongsToProviderAsync(provider, reservation.FacilityId, ct);
 
         return reservation;
@@ -651,9 +681,8 @@ public partial class ParkingService : IParkingService
 
         var heldSlotIds = layoutChanged
             ? (await _context.Set<Reservation>()
-                .Where(r => r.FacilityId == facility.Id &&
-                            (r.Status == ReservationStatus.PENDING || r.Status == ReservationStatus.CONFIRMED) &&
-                            r.EndTime > now)
+                .Where(r => r.FacilityId == facility.Id)
+                .Where(HoldsSlot(now, DateTime.MaxValue))
                 .Select(r => r.SlotId)
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();
@@ -761,6 +790,7 @@ public partial class ParkingService : IParkingService
         return slots.Select(s =>
         {
             var isBusy = busy.TryGetValue(s.Id, out var window);
+            var effective = EffectiveSlotStatus(s.Status, isBusy ? window!.Status : (ReservationStatus?)null);
 
             return new SlotResponse
             {
@@ -771,10 +801,11 @@ public partial class ParkingService : IParkingService
                 VehicleTypeName = s.VehicleType?.Name ?? string.Empty,
                 BayLabel = BayLabel(s.BayLengthMeters, s.BayWidthMeters),
                 Status = s.Status.ToString(),
+                EffectiveStatus = effective,
                 HourlyRate = rates.TryGetValue(s.VehicleTypeId, out var rate) ? rate : 0m,
-                AvailableForPeriod = s.Status == SlotStatus.AVAILABLE && !isBusy,
-                BusyFrom = isBusy ? window.Start : null,
-                BusyUntil = isBusy ? window.End : null
+                AvailableForPeriod = effective == nameof(SlotStatus.AVAILABLE),
+                BusyFrom = isBusy ? window!.Start : null,
+                BusyUntil = isBusy ? window!.End : null
             };
         }).ToList();
     }

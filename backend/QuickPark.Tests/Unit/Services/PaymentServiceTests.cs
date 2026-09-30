@@ -1,14 +1,15 @@
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using QuickPark.API.Enums;
 using QuickPark.API.Integrations.Payments;
+using QuickPark.API.Models;
 using QuickPark.API.Services.Implementations;
 using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.Tests.Unit.Services;
 
-// The money rules, tested without a database.
 public class PaymentServiceTests
 {
 
@@ -30,12 +31,10 @@ public class PaymentServiceTests
         Assert.Equal(expectedCommission, split.CommissionAmount);
         Assert.Equal(expectedProvider, split.ProviderAmount);
 
-        // The owner's share is whatever is left, so the pair can never drift from the total.
         Assert.Equal(gross, split.CommissionAmount + split.ProviderAmount);
     }
 
     [Theory]
-    // 12.5% of Rs.333.33 = 41.66625, and the paisa it rounds to must be the same paisa the booking was priced with.
     [InlineData(333.33, 12.5, 41.67)]
     [InlineData(0.25, 10, 0.03)]
     [InlineData(1234.56, 7.5, 92.59)]
@@ -57,7 +56,6 @@ public class PaymentServiceTests
     [Fact]
     public void Calculate_KeepsTheRateThatWasApplied_NotTheOneConfiguredNow()
     {
-        // The rate is stored next to the money it produced, so a later config change cannot rewrite history.
         var bookedLastYear = Commission().Calculate(800.00m, 10.00m);
 
         Assert.Equal(10.00m, bookedLastYear.CommissionRate);
@@ -75,7 +73,7 @@ public class PaymentServiceTests
     }
 
     [Theory]
-    // A refund is the end of the road: the way back is a new payment, not an edit.
+    // A refund is the end of the road
     [InlineData(PaymentStatus.REFUNDED, PaymentStatus.PAID)]
     [InlineData(PaymentStatus.PAID, PaymentStatus.PENDING)]
     [InlineData(PaymentStatus.PAID, PaymentStatus.FAILED)]
@@ -90,7 +88,6 @@ public class PaymentServiceTests
         Assert.Contains("cannot become", ex.Message);
     }
 
-    // EnsureCanMove is deliberately not public; reflection tests the transition table without widening it.
     private static void Move(PaymentStatus from, PaymentStatus to)
     {
         var ensure = typeof(PaymentService)
@@ -184,7 +181,7 @@ public class PaymentServiceTests
         Assert.False(result.Approved);
         Assert.Contains(expectedReason, result.DeclineReason);
 
-        // The decline is still a signed statement from the gateway, not a claim from the page.
+        // The decline is still a signed statement from the gateway
         Assert.False(gateway.VerifyCallback(result.CallbackToken).Approved);
     }
 
@@ -334,6 +331,280 @@ public class PaymentServiceTests
         Assert.Equal(first, second);
         Assert.NotEqual(first, other);
         Assert.StartsWith("QPSBX-RF-", first);
+    }
+
+    // ---- the booking fee and the parking charge ----
+
+    [Theory]
+    [InlineData(ReservationStatus.PENDING, PaymentStage.BOOKING_FEE)]
+    [InlineData(ReservationStatus.CONFIRMED, PaymentStage.PARKING_CHARGE)]
+    [InlineData(ReservationStatus.CHECKED_IN, PaymentStage.PARKING_CHARGE)]
+    [InlineData(ReservationStatus.CHECKED_OUT, PaymentStage.PARKING_CHARGE)]
+    public void The_booking_lifecycle_decides_which_charge_is_owed(
+        ReservationStatus status, PaymentStage expected)
+    {
+        Assert.Equal(expected, (PaymentStage)Invoke("StageFor", status)!);
+    }
+
+    [Theory]
+    // The examples the rule is written down with: two hours' hold at Rs.50 an hour, half an hour,
+    // ninety minutes, and a booking placed for the very moment it starts.
+    [InlineData(50.00, 120, "100.00")]
+    [InlineData(50.00, 30, "25.00")]
+    [InlineData(50.00, 90, "75.00")]
+    [InlineData(50.00, 0, "0.00")]
+    [InlineData(50.00, 15, "12.50")]
+    [InlineData(50.00, 20, "16.67")]
+    [InlineData(333.33, 5, "27.78")]
+    [InlineData(500.00, 120, "1000.00")]
+    [InlineData(10.00, 360, "60.00")]
+    public void The_fee_is_the_lead_time_the_bay_was_held_for_at_this_bookings_own_rate(
+        decimal hourlyRate, int leadMinutes, string expected)
+    {
+        var fee = Amount(Held(hourlyRate, leadMinutes), PaymentStage.BOOKING_FEE);
+
+        Assert.Equal(expected, fee.ToString("0.00", CultureInfo.InvariantCulture));
+    }
+
+    [Theory]
+    // A bay needed before the clock that placed the booking is worth nothing, and it is never a
+    // negative the driver is paid back for.
+    [InlineData(-30)]
+    [InlineData(-1)]
+    public void A_booking_with_no_lead_time_owes_no_fee(int leadMinutes) =>
+        Assert.Equal(0.00m, Amount(Held(50.00m, leadMinutes), PaymentStage.BOOKING_FEE));
+
+    [Fact]
+    public void The_same_lead_time_is_a_different_fee_for_two_vehicle_types()
+    {
+        // One hour of hold: a motorbike priced at Rs.40 and a van priced at Rs.90 are not the same charge.
+        Assert.Equal(40.00m, Amount(Held(40.00m, 60), PaymentStage.BOOKING_FEE));
+        Assert.Equal(90.00m, Amount(Held(90.00m, 60), PaymentStage.BOOKING_FEE));
+    }
+
+    [Fact]
+    public void The_fee_is_counted_from_the_booking_and_not_from_the_clock_it_is_read_on()
+    {
+        // One argument, the booking: nothing about the moment the fee is read can move the amount the
+        // driver was quoted, so the same attempt re-priced later settles for the same money. Two
+        // bookings placed months apart and held for the same ninety minutes are the same fee.
+        var parameters = typeof(PaymentService)
+            .GetMethod("BookingFee", BindingFlags.NonPublic | BindingFlags.Static)!
+            .GetParameters().Select(p => p.ParameterType).ToArray();
+
+        Assert.Equal(new[] { typeof(Reservation) }, parameters);
+        Assert.Equal(
+            Amount(Held(50.00m, PlacedAt, 90), PaymentStage.BOOKING_FEE),
+            Amount(Held(50.00m, PlacedAt.AddMonths(3), 90), PaymentStage.BOOKING_FEE));
+    }
+
+    [Fact]
+    public void The_service_holds_no_platform_fee_of_its_own()
+    {
+        // Nothing reads Payments:BookingFee any more: a configured value is dead weight, and the
+        // service keeps no decimal of its own to charge.
+        var service = new PaymentService(null!, BuildConfig(
+            new Dictionary<string, string?> { ["Payments:BookingFee"] = "500" }));
+
+        Assert.Empty(typeof(PaymentService)
+            .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+            .Where(f => f.FieldType == typeof(decimal))
+            .Select(f => f.Name));
+    }
+
+    [Fact]
+    public void The_booking_is_only_confirmed_by_paying_its_fee()
+    {
+        Assert.Equal(ReservationStatus.CONFIRMED,
+            (ReservationStatus?)Invoke("ConfirmedBy", PaymentStage.BOOKING_FEE, ReservationStatus.PENDING)!);
+    }
+
+    [Theory]
+    [InlineData(PaymentStage.BOOKING_FEE, ReservationStatus.CANCELLED)]
+    [InlineData(PaymentStage.BOOKING_FEE, ReservationStatus.CONFIRMED)]
+    [InlineData(PaymentStage.PARKING_CHARGE, ReservationStatus.PENDING)]
+    [InlineData(PaymentStage.PARKING_CHARGE, ReservationStatus.CHECKED_IN)]
+    [InlineData(PaymentStage.PARKING_CHARGE, ReservationStatus.CHECKED_OUT)]
+    public void Nothing_else_moves_a_booking_to_confirmed(PaymentStage stage, ReservationStatus current)
+    {
+        Assert.Null(Invoke("ConfirmedBy", stage, current));
+    }
+
+    [Fact]
+    public void Before_the_gate_opens_the_charge_is_the_amount_the_booking_was_quoted_at()
+    {
+        Assert.Equal(1000.00m, Amount(Booked(200.00m, 5), PaymentStage.PARKING_CHARGE));
+    }
+
+    [Fact]
+    public void The_charge_after_checkout_is_the_time_the_bay_was_actually_used()
+    {
+        // The business example: in at 14:00 and out at 17:30 at Rs.200 an hour is Rs.700, whatever
+        // the five hours the driver first booked the bay for.
+        var stayed = Booked(200.00m, 5);
+        stayed.CheckedInAt = At(14, 0);
+        stayed.CheckedOutAt = At(17, 30);
+
+        Assert.Equal(700.00m, Amount(stayed, PaymentStage.PARKING_CHARGE));
+
+        // Rs.150 for holding the bay the 45 minutes before it was needed, plus Rs.700 for the stay:
+        // the fee is timed off the lead, the charge off the stay, and neither is inside the other.
+        Assert.Equal(150.00m, Amount(stayed, PaymentStage.BOOKING_FEE));
+        Assert.Equal(850.00m, Amount(stayed, PaymentStage.BOOKING_FEE) + Amount(stayed, PaymentStage.PARKING_CHARGE));
+    }
+
+    [Fact]
+    public void The_parking_charge_never_becomes_a_lead_time_fee_and_the_fee_never_a_stay()
+    {
+        var placed_late = Booked(200.00m, 5);
+        placed_late.StartTime = PlacedAt.AddMinutes(5);
+
+        var placed_early = Booked(200.00m, 5);
+        placed_early.StartTime = PlacedAt.AddHours(20);
+
+        // Same stay, so the same parking charge however far ahead the bay was held.
+        Assert.Equal(Amount(placed_late, PaymentStage.PARKING_CHARGE),
+            Amount(placed_early, PaymentStage.PARKING_CHARGE));
+        // And the fee does move with that lead, which is the half of the bill the booking decides:
+        // five minutes' hold at Rs.200 an hour is a third of an hour's rate, not a minimum one hour.
+        Assert.Equal(16.67m, Amount(placed_late, PaymentStage.BOOKING_FEE));
+        Assert.Equal(4000.00m, Amount(placed_early, PaymentStage.BOOKING_FEE));
+    }
+
+    [Theory]
+    [InlineData(14, 0, 17, 30, 3.5)]
+    [InlineData(14, 0, 18, 0, 4)]
+    [InlineData(9, 0, 9, 20, 1)]
+    [InlineData(17, 30, 14, 0, 1)]
+    public void Half_hours_bill_as_half_hours_and_the_floor_stays_one_hour(
+        int inHour, int inMinute, int outHour, int outMinute, decimal expectedHours)
+    {
+        var hours = (decimal)Invoke("ActualHours", At(inHour, inMinute), At(outHour, outMinute))!;
+
+        Assert.Equal(expectedHours, hours);
+    }
+
+    [Theory]
+    [InlineData(ReservationStatus.PENDING)]
+    [InlineData(ReservationStatus.CHECKED_OUT)]
+    public void Each_stage_is_only_payable_at_its_own_moment_of_the_booking(ReservationStatus status) =>
+        Invoke("EnsureOpenForPayment", Booked(200.00m, 5, status));
+
+    [Theory]
+    // While the car sits in the bay the stay's hours are still being written, so a charge taken now
+    // would be the booked estimate and would block the real one that follows.
+    [InlineData(ReservationStatus.CONFIRMED)]
+    [InlineData(ReservationStatus.CHECKED_IN)]
+    public void The_stay_cannot_be_paid_for_before_it_ends(ReservationStatus status)
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Invoke("EnsureOpenForPayment", Booked(200.00m, 5, status)));
+
+        Assert.Contains("once the car leaves the bay", ex.Message);
+    }
+
+    [Theory]
+    [InlineData(ReservationStatus.CANCELLED)]
+    [InlineData(ReservationStatus.NOSHOW)]
+    [InlineData(ReservationStatus.COMPLETED)]
+    public void A_booking_that_ended_elsewhere_has_nothing_left_to_pay_for(ReservationStatus status)
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Invoke("EnsureOpenForPayment", Booked(200.00m, 5, status)));
+
+        Assert.Contains("can no longer be paid for", ex.Message);
+    }
+
+    [Fact]
+    public void A_paid_fee_is_not_refundable_and_says_what_is()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Invoke("EnsureRefundable", PaymentStage.BOOKING_FEE));
+
+        Assert.Equal("A booking fee is not refundable. Refund the parking charge instead.", ex.Message);
+    }
+
+    [Fact]
+    public void The_parking_charge_keeps_the_refund_path_it_already_had() =>
+        Invoke("EnsureRefundable", PaymentStage.PARKING_CHARGE);
+
+    [Fact]
+    public void The_card_is_charged_the_lead_time_fee_and_the_callback_comes_back_with_that_same_amount()
+    {
+        // The fee the booking is worth is the fee the gateway takes: nothing on the card path rescales it.
+        var gateway = Gateway();
+        var fee = Amount(Held(50.00m, 90), PaymentStage.BOOKING_FEE);
+
+        var result = gateway.CompleteCheckout(
+            gateway.CreateCheckout(PaymentId, ReservationId, fee).Reference, GoodCard);
+
+        Assert.True(result.Approved);
+        Assert.Equal(75.00m, result.Amount);
+        Assert.Equal(75.00m, gateway.VerifyCallback(result.CallbackToken).Amount);
+    }
+
+    [Fact]
+    public void Cash_at_the_property_settles_the_same_lead_time_fee_the_card_was_charged()
+    {
+        var held = Held(50.00m, 90);
+        var gross = Amount(held, PaymentStage.BOOKING_FEE);
+
+        // The owner is confirming the fee stage of a booking that is still PENDING, so it is settleable
+        // and the note the commission line carries names the fee that was actually owed.
+        Invoke("EnsureSettleable", held);
+
+        var note = (string)Invoke("BuildCashReference",
+            held, PaymentStage.BOOKING_FEE, gross, true, "Paid at the gate")!;
+
+        Assert.Contains("set to the 75.00 booking fee", note);
+        Assert.Equal(75.00m, Amount(held, PaymentStage.BOOKING_FEE));
+    }
+
+    private static readonly DateTime PlacedAt = new(2026, 9, 15, 8, 0, 0, DateTimeKind.Utc);
+
+    private static Reservation Booked(
+        decimal hourlyRate, int hours, ReservationStatus status = ReservationStatus.PENDING) => new()
+    {
+        HourlyRate = hourlyRate,
+        Hours = hours,
+        TotalAmount = hourlyRate * hours,
+        Status = status,
+        CreatedAt = PlacedAt,
+        StartTime = PlacedAt.AddMinutes(45)
+    };
+
+    // A booking held for `leadMinutes` before the bay is needed, at that vehicle type's own rate.
+    private static Reservation Held(decimal hourlyRate, int leadMinutes) =>
+        Held(hourlyRate, PlacedAt, leadMinutes);
+
+    private static Reservation Held(decimal hourlyRate, DateTime placedAt, int leadMinutes) => new()
+    {
+        HourlyRate = hourlyRate,
+        CreatedAt = placedAt,
+        StartTime = placedAt.AddMinutes(leadMinutes)
+    };
+
+    private static decimal Amount(Reservation reservation, PaymentStage stage) =>
+        (decimal)Invoke("AmountFor", reservation, stage)!;
+
+    private static DateTime At(int hour, int minute) =>
+        new DateTime(2026, 9, 15, hour, minute, 0, DateTimeKind.Utc);
+
+    // The stage rules are private for the same reason the transition tables are: only the service
+    // should widen them, so the tests reach them without opening them up.
+    private static object? Invoke(string name, params object?[] args)
+    {
+        var method = typeof(PaymentService)
+            .GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        try
+        {
+            return method.Invoke(null, args);
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            throw ex.InnerException;
+        }
     }
 
     private static string Base64Url(byte[] bytes) =>

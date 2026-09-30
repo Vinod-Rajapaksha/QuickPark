@@ -1,11 +1,9 @@
 from typing import Any, Dict, List
-
 from app.models.validation import (
     ValidationIssue,
     ValidationResult,
     ValidationStatus,
 )
-
 
 class ValidationAgent:
     """

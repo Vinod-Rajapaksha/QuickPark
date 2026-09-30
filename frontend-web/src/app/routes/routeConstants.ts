@@ -30,14 +30,17 @@ export const ROUTES = {
   FACILITY_EDIT: (facilityId: string) => `/facilities/${facilityId}/edit`,
   FACILITY_SETUP: (facilityId: string) => `/facilities/${facilityId}/setup`,
   FACILITY_SLOTS: (facilityId: string) => `/facilities/${facilityId}/slots`,
+  FACILITY_REVENUE: (facilityId: string) => `/facilities/${facilityId}/revenue`,
   FACILITY_DETAILS_PATTERN: "/facilities/:facilityId",
   FACILITY_EDIT_PATTERN: "/facilities/:facilityId/edit",
   FACILITY_SETUP_PATTERN: "/facilities/:facilityId/setup",
   FACILITY_SLOTS_PATTERN: "/facilities/:facilityId/slots",
+  FACILITY_REVENUE_PATTERN: "/facilities/:facilityId/revenue",
   REVENUE: "/revenue",
   PROVIDER_ANALYTICS: "/analytics",
   PROVIDER_REPORTS: "/reports",
   PROVIDER_RESERVATIONS: "/reservations",
+  PROVIDER_RESERVATION_APPROVAL: "/provider/reservations/approval/:id",
 
   // Staff routes
   STAFF_DASHBOARD: "/staff/dashboard",
@@ -67,6 +70,7 @@ export const ROUTES = {
   facilityEditPath: (facilityId: string) => `/facilities/${facilityId}/edit`,
   facilitySetupPath: (facilityId: string) => `/facilities/${facilityId}/setup`,
   facilitySlotsPath: (facilityId: string) => `/facilities/${facilityId}/slots`,
+  facilityRevenuePath: (facilityId: string) => `/facilities/${facilityId}/revenue`,
   adminPropertyPath: (facilityId: string) => `/admin/properties/${facilityId}`,
 } as const;
 

@@ -1,4 +1,3 @@
-// Mirrors the API's ReservationResponse. The gate columns are what the action buttons read.
 export interface Reservation {
   reservationId: string;
   driverId: string;
@@ -22,8 +21,9 @@ export interface Reservation {
   commissionRate: number;
   commissionAmount: number;
   providerAmount: number;
-  // Server sends the ReservationStatus name; a bad value simply offers no gate action.
   status: string;
+  isApprovedByProvider: boolean;
+  isAgentBooking: boolean;
   checkedInAt: string | null;
   checkedOutAt: string | null;
   cancelReason: string | null;
@@ -33,4 +33,5 @@ export interface Reservation {
   updatedAt: string;
 }
 
-export type BookingGateAction = "CONFIRM" | "CHECK_IN" | "CHECK_OUT" | "NO_SHOW";
+export type BookingGateAction =
+  "CONFIRM" | "CHECK_IN" | "CHECK_OUT" | "NO_SHOW";

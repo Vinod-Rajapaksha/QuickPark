@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using QuickPark.API.Data;
 using QuickPark.API.DTOs.Payments;
@@ -12,6 +13,8 @@ namespace QuickPark.API.Services.Implementations;
 public class PaymentService : IPaymentService
 {
     private const string CashGatewayProvider = "CASH_AT_PROPERTY";
+
+    private const decimal MinimumChargedHours = 1m;
 
     private readonly AppDbContext _context;
     private readonly ICardPaymentGateway _gateway;
@@ -44,14 +47,16 @@ public class PaymentService : IPaymentService
 
         EnsureOpenForPayment(reservation);
 
+        var stage = StageFor(reservation.Status);
+
         var live = await _context.Set<Payment>()
-            .Where(p => p.ReservationId == reservation.Id &&
+            .Where(p => p.ReservationId == reservation.Id && p.Stage == stage &&
                         (p.Status == PaymentStatus.PENDING || p.Status == PaymentStatus.PAID))
             .ToListAsync(ct);
 
         if (live.Any(p => p.Status == PaymentStatus.PAID))
         {
-            throw new InvalidOperationException("This booking has already been paid for.");
+            throw new InvalidOperationException($"{Label(stage)} has already been paid for this booking.");
         }
 
         foreach (var abandoned in live.Where(p => p.PaymentMethod != method))
@@ -62,8 +67,17 @@ public class PaymentService : IPaymentService
             abandoned.FailureReason = $"Replaced by a {Describe(method)} payment.";
         }
 
-        var payment = live.FirstOrDefault(p => p.PaymentMethod == method)
-            ?? await NewAttemptAsync(reservation, driverUserId, method, ct);
+        var payment = live.FirstOrDefault(p => p.PaymentMethod == method);
+
+        if (payment is null)
+        {
+            payment = await NewAttemptAsync(reservation, driverUserId, method, stage, ct);
+        }
+        else
+        {
+            payment.Amount = AmountFor(reservation, stage);
+            payment.UpdatedAt = DateTime.UtcNow;
+        }
 
         GatewayCheckout? checkout = null;
         if (method == PaymentMethod.CARD)
@@ -215,6 +229,8 @@ public class PaymentService : IPaymentService
 
         EnsureSettleable(reservation);
 
+        EnsureCanMove(payment.Status, PaymentStatus.PAID);
+
         payment.GatewayTransactionId = callback.TransactionId;
 
         try
@@ -276,7 +292,9 @@ public class PaymentService : IPaymentService
 
         EnsureSettleable(reservation);
 
-        var gross = reservation.TotalAmount;
+        EnsureCanMove(payment.Status, PaymentStatus.PAID);
+
+        var gross = AmountFor(reservation, payment.Stage);
         var reconciled = gross != payment.Amount;
 
         payment.Amount = gross;
@@ -285,7 +303,8 @@ public class PaymentService : IPaymentService
         payment.CashConfirmedAt = DateTime.UtcNow;
         payment.GatewayProvider = CashGatewayProvider;
 
-        await SettleAsync(payment, reservation, isCash: true, BuildCashReference(reservation, reconciled, request?.Note), ct);
+        await SettleAsync(payment, reservation, isCash: true,
+            BuildCashReference(reservation, payment.Stage, gross, reconciled, request?.Note), ct);
         await _context.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
 
@@ -305,11 +324,15 @@ public class PaymentService : IPaymentService
     public async Task<PaymentResponse?> GetForReservationAsync(
         Guid userId, Guid reservationId, CancellationToken ct = default)
     {
-        var payment = await _context.Set<Payment>()
+        var attempts = await _context.Set<Payment>()
             .AsNoTracking()
             .Where(p => p.ReservationId == reservationId)
-            .OrderByDescending(p => p.AttemptNumber)
-            .FirstOrDefaultAsync(ct);
+            .ToListAsync(ct);
+
+        var payment = attempts
+            .OrderByDescending(p => p.Stage == PaymentStage.PARKING_CHARGE)
+            .ThenByDescending(p => p.AttemptNumber)
+            .FirstOrDefault();
 
         if (payment is null) return null;
 
@@ -355,6 +378,8 @@ public class PaymentService : IPaymentService
         var payment = await _context.Set<Payment>()
             .FirstOrDefaultAsync(p => p.Id == paymentId, ct)
             ?? throw new KeyNotFoundException("Payment not found.");
+
+        EnsureRefundable(payment.Stage);
 
         EnsureCanMove(payment.Status, PaymentStatus.REFUNDED);
 
@@ -461,6 +486,13 @@ public class PaymentService : IPaymentService
         payment.PaidAt = now;
         payment.UpdatedAt = now;
 
+        // Nothing lets a car in before the booking fee requirement is satisfied.
+        if (ConfirmedBy(payment.Stage, reservation.Status) is ReservationStatus confirmed)
+        {
+            reservation.Status = confirmed;
+            reservation.UpdatedAt = now;
+        }
+
         var rate = await _commission.RateForAsync(reservation.VehicleTypeId, reservation.CommissionRate, ct);
         var split = _commission.Calculate(payment.Amount, rate);
 
@@ -498,8 +530,11 @@ public class PaymentService : IPaymentService
     }
 
     private async Task<Payment> NewAttemptAsync(
-        Reservation reservation, Guid driverUserId, PaymentMethod method, CancellationToken ct)
+        Reservation reservation, Guid driverUserId, PaymentMethod method, PaymentStage stage,
+        CancellationToken ct)
     {
+        // Numbered across the whole booking rather than per stage, because (ReservationId,
+        // AttemptNumber) is the index that stops two attempts colliding.
         var lastAttempt = await _context.Set<Payment>()
             .Where(p => p.ReservationId == reservation.Id)
             .Select(p => (int?)p.AttemptNumber)
@@ -510,7 +545,8 @@ public class PaymentService : IPaymentService
             ReservationId = reservation.Id,
             ProviderId = reservation.ProviderId,
             DriverId = driverUserId,
-            Amount = reservation.TotalAmount,
+            Stage = stage,
+            Amount = AmountFor(reservation, stage),
             PaymentMethod = method,
             Status = PaymentStatus.PENDING,
             AttemptNumber = lastAttempt + 1
@@ -525,10 +561,17 @@ public class PaymentService : IPaymentService
     {
         var status = Describe(reservation.Status);
 
-        if (reservation.Status is not (ReservationStatus.PENDING or ReservationStatus.CONFIRMED))
+        if (reservation.Status is not (ReservationStatus.PENDING or ReservationStatus.CONFIRMED
+                or ReservationStatus.CHECKED_IN or ReservationStatus.CHECKED_OUT))
         {
             throw new InvalidOperationException(
                 $"This booking is {status} and can no longer be paid for.");
+        }
+
+        if (reservation.Status is ReservationStatus.CONFIRMED or ReservationStatus.CHECKED_IN)
+        {
+            throw new InvalidOperationException(
+                "The parking charge is payable once the car leaves the bay, so its real hours can be counted.");
         }
 
         if (reservation.TotalAmount <= 0m)
@@ -546,12 +589,75 @@ public class PaymentService : IPaymentService
         }
     }
 
-    private static string BuildCashReference(Reservation reservation, bool reconciled, string? note)
+    private static PaymentStage StageFor(ReservationStatus status) =>
+        status == ReservationStatus.PENDING ? PaymentStage.BOOKING_FEE : PaymentStage.PARKING_CHARGE;
+
+    private static decimal AmountFor(Reservation reservation, PaymentStage stage) =>
+        stage == PaymentStage.BOOKING_FEE ? BookingFee(reservation) : ParkingCharge(reservation);
+
+    // What the booking asked the property to hold the bay for, at this booking's own hourly rate. The
+    // parking charge's one-hour floor deliberately does not apply: lead time below an hour is charged
+    // as the fraction it is, and a booking made for the moment it is made holds nothing.
+    private static decimal BookingFee(Reservation reservation)
+    {
+        var leadHours = (decimal)(AsUtc(reservation.StartTime) - AsUtc(reservation.CreatedAt)).TotalHours;
+
+        return leadHours <= 0m
+            ? 0m
+            : Math.Round(reservation.HourlyRate * leadHours, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private static ReservationStatus? ConfirmedBy(PaymentStage stage, ReservationStatus current) =>
+        stage == PaymentStage.BOOKING_FEE && current == ReservationStatus.PENDING
+            ? ReservationStatus.CONFIRMED
+            : null;
+
+    private static void EnsureRefundable(PaymentStage stage)
+    {
+        if (stage == PaymentStage.BOOKING_FEE)
+        {
+            throw new InvalidOperationException(
+                "A booking fee is not refundable. Refund the parking charge instead.");
+        }
+    }
+
+    private static decimal ParkingCharge(Reservation reservation)
+    {
+        if (reservation.CheckedInAt is not DateTime inAt || reservation.CheckedOutAt is not DateTime outAt)
+        {
+            return reservation.TotalAmount;
+        }
+
+        return Math.Round(reservation.HourlyRate * ActualHours(inAt, outAt), 2, MidpointRounding.AwayFromZero);
+    }
+
+    private static decimal ActualHours(DateTime checkedInAt, DateTime checkedOutAt)
+    {
+        var hours = (decimal)(AsUtc(checkedOutAt) - AsUtc(checkedInAt)).TotalHours;
+        return Math.Max(MinimumChargedHours, hours);
+    }
+
+    private static string UsedHours(Reservation reservation) =>
+        reservation.CheckedInAt is DateTime inAt && reservation.CheckedOutAt is DateTime outAt
+            ? ActualHours(inAt, outAt).ToString("0.##", CultureInfo.InvariantCulture)
+            : reservation.Hours.ToString();
+
+    private static string Label(PaymentStage stage) =>
+        stage == PaymentStage.BOOKING_FEE ? "The booking fee" : "The parking charge";
+
+    private static string BuildCashReference(
+        Reservation reservation, PaymentStage stage, decimal gross, bool reconciled, string? note)
     {
         var text = $"Cash commission due for booking {reservation.SlotNumber} at " +
                    $"{reservation.Facility?.Name ?? "the property"}";
 
-        if (reconciled) text += $" (re-priced to the stay actually used: {reservation.Hours}h)";
+        if (reconciled)
+        {
+            text += stage == PaymentStage.BOOKING_FEE
+                ? $" (set to the {gross:0.00} booking fee)"
+                : $" (re-priced to the stay actually used: {UsedHours(reservation)}h)";
+        }
+
         if (!string.IsNullOrWhiteSpace(note)) text += $" — {note.Trim()}";
 
         return text;
@@ -583,9 +689,8 @@ public class PaymentService : IPaymentService
         await transaction.CommitAsync(ct);
     }
 
-    // ---- small helpers ----
+    // small helpers 
 
-    // The bay the booking was for, in the wording a ledger line reads with.
     private static string SlotRef(Guid reservationId) =>
         $"#{reservationId.ToString("N")[..8]}";
 
@@ -607,7 +712,6 @@ public class PaymentService : IPaymentService
         });
     }
 
-    // Money never moves backwards: only these transitions are legal.
     private static void EnsureCanMove(PaymentStatus from, PaymentStatus to)
     {
         var legal = (from, to) switch
@@ -725,6 +829,7 @@ public class PaymentService : IPaymentService
             PaymentMethod = payment.PaymentMethod.ToString(),
             Status = payment.Status.ToString(),
             ReservationStatus = reservation?.Status.ToString() ?? string.Empty,
+            PaymentStage = payment.Stage.ToString(),
             CommissionRate = includeCommission ? commission?.CommissionRate : null,
             CommissionAmount = includeCommission ? commission?.CommissionAmount : null,
             ProviderAmount = includeCommission ? commission?.ProviderAmount : null,
