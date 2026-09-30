@@ -15,4 +15,13 @@ export const reportApi = {
     const response = await axiosClient.get<RevenueOverviewPayload>(`${BASE}/provider`, { params });
     return normaliseOverview(response.data);
   },
+  getPlatformRevenue: async (query: RevenueQuery = {}): Promise<RevenueOverview> => {
+    const params: Record<string, string | boolean> = {};
+    if (query.from) params.from = query.from;
+    if (query.to) params.to = query.to;
+    if (query.byProperty) params.byProperty = true;
+
+    const response = await axiosClient.get<RevenueOverviewPayload>(`${BASE}/platform`, { params });
+    return normaliseOverview(response.data);
+  },
 };

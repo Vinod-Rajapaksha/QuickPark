@@ -39,13 +39,17 @@ import ReservationsPage from "../../pages/admin/ReservationsPage";
 import StaffManagementPage from "../../pages/admin/StaffManagementPage";
 import AgentMonitoringPage from "../../pages/admin/AgentMonitoringPage";
 import PaymentsPage from "../../pages/admin/PaymentsPage";
-import ProviderApprovalPage from "../../pages/admin/ProviderApprovalPage";
 import ParkingFacilitiesPage from "../../pages/admin/ParkingFacilitiesPage";
 import FacilityReviewPage from "../../pages/admin/FacilityReviewPage";
 import FeedbackManagementPage from "../../pages/admin/FeedbackManagementPage";
 
 //Driver pages
 import FeedbackPage from "../../pages/driver/FeedbackPage";
+import ParkingDiscoveryPage from "../../pages/driver/ParkingDiscoveryPage";
+import MyReservationsPage from "../../pages/driver/MyReservationsPage";
+import ReservationCreatePage from "../../pages/driver/ReservationCreatePage";
+import DriverDashboardPage from "../../pages/driver/DriverDashboardPage";
+import BookingHistoryPage from "../../pages/driver/BookingHistoryPage";
 
 import { ProtectedRoute } from "./ProtectedRoute";
 import { ROUTES } from "./routeConstants";
@@ -89,11 +93,13 @@ export const router = createBrowserRouter([
                   return redirect(ROUTES.PROVIDER_DASHBOARD);
                 case Role.PARKING_STAFF:
                   return redirect(ROUTES.STAFF_DASHBOARD);
+                case Role.DRIVER:
+                  return redirect(ROUTES.DRIVER_DASHBOARD);
                 default:
                   return null;
               }
             },
-            element: <div className="p-4">Driver Dashboard Coming Soon</div>,
+            element: <Navigate to={ROUTES.HOME} replace />,
           },
 
           //Common Routes
@@ -104,22 +110,24 @@ export const router = createBrowserRouter([
             element: <ProtectedRoute allowedRoles={[Role.DRIVER]} />,
             children: [
               {
-                path: ROUTES.SEARCH_PARKING,
-                element: (
-                  <div className="p-4">Search Parking - Coming Soon</div>
-                ),
+                path: ROUTES.DRIVER_DASHBOARD,
+                element: <DriverDashboardPage />,
+              },
+              {
+                path: ROUTES.PARKING_DISCOVERY,
+                element: <ParkingDiscoveryPage />,
               },
               {
                 path: ROUTES.DRIVER_RESERVATIONS,
-                element: (
-                  <div className="p-4">Driver Reservations - Coming Soon</div>
-                ),
+                element: <MyReservationsPage />,
               },
               {
                 path: ROUTES.BOOKING_HISTORY,
-                element: (
-                  <div className="p-4">Booking History - Coming Soon</div>
-                ),
+                element: <BookingHistoryPage />,
+              },
+              {
+                path: ROUTES.RESERVATION_CREATE_PATTERN,
+                element: <ReservationCreatePage />,
               },
               {
                 path: ROUTES.DRIVER_FEEDBACK,
@@ -205,11 +213,7 @@ export const router = createBrowserRouter([
                 path: ROUTES.ADMIN_PROPERTY_DETAILS_PATTERN,
                 element: <FacilityReviewPage />,
               },
-              { path: ROUTES.ADMIN_PROVIDERS, element: <ProvidersPage /> },
-              {
-                path: ROUTES.ADMIN_PROVIDER_APPROVALS,
-                element: <ProviderApprovalPage />,
-              },
+              { path: ROUTES.ADMIN_PROVIDER_APPROVALS, element: <ProvidersPage /> },
               { path: ROUTES.ADMIN_COMMISSION, element: <CommissionPage /> },
               { path: ROUTES.ADMIN_ANALYTICS, element: <AnalyticsPage /> },
               { path: ROUTES.ADMIN_REPORTS, element: <ReportsPage /> },
