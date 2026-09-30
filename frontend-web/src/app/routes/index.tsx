@@ -16,6 +16,8 @@ import FacilitySetupPage from "../../pages/provider/FacilitySetupPage";
 import SlotManagementPage from "../../pages/provider/SlotManagementPage";
 import ProviderDashboardPage from "../../pages/provider/ProviderDashboardPage";
 import EarningsPage from "../../pages/provider/EarningsPage";
+import ProviderAnalyticsPage from '../../pages/provider/ProviderAnalyticsPage';
+import FacilityRevenuePage from '../../pages/provider/FacilityRevenuePage';
 import ProviderReportsPage from "../../pages/provider/ReportsPage";
 import ProviderReservationsPage from "../../pages/provider/ReservationsPage";
 import ParkingDetailsPage from "../../pages/provider/ParkingDetailsPage";
@@ -156,8 +158,11 @@ export const router = createBrowserRouter([
                 path: ROUTES.FACILITY_SLOTS_PATTERN,
                 element: <SlotManagementPage />,
               },
+              { path: ROUTES.FACILITY_REVENUE_PATTERN,
+                element: <FacilityRevenuePage /> 
+              },
               { path: ROUTES.REVENUE, element: <EarningsPage /> },
-              { path: ROUTES.PROVIDER_ANALYTICS, element: <AnalyticsPage /> },
+              { path: ROUTES.PROVIDER_ANALYTICS, element: <ProviderAnalyticsPage /> },
               {
                 path: ROUTES.PROVIDER_REPORTS,
                 element: <ProviderReportsPage />,

@@ -11,6 +11,7 @@ export { formatMoney };
 
 export const SLOT_STATE_BADGE: Record<SlotState, BadgeVariant> = {
   AVAILABLE: "success",
+  PENDING: "info",
   RESERVED: "info",
   OCCUPIED: "primary",
   MAINTENANCE: "warning",
@@ -19,6 +20,7 @@ export const SLOT_STATE_BADGE: Record<SlotState, BadgeVariant> = {
 
 export const SLOT_STATE_LABEL: Record<SlotState, string> = {
   AVAILABLE: "Available",
+  PENDING: "Awaiting payment",
   RESERVED: "Reserved",
   OCCUPIED: "Occupied",
   MAINTENANCE: "Maintenance",
@@ -27,7 +29,9 @@ export const SLOT_STATE_LABEL: Record<SlotState, string> = {
 
 export const SLOT_STATE_HINT: Record<SlotState, string> = {
   AVAILABLE: "Free to book for the period you are looking at.",
-  RESERVED: "A booking is waiting to start on this bay.",
+  PENDING:
+    "The booking fee has not settled, so this bay is held for that booking's window only. It becomes Reserved once the fee is paid.",
+  RESERVED: "A paid booking is waiting to start on this bay.",
   OCCUPIED: "A vehicle is in this bay right now.",
   MAINTENANCE: "You took this bay out of service. Drivers are not shown it.",
   DISABLED: "Retired from the layout. Its past bookings stay on file.",
@@ -57,6 +61,7 @@ export const OWNER_SLOT_STATE_HELP: Record<OwnerSlotState, string> = {
 export const BOARD_STATUS_OPTIONS: { value: SlotState; label: string }[] = (
   [
     SlotState.AVAILABLE,
+    SlotState.PENDING,
     SlotState.RESERVED,
     SlotState.OCCUPIED,
     SlotState.MAINTENANCE,
@@ -78,6 +83,7 @@ export const describeCounts = (counts: SlotBoardCounts): string =>
   [
     `${counts.total} bays`,
     `${counts.available} available`,
+    counts.pending ? `${counts.pending} awaiting payment` : null,
     counts.reserved ? `${counts.reserved} reserved` : null,
     counts.occupied ? `${counts.occupied} occupied` : null,
     counts.maintenance ? `${counts.maintenance} maintenance` : null,

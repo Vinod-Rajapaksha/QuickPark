@@ -30,6 +30,7 @@ import {
   normaliseCode,
   pricingDraft,
   providerSummary,
+  toPricingInput,
   toVehicleTypeInput,
   validatePricingDraft,
   validateVehicleTypeDraft,
@@ -41,6 +42,18 @@ import {
   formatNotificationTime,
   unreadCountFor,
 } from "../../../src/features/notifications/utils/notificationUtils";
+import type { RevenueBucket, RevenueOverview } from "../../../src/features/reports/types/reportTypes";
+import {
+  ReportPeriod,
+  averageBookingValue,
+  describeWindow,
+  methodRows,
+  periodWindow,
+  previousWindow,
+  propertyRows,
+  trendPoints,
+  vehicleTypeRows,
+} from "../../../src/features/reports/utils/reportUtils";
 
 const vehicleType = (overrides: Partial<VehicleTypeOption> = {}): VehicleTypeOption => ({
   id: "vt-car",
@@ -307,6 +320,8 @@ const adminVehicleType = (
   isActive: true,
   bayLengthMeters: 5,
   bayWidthMeters: 2.5,
+  createdAt: "2026-09-01T00:00:00Z",
+  updatedAt: "2026-09-01T00:00:00Z",
   ...overrides,
 });
 
@@ -321,6 +336,8 @@ const savedPricing = (
   maximumPrice: 1500,
   commissionRate: 12,
   isActive: true,
+  createdAt: "2026-09-01T00:00:00Z",
+  updatedAt: "2026-09-01T00:00:00Z",
   ...overrides,
 });
 
@@ -463,6 +480,16 @@ describe("configuration payload formatting", () => {
     });
   });
 
+  it("send the pricing row back as numbers, keeping the active flag", () => {
+    expect(toPricingInput(adminPricing())).toEqual({
+      minimumPrice: 300,
+      maximumPrice: 1500,
+      commissionRate: 12,
+      isActive: true,
+    });
+    expect(toPricingInput(adminPricing({ isActive: false })).isActive).toBe(false);
+  });
+
   it("seed a row from the saved configuration, or an empty one when there is none", () => {
     expect(pricingDraft(savedPricing())).toEqual(adminPricing());
     expect(pricingDraft(undefined)).toEqual({
@@ -558,5 +585,235 @@ describe("notification utils", () => {
     expect(bellLabel(0)).toBe("No unread updates");
     expect(bellLabel(1)).toBe("1 unread update");
     expect(bellLabel(4)).toBe("4 unread updates");
+  });
+});
+
+// A wall-clock day: every report period is read on the owner's own calendar, then sent as UTC.
+const day = (year: number, month: number, date: number, endOfDay = false): string =>
+  (
+    endOfDay
+      ? new Date(year, month - 1, date, 23, 59, 59, 999)
+      : new Date(year, month - 1, date)
+  ).toISOString();
+
+const DAY_START = new Date(2026, 8, 28, 10, 30);
+
+describe("periodWindow", () => {
+  it("holds this month from its first midnight to its last millisecond", () => {
+    expect(periodWindow(ReportPeriod.THIS_MONTH, {}, DAY_START)).toEqual({
+      from: day(2026, 9, 1),
+      to: day(2026, 9, 30, true),
+    });
+  });
+
+  it("holds today from midnight to the end of the same day", () => {
+    expect(periodWindow(ReportPeriod.TODAY, {}, DAY_START)).toEqual({
+      from: day(2026, 9, 28),
+      to: day(2026, 9, 28, true),
+    });
+  });
+
+  it("holds last month whole, including the 31st", () => {
+    expect(periodWindow(ReportPeriod.LAST_MONTH, {}, DAY_START)).toEqual({
+      from: day(2026, 8, 1),
+      to: day(2026, 8, 31, true),
+    });
+  });
+
+  it("reads last 3 months as July, August and September", () => {
+    expect(periodWindow(ReportPeriod.LAST_3_MONTHS, {}, DAY_START)).toEqual({
+      from: day(2026, 7, 1),
+      to: day(2026, 9, 30, true),
+    });
+  });
+
+  it("starts the week on Monday and never rolls back mid-week", () => {
+    expect(periodWindow(ReportPeriod.THIS_WEEK, {}, DAY_START)).toEqual({
+      from: day(2026, 9, 28),
+      to: day(2026, 10, 4, true),
+    });
+    // Sunday 27 September still belongs to the week that opened on Monday 21 September.
+    expect(periodWindow(ReportPeriod.THIS_WEEK, {}, new Date(2026, 8, 27, 9)).from).toBe(
+      day(2026, 9, 21),
+    );
+  });
+
+  it("takes a typed range as whole days, so the last day is not cut off", () => {
+    expect(periodWindow(ReportPeriod.CUSTOM, { from: "2026-09-01", to: "2026-09-30" })).toEqual({
+      from: day(2026, 9, 1),
+      to: day(2026, 9, 30, true),
+    });
+  });
+
+  it("leaves a bound open when only one date is typed", () => {
+    expect(periodWindow(ReportPeriod.CUSTOM, { from: "2026-09-01" })).toEqual({
+      from: day(2026, 9, 1),
+      to: undefined,
+    });
+    expect(periodWindow(ReportPeriod.CUSTOM, {})).toEqual({ from: undefined, to: undefined });
+  });
+});
+
+describe("previousWindow", () => {
+  it("steps back the same number of whole days", () => {
+    expect(
+      previousWindow({ from: day(2026, 9, 1), to: day(2026, 9, 30, true) }),
+    ).toEqual({ from: day(2026, 8, 2), to: day(2026, 8, 31, true) });
+  });
+
+  it("refuses to compare a period that has no end", () => {
+    expect(previousWindow({ from: day(2026, 9, 1) })).toBeNull();
+    expect(previousWindow({})).toBeNull();
+  });
+});
+
+describe("describeWindow", () => {
+  it("names the span the figures cover", () => {
+    expect(describeWindow({})).toBe("All time");
+    expect(describeWindow({ from: day(2026, 9, 1) })).toMatch(/^From /);
+    expect(describeWindow({ to: day(2026, 9, 30, true) })).toMatch(/^Until /);
+    expect(describeWindow({ from: day(2026, 9, 1), to: day(2026, 9, 30, true) })).toContain("—");
+  });
+});
+
+const bucket = (period: string, overrides: Partial<RevenueBucket> = {}): RevenueBucket => ({
+  period,
+  amount: 0,
+  commission: 0,
+  providerAmount: 0,
+  cardAmount: 0,
+  cashAmount: 0,
+  payments: 0,
+  ...overrides,
+});
+
+describe("trendPoints", () => {
+  it("relabels a day bucket without changing its money", () => {
+    const [point] = trendPoints([bucket("2026-09-05", { amount: 1500 })]);
+    const expected = new Intl.DateTimeFormat("en-LK", {
+      day: "2-digit",
+      month: "short",
+    }).format(new Date(2026, 8, 5));
+
+    expect(point.label).toBe(expected);
+    expect(point.amount).toBe(1500);
+  });
+
+  it("relabels a month bucket, keeping the year", () => {
+    const [point] = trendPoints([bucket("2026-09")]);
+    const expected = new Intl.DateTimeFormat("en-LK", {
+      month: "short",
+      year: "numeric",
+    }).format(new Date(2026, 8, 1));
+
+    expect(point.label).toBe(expected);
+  });
+
+  it("keeps the buckets in the order the server sent them", () => {
+    expect(trendPoints([bucket("2026-09-05"), bucket("2026-09-06")]).map((p) => p.period)).toEqual(
+      ["2026-09-05", "2026-09-06"],
+    );
+  });
+});
+
+const overview = (overrides: Partial<RevenueOverview> = {}): RevenueOverview => ({
+  totalRevenue: 0,
+  totalCommission: 0,
+  totalProviderAmount: 0,
+  cashCommissionDue: 0,
+  paidPayments: 0,
+  bookingsPaid: 0,
+  cardPayments: 0,
+  cashPayments: 0,
+  failedPayments: 0,
+  cancelledPayments: 0,
+  refundedPayments: 0,
+  pendingCashConfirmations: 0,
+  byMethod: [],
+  trend: [],
+  byProperty: [],
+  byVehicleType: [],
+  ...overrides,
+});
+
+describe("averageBookingValue", () => {
+  it("divides the collection by the paid bookings", () => {
+    expect(averageBookingValue(overview({ totalRevenue: 3000, bookingsPaid: 3 }))).toBe(1000);
+  });
+
+  it("says nothing when no booking was paid", () => {
+    expect(averageBookingValue(overview({ totalRevenue: 3000 }))).toBe(0);
+  });
+
+  it("still sees one booking behind a fee and the stay it confirmed", () => {
+    // Two settled payments are Rs.100 plus Rs.700 for one car, so the booking averaged Rs.800.
+    expect(
+      averageBookingValue(overview({ totalRevenue: 800, paidPayments: 2, bookingsPaid: 1 })),
+    ).toBe(800);
+  });
+});
+
+describe("breakdown rows", () => {
+  it("maps a property row and leaves its bay hours unknown", () => {
+    expect(
+      propertyRows(
+        overview({
+          byProperty: [
+            {
+              facilityId: "f1",
+              facilityName: "Fort Clock",
+              amount: 900,
+              commission: 100,
+              providerAmount: 800,
+              payments: 4,
+            },
+          ],
+        }),
+      ),
+    ).toEqual([
+      {
+        id: "f1",
+        name: "Fort Clock",
+        amount: 900,
+        commission: 100,
+        providerAmount: 800,
+        payments: 4,
+        bookedHours: null,
+      },
+    ]);
+  });
+
+  it("carries the booked hours of a vehicle category", () => {
+    const [row] = vehicleTypeRows(
+      overview({
+        byVehicleType: [
+          {
+            vehicleTypeId: "vt1",
+            vehicleTypeName: "SUV",
+            amount: 500,
+            commission: 50,
+            providerAmount: 450,
+            payments: 2,
+            bookedHours: 7,
+          },
+        ],
+      }),
+    );
+
+    expect(row.name).toBe("SUV");
+    expect(row.bookedHours).toBe(7);
+  });
+
+  it("words a payment method the same way the page does", () => {
+    const rows = methodRows(
+      overview({
+        byMethod: [
+          { paymentMethod: "CARD", amount: 1, commission: 0, providerAmount: 1, payments: 1 },
+          { paymentMethod: "CASH", amount: 2, commission: 0, providerAmount: 2, payments: 2 },
+        ],
+      }),
+    );
+
+    expect(rows.map((row) => row.name)).toEqual(["Card", "Cash"]);
   });
 });

@@ -21,6 +21,9 @@ public class PaymentResponse
     public string Status { get; set; } = string.Empty;
     public string ReservationStatus { get; set; } = string.Empty;
 
+    // BOOKING_FEE or PARKING_CHARGE: which half of the booking's money this row is.
+    public string PaymentStage { get; set; } = string.Empty;
+
     public decimal? CommissionRate { get; set; }
     public decimal? CommissionAmount { get; set; }
     public decimal? ProviderAmount { get; set; }
