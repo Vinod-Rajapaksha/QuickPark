@@ -39,7 +39,6 @@ import ReservationsPage from "../../pages/admin/ReservationsPage";
 import StaffManagementPage from "../../pages/admin/StaffManagementPage";
 import AgentMonitoringPage from "../../pages/admin/AgentMonitoringPage";
 import PaymentsPage from "../../pages/admin/PaymentsPage";
-import ProviderApprovalPage from "../../pages/admin/ProviderApprovalPage";
 import ParkingFacilitiesPage from "../../pages/admin/ParkingFacilitiesPage";
 import FacilityReviewPage from "../../pages/admin/FacilityReviewPage";
 import FeedbackManagementPage from "../../pages/admin/FeedbackManagementPage";
@@ -205,11 +204,7 @@ export const router = createBrowserRouter([
                 path: ROUTES.ADMIN_PROPERTY_DETAILS_PATTERN,
                 element: <FacilityReviewPage />,
               },
-              { path: ROUTES.ADMIN_PROVIDERS, element: <ProvidersPage /> },
-              {
-                path: ROUTES.ADMIN_PROVIDER_APPROVALS,
-                element: <ProviderApprovalPage />,
-              },
+              { path: ROUTES.ADMIN_PROVIDER_APPROVALS, element: <ProvidersPage /> },
               { path: ROUTES.ADMIN_COMMISSION, element: <CommissionPage /> },
               { path: ROUTES.ADMIN_ANALYTICS, element: <AnalyticsPage /> },
               { path: ROUTES.ADMIN_REPORTS, element: <ReportsPage /> },
