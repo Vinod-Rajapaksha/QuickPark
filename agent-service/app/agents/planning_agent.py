@@ -1,5 +1,27 @@
 from app.models.agent_step import AgentStep
 from app.models.agent_workflow import AgentWorkflow
+from app.models.chat import ChatMessage
+from app.config.settings import settings
+import logging
+from typing import List, Optional, Dict, Any
+
+from google import genai
+from google.genai import types as genai_types
+
+logger = logging.getLogger(__name__)
+
+GEMINI_MODEL = settings.GEMINI_MODEL
+SYSTEM_INSTRUCTION = (
+    "You are QuickPark's intelligent parking assistant. Your job is to help drivers find the perfect "
+    "parking spot, check availability, calculate prices, and make reservations. \n\n"
+    "Guidelines:\n"
+    "1. Be concise, polite, and highly professional.\n"
+    "2. If you do not have enough information to find parking (e.g., location, vehicle type), ask for it clearly.\n"
+    "3. Never make up prices, distances, or parking facility names. If you don't know, inform the user.\n"
+    "4. Do not offer services outside the scope of parking, such as driving directions or general knowledge.\n"
+    "5. Keep responses short and directly address the user's request.\n"
+    "6. Format lists properly. Always use new lines to separate numbered or bulleted items for readability."
+)
 
 ALLOWED_AGENTS = {
     "parking_demand_agent",
@@ -20,9 +42,94 @@ ALLOWED_TOOLS = {
 class PlanningError(Exception):
     pass
 
+reservation_tool = genai_types.Tool(
+    function_declarations=[
+        genai_types.FunctionDeclaration(
+            name="request_reservation_approval",
+            description="Call this function when the user explicitly wants to book or reserve a parking spot. Do not call this if they are just asking for recommendations.",
+            parameters=genai_types.Schema(
+                type="OBJECT",
+                properties={
+                    "facility_id": genai_types.Schema(type="STRING", description="UUID of the facility to book"),
+                    "facility_name": genai_types.Schema(type="STRING", description="Name of the facility"),
+                    "start_time": genai_types.Schema(type="STRING", description="ISO format start time"),
+                    "end_time": genai_types.Schema(type="STRING", description="ISO format end time"),
+                    "vehicle_type": genai_types.Schema(type="STRING", description="Type of vehicle (e.g., CAR, MOTORCYCLE)"),
+                    "estimated_price": genai_types.Schema(type="NUMBER", description="Estimated price in LKR"),
+                },
+                required=["facility_id", "facility_name", "start_time", "end_time", "vehicle_type", "estimated_price"]
+            )
+        )
+    ]
+)
+
 class PlanningAgent:
-    def __init__(self):
-        pass
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or settings.GOOGLE_API_KEY
+        if not self.api_key:
+            logger.warning("Google API Key not set. Conversational features might fail.")
+        self.client = genai.Client(api_key=self.api_key) if self.api_key else None
+        self.model_name = GEMINI_MODEL
+
+    def process_message(self, user_message: str, history: List[ChatMessage], context: dict = None) -> Dict[str, Any]:
+        """
+        Processes a user message and returns a dict with the AI response and potential actions.
+        """
+        from app.utils.api_key_manager import api_key_manager
+        if not api_key_manager.get_all_keys():
+            return {"text": "System Error: AI service is currently unavailable.", "action_type": None, "action_payload": None}
+        contents = []
+        MAX_HISTORY = 4
+        recent_history = history[-MAX_HISTORY:] if len(history) > MAX_HISTORY else history
+        
+        for msg in recent_history:
+            role = "user" if msg.role == "user" else "model"
+            contents.append(
+                genai_types.Content(role=role, parts=[genai_types.Part.from_text(msg.content)])
+            )
+            
+        context_str = ""
+        if context:
+            context_str = f"[System Context: User Location ({context.get('location_lat', 'Unknown')}, {context.get('location_lng', 'Unknown')})] "
+            
+        final_message = f"{context_str}{user_message}"
+
+        contents.append(
+            genai_types.Content(role="user", parts=[genai_types.Part.from_text(final_message)])
+        )
+
+        try:
+            def api_call(client):
+                return client.models.generate_content(
+                    model=self.model_name,
+                    contents=contents,
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=SYSTEM_INSTRUCTION,
+                        temperature=0.3,
+                        max_output_tokens=300,
+                        tools=[reservation_tool]
+                    ),
+                )
+            
+            from app.utils.api_executor import execute_with_api_key_rotation
+            response = execute_with_api_key_rotation(api_call)
+            
+            # Check for function calls
+            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if part.function_call:
+                        call = part.function_call
+                        if call.name == "request_reservation_approval":
+                            return {
+                                "text": "I can help with that! Please review and confirm your reservation details below.",
+                                "action_type": "reservation_approval",
+                                "action_payload": call.args
+                            }
+                    
+            return {"text": response.text, "action_type": None, "action_payload": None}
+        except Exception as e:
+            logger.error(f"Error in PlanningAgent processing chat: {e}")
+            return {"text": "Sorry, I encountered an error while processing your request. Please try again.", "action_type": None, "action_payload": None}
 
     def create_plan(self, objective: str) -> AgentWorkflow:
         steps = []

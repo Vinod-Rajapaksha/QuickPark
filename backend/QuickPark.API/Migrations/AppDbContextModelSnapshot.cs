@@ -595,6 +595,66 @@ namespace QuickPark.API.Migrations
                     b.ToTable("ParkingSlots");
                 });
 
+            modelBuilder.Entity("QuickPark.API.Models.ParkingStaff", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("CanCheckInVehicle")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanCheckOutVehicle")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanManageReservations")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanManageStaff")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanViewReports")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FacilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("ProviderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FacilityId");
+
+                    b.HasIndex("ProviderId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ParkingStaff", (string)null);
+                });
+
             modelBuilder.Entity("QuickPark.API.Models.Payment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -669,6 +729,12 @@ namespace QuickPark.API.Migrations
 
                     b.Property<Guid>("ReservationId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PARKING_CHARGE");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -808,6 +874,12 @@ namespace QuickPark.API.Migrations
                     b.Property<int>("Hours")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsAgentBooking")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsApprovedByProvider")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("ProviderAmount")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
@@ -855,12 +927,6 @@ namespace QuickPark.API.Migrations
                     b.HasIndex("VehicleTypeId");
 
                     b.HasIndex("Status", "StartTime");
-                    
-                    b.HasIndex("DriverId", "StartTime");
-
-                    b.HasIndex("FacilityId", "Status", "StartTime");
-
-                    b.HasIndex("SlotId", "StartTime", "EndTime");
 
                     b.ToTable("Reservations", (string)null);
                 });
@@ -1147,6 +1213,33 @@ namespace QuickPark.API.Migrations
                     b.Navigation("Facility");
 
                     b.Navigation("VehicleType");
+                });
+
+            modelBuilder.Entity("QuickPark.API.Models.ParkingStaff", b =>
+                {
+                    b.HasOne("QuickPark.API.Models.ParkingFacility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QuickPark.API.Models.ParkingProvider", "Provider")
+                        .WithMany()
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QuickPark.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Facility");
+
+                    b.Navigation("Provider");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("QuickPark.API.Models.Payment", b =>

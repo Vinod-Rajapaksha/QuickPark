@@ -146,10 +146,15 @@ export interface CoordinateInput {
 }
 
 export interface ParkingLocationFilter extends Partial<CoordinateInput> {
+  // Partial, case-insensitive match on the attributes
+  name?: string;
   province?: string;
   district?: string;
-  // Only meaningful with a reference point; the server sorts by distance when it gets one.
+  city?: string;
   radiusKm?: number;
+  hasEvCharging?: boolean;
+  minHourlyRate?: number;
+  maxHourlyRate?: number;
 }
 
 // One row of the owner's slot layout; saving the list regenerates the slots. Bay size and commission are stamped server-side.

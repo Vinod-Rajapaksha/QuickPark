@@ -107,6 +107,9 @@ export const ParkingListPage: React.FC = () => {
               onOpenSlots={(target) =>
                 navigate(ROUTES.facilitySlotsPath(target.facilityId))
               }
+              onOpenRevenue={(target) =>
+                navigate(ROUTES.facilityRevenuePath(target.facilityId))
+              }
               onSaveHours={async (input) =>
                 (await update(facility.facilityId, input)) !== null
               }

@@ -1,4 +1,3 @@
-// Mirrors the API's ReservationResponse. The gate columns are what the action buttons read.
 export interface Reservation {
   reservationId: string;
   driverId: string;
@@ -22,8 +21,9 @@ export interface Reservation {
   commissionRate: number;
   commissionAmount: number;
   providerAmount: number;
-  // Server sends the ReservationStatus name; a bad value simply offers no gate action.
   status: string;
+  isApprovedByProvider: boolean;
+  isAgentBooking: boolean;
   checkedInAt: string | null;
   checkedOutAt: string | null;
   cancelReason: string | null;
@@ -33,10 +33,9 @@ export interface Reservation {
   updatedAt: string;
 }
 
-export type BookingGateAction = "CONFIRM" | "CHECK_IN" | "CHECK_OUT" | "NO_SHOW";
+export type BookingGateAction =
+  "CONFIRM" | "CHECK_IN" | "CHECK_OUT" | "NO_SHOW";
 
-// Mirrors the API's CreateReservationRequest. The driver is never named here: the server reads the
-// account from the access token. Leaving slotId empty lets the server assign the lowest free bay.
 export interface CreateReservationInput {
   facilityId: string;
   vehicleTypeId: string;
@@ -45,8 +44,6 @@ export interface CreateReservationInput {
   endTime: string;
 }
 
-// Mirrors the API's SlotResponse for GET /api/parkingFacilities/{id}/slots, which answers only for
-// an approved property and needs both from and to (or neither) to judge a period.
 export interface DriverSlot {
   slotId: string;
   facilityId: string;
@@ -54,7 +51,6 @@ export interface DriverSlot {
   vehicleTypeId: string;
   vehicleTypeName: string;
   bayLabel: string;
-  // What the owner set: AVAILABLE, MAINTENANCE or DISABLED.
   status: string;
   availableForPeriod: boolean;
   hourlyRate: number;

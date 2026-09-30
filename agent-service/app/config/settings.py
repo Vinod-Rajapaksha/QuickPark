@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     AGENT_SERVICE_PORT: int
     BACKEND_API_URL: str
     GOOGLE_API_KEY: Optional[str] = None
+    CORS_ORIGINS: str
+    GEMINI_MODEL: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

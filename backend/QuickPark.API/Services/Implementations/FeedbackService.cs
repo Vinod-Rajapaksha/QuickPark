@@ -637,6 +637,53 @@ public class FeedbackService : IFeedbackService
             .ToListAsync();
     }
 
+    public async Task<List<FeedbackResponse>> GetHiddenAsync()
+    {
+        return await _context.Feedbacks
+            .Where(x =>
+                x.Type == FeedbackType.SYSTEM &&
+                x.Status == FeedbackStatus.HIDDEN)
+
+            .Include(x => x.User)
+            .Include(x => x.Keywords)
+            .Include(x => x.Replies)
+
+            .OrderByDescending(x => x.CreatedAt)
+
+            .Select(x => new FeedbackResponse
+            {
+                Id = x.Id,
+                UserName = x.User != null
+                    ? x.User.FullName
+                    : "Unknown User",
+                Type = x.Type,
+                ParkingId = x.ParkingId,
+                ReservationId = x.ReservationId,
+                Rating = x.Rating,
+                Comment = x.Comment,
+                Status = x.Status,
+
+                Keywords = x.Keywords
+                    .Select(k => k.Keyword)
+                    .ToList(),
+
+                Replies = x.Replies
+                    .Select(r => new FeedbackReplyResponse
+                    {
+                        Id = r.Id,
+                        RepliedByUserId = r.RepliedByUserId,
+                        Role = r.ReplierRole,
+                        Message = r.Message,
+                        CreatedAt = r.CreatedAt
+                    })
+                    .ToList(),
+
+                CreatedAt = x.CreatedAt,
+                UpdatedAt = x.UpdatedAt
+            })
+            .ToListAsync();
+    }
+
     public async Task<List<FeedbackReportResponse>>
         GetReportsAsync()
     {
@@ -687,10 +734,7 @@ public class FeedbackService : IFeedbackService
                 "Feedback not found.");
         }
 
-        feedback.Status =
-            feedback.Type == FeedbackType.SYSTEM
-                ? FeedbackStatus.PENDING_APPROVAL
-                : FeedbackStatus.ACTIVE;
+        feedback.Status = FeedbackStatus.ACTIVE;
 
         feedback.ModeratedBy = null;
 

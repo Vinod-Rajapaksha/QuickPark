@@ -303,6 +303,20 @@ public partial class ParkingService : IParkingService
         Guid providerUserId, Guid? facilityId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default)
     {
+        var staff =
+            await _context.ParkingStaff
+            .FirstOrDefaultAsync(
+                x =>
+                x.UserId == providerUserId &&
+                x.IsActive,
+                ct);
+
+
+        if (staff != null && !staff.CanManageReservations)
+        {
+            throw new UnauthorizedAccessException(
+                "Staff member does not have reservation management permission.");
+        }
         var provider = await _context.ParkingProviders.FirstOrDefaultAsync(p => p.UserId == providerUserId, ct)
             ?? throw new UnauthorizedAccessException("You can only manage your own parking properties.");
 
@@ -339,6 +353,13 @@ public partial class ParkingService : IParkingService
             throw new InvalidOperationException($"This reservation is already {reservation.Status.ToString().ToLowerInvariant()}.");
         }
 
+        // Cancelling releases the bay, and a bay with a car in it is only ever freed by a checkout.
+        if (reservation.Status == ReservationStatus.CHECKED_IN)
+        {
+            throw new InvalidOperationException(
+                "A vehicle is in the bay, so this booking can only be ended by checking the driver out.");
+        }
+
         if (isDriver && reservation.StartTime <= now)
         {
             throw new InvalidOperationException("This reservation has already started and can no longer be cancelled.");
@@ -367,11 +388,37 @@ public partial class ParkingService : IParkingService
             ?? throw new KeyNotFoundException("Reservation not found.");
     }
 
-    // The driver is at the gate, so only the owner of the property the booking was made at can let them in.
-    public async Task<ReservationResponse> CheckInAsync(
+    public async Task<ReservationResponse> ApproveReservationAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct = default)
     {
         var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+
+        if (reservation.Status != ReservationStatus.PENDING)
+        {
+            throw new InvalidOperationException($"Cannot approve a reservation that is {reservation.Status.ToString().ToLowerInvariant()}.");
+        }
+
+        reservation.IsApprovedByProvider = true;
+        reservation.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+
+        return MapToReservation(reservation);
+    }
+
+    public async Task SendProviderMessageAsync(
+        Guid providerUserId, Guid reservationId, string message, CancellationToken ct = default)
+    {
+        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+
+        await Task.CompletedTask;
+    }
+
+    public async Task<ReservationResponse> CheckInAsync(
+        Guid userId, Guid reservationId, CancellationToken ct = default)
+    {
+        var reservation = await LoadReservationForGateActionAsync(userId, reservationId, true, ct);
 
         EnsureCanMove(reservation.Status, ReservationStatus.CHECKED_IN);
 
@@ -387,9 +434,9 @@ public partial class ParkingService : IParkingService
     }
 
     public async Task<ReservationResponse> CheckOutAsync(
-        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+        Guid userId, Guid reservationId, CancellationToken ct = default)
     {
-        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+        var reservation = await LoadReservationForGateActionAsync(userId, reservationId, false, ct);
 
         EnsureCanMove(reservation.Status, ReservationStatus.CHECKED_OUT);
 
@@ -404,7 +451,6 @@ public partial class ParkingService : IParkingService
             ?? throw new KeyNotFoundException("Reservation not found.");
     }
 
-    // Loads the booking behind the owner check, so no gate path can authorize from the caller's id alone.
     private async Task<Reservation> LoadProviderReservationAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct)
     {
@@ -414,8 +460,6 @@ public partial class ParkingService : IParkingService
             .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
 
-        // Checked against the property rather than the ProviderId copied onto the booking, so a
-        // transferred property cannot leave a booking gateable by its previous owner.
         await EnsureFacilityBelongsToProviderAsync(provider, reservation.FacilityId, ct);
 
         return reservation;
@@ -637,9 +681,8 @@ public partial class ParkingService : IParkingService
 
         var heldSlotIds = layoutChanged
             ? (await _context.Set<Reservation>()
-                .Where(r => r.FacilityId == facility.Id &&
-                            (r.Status == ReservationStatus.PENDING || r.Status == ReservationStatus.CONFIRMED) &&
-                            r.EndTime > now)
+                .Where(r => r.FacilityId == facility.Id)
+                .Where(HoldsSlot(now, DateTime.MaxValue))
                 .Select(r => r.SlotId)
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();
@@ -747,6 +790,7 @@ public partial class ParkingService : IParkingService
         return slots.Select(s =>
         {
             var isBusy = busy.TryGetValue(s.Id, out var window);
+            var effective = EffectiveSlotStatus(s.Status, isBusy ? window!.Status : (ReservationStatus?)null);
 
             return new SlotResponse
             {
@@ -757,10 +801,11 @@ public partial class ParkingService : IParkingService
                 VehicleTypeName = s.VehicleType?.Name ?? string.Empty,
                 BayLabel = BayLabel(s.BayLengthMeters, s.BayWidthMeters),
                 Status = s.Status.ToString(),
+                EffectiveStatus = effective,
                 HourlyRate = rates.TryGetValue(s.VehicleTypeId, out var rate) ? rate : 0m,
-                AvailableForPeriod = s.Status == SlotStatus.AVAILABLE && !isBusy,
-                BusyFrom = isBusy ? window.Start : null,
-                BusyUntil = isBusy ? window.End : null
+                AvailableForPeriod = effective == nameof(SlotStatus.AVAILABLE),
+                BusyFrom = isBusy ? window!.Start : null,
+                BusyUntil = isBusy ? window!.End : null
             };
         }).ToList();
     }
@@ -1130,6 +1175,65 @@ public partial class ParkingService : IParkingService
         await ReapplyVehicleTypeConfigurationAsync(vehicleType, null, ct);
 
         await _context.SaveChangesAsync(ct);
+    }
+
+    private async Task<Reservation> LoadReservationForGateActionAsync(
+    Guid userId,
+    Guid reservationId,
+     bool isCheckIn,
+    CancellationToken ct)
+    {
+        var reservation =
+            await _context.Reservations
+            .FirstOrDefaultAsync(
+                x => x.Id == reservationId,
+                ct)
+            ??
+            throw new KeyNotFoundException(
+                "Reservation not found.");
+
+        var provider =
+            await _context.ParkingProviders
+            .FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                ct);
+
+        if (provider != null)
+        {
+
+            if (reservation.ProviderId == provider.Id)
+                return reservation;
+
+        }
+
+        var staff =
+            await _context.ParkingStaff
+            .FirstOrDefaultAsync(
+                x =>
+                x.UserId == userId &&
+                x.FacilityId == reservation.FacilityId &&
+                x.IsActive,
+                ct);
+
+        if (staff == null)
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have access to this parking facility.");
+        }
+
+        if (isCheckIn && !staff.CanCheckInVehicle)
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to check-in vehicles.");
+        }
+
+        if (!isCheckIn && !staff.CanCheckOutVehicle)
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to check-out vehicles.");
+        }
+
+        return reservation;
     }
 
     private const int MaxRejectionReasonLength = 500;

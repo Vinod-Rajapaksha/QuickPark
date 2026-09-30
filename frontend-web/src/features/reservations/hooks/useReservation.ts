@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { parkingApi } from "../../parking/api/parkingApi";
 import type { ParkingFacility } from "../../parking/types/parkingTypes";
 import { getApiErrorMessage } from "../../parking/utils/parkingUtils";
@@ -6,23 +7,17 @@ import { reservationApi } from "../api/reservationApi";
 import type { DriverSlot, Reservation } from "../types/reservationTypes";
 import { bookingHours, defaultStartValue } from "../utils/reservationUtils";
 
-// A datetime-local control yields wall-clock text, and the server reads a time with no offset as
-// UTC. Resolving the offset here keeps the instant the driver meant.
 export const toUtcInstant = (wallClock: string): string | null => {
   const parsed = new Date(wallClock);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 };
 
-// Answers are stamped with the period they were read for, so a slow reply about bays that have
-// since been taken can never stand in for the newest one.
 interface SlotResult {
   key: string;
   slots: DriverSlot[];
   error: string | null;
 }
 
-// One booking attempt against one property: the property's own priced vehicle types, the bays free
-// for the chosen period, and the create call itself.
 export const useReservationBooking = (facilityId: string) => {
   const [facility, setFacility] = useState<ParkingFacility | null>(null);
   const [facilityError, setFacilityError] = useState<string | null>(null);
@@ -40,22 +35,23 @@ export const useReservationBooking = (facilityId: string) => {
     if (!facilityId) return;
     let cancelled = false;
 
-    parkingApi
-      .getApprovedFacility(facilityId)
-      .then(
-        (data) => {
-          if (cancelled) return;
-          setFacility(data);
-          setFacilityError(null);
-          // A driver starts from the first type the property sells.
-          setVehicleTypeId((current) => current || data.allocations[0]?.vehicleTypeId || "");
-        },
-        (err: unknown) => {
-          if (!cancelled) {
-            setFacilityError(getApiErrorMessage(err, "Could not load that property."));
-          }
-        },
-      );
+    parkingApi.getApprovedFacility(facilityId).then(
+      (data) => {
+        if (cancelled) return;
+        setFacility(data);
+        setFacilityError(null);
+        setVehicleTypeId(
+          (current) => current || data.allocations[0]?.vehicleTypeId || "",
+        );
+      },
+      (err: unknown) => {
+        if (!cancelled) {
+          setFacilityError(
+            getApiErrorMessage(err, "Could not load that property."),
+          );
+        }
+      },
+    );
 
     return () => {
       cancelled = true;
@@ -64,7 +60,9 @@ export const useReservationBooking = (facilityId: string) => {
 
   const from = useMemo(() => toUtcInstant(startTime), [startTime]);
   const to = useMemo(() => toUtcInstant(endTime), [endTime]);
-  const windowIsValid = Boolean(from && to && Date.parse(to) > Date.parse(from));
+  const windowIsValid = Boolean(
+    from && to && Date.parse(to) > Date.parse(from),
+  );
 
   const requestKey =
     facilityId && vehicleTypeId && windowIsValid && from && to
@@ -77,14 +75,18 @@ export const useReservationBooking = (facilityId: string) => {
 
     reservationApi.getAvailableSlots(facilityId, vehicleTypeId, from, to).then(
       (data) => {
-        if (!cancelled) setSlotResult({ key: requestKey, slots: data, error: null });
+        if (!cancelled)
+          setSlotResult({ key: requestKey, slots: data, error: null });
       },
       (err: unknown) => {
         if (!cancelled) {
           setSlotResult({
             key: requestKey,
             slots: [],
-            error: getApiErrorMessage(err, "Could not check the bays for that period."),
+            error: getApiErrorMessage(
+              err,
+              "Could not check the bays for that period.",
+            ),
           });
         }
       },
@@ -95,13 +97,11 @@ export const useReservationBooking = (facilityId: string) => {
     };
   }, [requestKey, facilityId, vehicleTypeId, from, to]);
 
-  const settled = slotResult && slotResult.key === requestKey ? slotResult : null;
+  const settled =
+    slotResult && slotResult.key === requestKey ? slotResult : null;
   const slots = settled?.slots ?? [];
   const slotsError = settled?.error ?? null;
   const slotsLoading = requestKey !== "" && settled === null;
-
-  // A bay chosen for an earlier period may have been taken by the time this one is checked. The
-  // server decides for real when the booking is made; this only stops the driver being misled.
   const pickedSlot = slots.find((slot) => slot.slotId === slotId) ?? null;
   const slotNotice =
     pickedSlot && !pickedSlot.availableForPeriod
@@ -109,7 +109,10 @@ export const useReservationBooking = (facilityId: string) => {
       : null;
 
   const allocation = useMemo(
-    () => facility?.allocations.find((item) => item.vehicleTypeId === vehicleTypeId) ?? null,
+    () =>
+      facility?.allocations.find(
+        (item) => item.vehicleTypeId === vehicleTypeId,
+      ) ?? null,
     [facility, vehicleTypeId],
   );
 
@@ -133,7 +136,9 @@ export const useReservationBooking = (facilityId: string) => {
         endTime: to,
       });
     } catch (err) {
-      setSubmitError(getApiErrorMessage(err, "Could not create the reservation."));
+      setSubmitError(
+        getApiErrorMessage(err, "Could not create the reservation."),
+      );
       return null;
     } finally {
       setIsSubmitting(false);
@@ -166,4 +171,11 @@ export const useReservationBooking = (facilityId: string) => {
   };
 };
 
-export default useReservationBooking;
+export function useReservation(id?: string) {
+  return useQuery({
+    queryKey: [...["reservation"], id],
+    queryFn: () =>
+      id ? reservationApi.getById(id) : Promise.reject("No ID provided"),
+    enabled: !!id,
+  });
+}

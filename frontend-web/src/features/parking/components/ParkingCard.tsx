@@ -21,6 +21,7 @@ interface ParkingCardProps {
   vehicleTypes?: VehicleTypeOption[];
   onOpenSetup?: (facility: ParkingFacility) => void;
   onOpenSlots?: (facility: ParkingFacility) => void;
+  onOpenRevenue?: (facility: ParkingFacility) => void;
   onSaveHours?: (input: ParkingInput) => Promise<boolean>;
   onSaveRates?: (allocations: AllocationInput[]) => Promise<boolean>;
   onDelete?: (facility: ParkingFacility) => void;
@@ -31,6 +32,7 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
   vehicleTypes = [],
   onOpenSetup,
   onOpenSlots,
+  onOpenRevenue,
   onSaveHours,
   onSaveRates,
   onDelete,
@@ -114,7 +116,7 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
         />
       )}
 
-      {(onOpenSetup || onOpenSlots || (canDelete && onDelete)) && (
+      {(onOpenSetup || onOpenSlots || onOpenRevenue || (canDelete && onDelete)) && (
         <div className="mt-4 flex flex-wrap gap-2">
           {onOpenSetup && (
             <Button
@@ -138,6 +140,16 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
               onClick={() => onOpenSlots(facility)}
             >
               Bays & bookings
+            </Button>
+          )}
+          {onOpenRevenue && facility.slotCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenRevenue(facility)}
+            >
+              Revenue
             </Button>
           )}
           {canDelete && onDelete && (

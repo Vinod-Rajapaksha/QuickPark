@@ -14,6 +14,7 @@ import { toApiInstant } from "../utils/parkingSlotUtils";
 const EMPTY_COUNTS: SlotBoardCounts = {
   total: 0,
   available: 0,
+  pending: 0,
   reserved: 0,
   occupied: 0,
   maintenance: 0,
@@ -21,7 +22,6 @@ const EMPTY_COUNTS: SlotBoardCounts = {
   byVehicleType: [],
 };
 
-// Draft filters are held apart from the sent ones so a dropdown change does not fire a request.
 export const useParkingSlots = (facilityId: string | undefined) => {
   const [board, setBoard] = useState<SlotBoard | null>(null);
   const [draft, setDraft] = useState<SlotBoardFilter>({});
@@ -82,7 +82,6 @@ export const useParkingSlots = (facilityId: string | undefined) => {
     setSent({});
   }, []);
 
-  // One bay opened from the board, with what holds it and what waits for it.
   const openSlot = useCallback(async (slotId: string) => {
     setDetailsSlotId(slotId);
     setIsLoadingDetails(true);
@@ -103,7 +102,6 @@ export const useParkingSlots = (facilityId: string | undefined) => {
     setDetails(null);
   }, []);
 
-  // Maintenance, retire or restore; the server's refusal names the bays in the way.
   const changeStatus = useCallback(
     async (slotId: string, input: SlotStatusInput): Promise<boolean> => {
       setIsSaving(true);

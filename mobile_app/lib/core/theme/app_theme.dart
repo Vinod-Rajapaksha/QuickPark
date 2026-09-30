@@ -88,6 +88,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: ColorPalette.error),
         ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: ColorPalette.error, width: 2),
+        ),
       ),
       cardTheme: CardThemeData(
         color: ColorPalette.surfaceLight,
