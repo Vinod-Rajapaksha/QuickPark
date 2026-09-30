@@ -405,23 +405,18 @@ public partial class ParkingService
                 x => x.Id == slotId,
                 ct);
 
-
         if (slot == null)
         {
             throw new KeyNotFoundException(
                 "Parking slot not found.");
         }
 
-
         var facility = slot.Facility;
 
-
-        // Provider access
         var provider = await _context.ParkingProviders
             .FirstOrDefaultAsync(
                 x => x.UserId == userId,
                 ct);
-
 
         if (provider != null &&
             facility.ProviderId == provider.Id)
@@ -429,9 +424,6 @@ public partial class ParkingService
             return (facility, slot);
         }
 
-
-
-        // Staff access
         var staff = await _context.ParkingStaff
             .FirstOrDefaultAsync(
                 x =>
@@ -440,14 +432,10 @@ public partial class ParkingService
                 x.IsActive,
                 ct);
 
-
-
         if (staff != null)
         {
             return (facility, slot);
         }
-
-
 
         throw new UnauthorizedAccessException(
             "You do not have access to manage slots in this branch.");
