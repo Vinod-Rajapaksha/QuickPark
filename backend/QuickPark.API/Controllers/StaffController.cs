@@ -3,18 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using QuickPark.API.Services.Interfaces;
 using QuickPark.API.Helpers;
 
-
 namespace QuickPark.API.Controllers;
-
 
 [ApiController]
 [Route("api/staff")]
 [Authorize(Roles = "PARKING_STAFF")]
 public class StaffController : ControllerBase
 {
-
     private readonly IStaffService _staffService;
-
 
     public StaffController(
         IStaffService staffService)
@@ -22,9 +18,6 @@ public class StaffController : ControllerBase
         _staffService = staffService;
     }
 
-
-
-    // Staff dashboard profile
     [HttpGet("me")]
     public async Task<IActionResult> GetProfile()
     {
@@ -32,16 +25,11 @@ public class StaffController : ControllerBase
         if (!this.TryGetUserId(out var userId))
             return Unauthorized();
 
-
-
         var profile =
             await _staffService.GetMyProfileAsync(userId);
 
-
-
         if (profile == null)
             return NotFound();
-
 
         return Ok(profile);
 
@@ -54,7 +42,6 @@ public class StaffController : ControllerBase
 
         if (!this.TryGetUserId(out var userId))
             return Unauthorized();
-
 
         return Ok(
             await _staffService

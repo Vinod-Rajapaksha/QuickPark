@@ -8,9 +8,7 @@ public class StaffDashboardResponse
 
     public string FacilityName { get; set; } = string.Empty;
 
-
     public string StaffType { get; set; } = string.Empty;
-
 
     public bool CanManageReservations { get; set; }
 
@@ -18,9 +16,7 @@ public class StaffDashboardResponse
 
     public bool CanCheckOutVehicle { get; set; }
 
-
     public int TodayReservationCount { get; set; }
-
 
     public int TotalSlots { get; set; }
 

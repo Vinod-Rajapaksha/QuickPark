@@ -1,4 +1,3 @@
-
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -61,7 +60,6 @@ public class ReservationsController : ControllerBase
         }
     }
 
-    // Parking Owner booking list, optionally narrowed to one property.
     [HttpGet("provider")]
     [Authorize(Roles = OwnerRole + "," + StaffRole)]
     public async Task<IActionResult> GetProviderReservations(

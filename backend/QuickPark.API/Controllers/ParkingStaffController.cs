@@ -4,18 +4,14 @@ using QuickPark.API.DTOs.Staff;
 using QuickPark.API.Services.Interfaces;
 using QuickPark.API.Helpers;
 
-
 namespace QuickPark.API.Controllers;
-
 
 [ApiController]
 [Route("api/provider/staff")]
 [Authorize(Roles = "PARKING_OWNER")]
 public class ProviderStaffController : ControllerBase
 {
-
     private readonly IStaffService _staffService;
-
 
     public ProviderStaffController(
         IStaffService staffService)
@@ -23,9 +19,6 @@ public class ProviderStaffController : ControllerBase
         _staffService = staffService;
     }
 
-
-
-    // Provider creates staff and assigns branch
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateStaffRequest request)
@@ -33,16 +26,12 @@ public class ProviderStaffController : ControllerBase
 
         if (!this.TryGetUserId(out var userId))
             return Unauthorized();
-
-
         try
         {
-
             var result =
                 await _staffService.CreateStaffAsync(
                     userId,
                     request);
-
 
             return StatusCode(
                 StatusCodes.Status201Created,
@@ -59,25 +48,16 @@ public class ProviderStaffController : ControllerBase
 
     }
 
-
-
-
-    // Provider views all branches staff
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
 
         if (!this.TryGetUserId(out var userId))
             return Unauthorized();
-
-
-
         try
         {
-
             return Ok(
                 await _staffService.GetProviderStaffAsync(userId));
-
         }
         catch (Exception ex)
         {
@@ -89,10 +69,6 @@ public class ProviderStaffController : ControllerBase
 
     }
 
-
-
-
-    // Activate / deactivate staff
     [HttpPatch("{staffId:guid}/status")]
     public async Task<IActionResult> UpdateStatus(
         Guid staffId,
@@ -101,18 +77,12 @@ public class ProviderStaffController : ControllerBase
 
         if (!this.TryGetUserId(out var userId))
             return Unauthorized();
-
-
-
         try
         {
-
             await _staffService.UpdateStatusAsync(
                 userId,
                 staffId,
                 request.IsActive);
-
-
 
             return Ok(new
             {
@@ -130,10 +100,6 @@ public class ProviderStaffController : ControllerBase
 
     }
 
-
-
-
-    // Move staff to another branch
     [HttpPatch("{staffId:guid}/assignment")]
     public async Task<IActionResult> UpdateAssignment(
         Guid staffId,
@@ -142,18 +108,12 @@ public class ProviderStaffController : ControllerBase
 
         if (!this.TryGetUserId(out var userId))
             return Unauthorized();
-
-
-
         try
         {
-
             await _staffService.UpdateAssignmentAsync(
                 userId,
                 staffId,
                 request.FacilityId);
-
-
 
             return Ok(new
             {

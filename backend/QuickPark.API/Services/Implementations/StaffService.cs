@@ -5,33 +5,24 @@ using QuickPark.API.Models;
 using QuickPark.API.Services.Interfaces;
 using QuickPark.API.Enums;
 
-
 namespace QuickPark.API.Services.Implementations;
-
 
 public class StaffService : IStaffService
 {
-
     private readonly AppDbContext _context;
-
 
     public StaffService(AppDbContext context)
     {
         _context = context;
     }
 
-
-
     public async Task<StaffResponse> CreateStaffAsync(
         Guid providerUserId,
         CreateStaffRequest request)
     {
-
         var provider = await _context.ParkingProviders
             .FirstOrDefaultAsync(x => x.UserId == providerUserId)
             ?? throw new Exception("Provider account not found.");
-
-
 
         var facility = await _context.ParkingFacilities
             .FirstOrDefaultAsync(x =>
@@ -39,14 +30,10 @@ public class StaffService : IStaffService
                 x.ProviderId == provider.Id)
             ?? throw new Exception("Invalid branch assignment.");
 
-
-
         if (await _context.Users.AnyAsync(x => x.Email == request.Email))
         {
             throw new Exception("Email already exists.");
         }
-
-
 
         var user = new User
         {
@@ -58,12 +45,9 @@ public class StaffService : IStaffService
             Role = UserRole.PARKING_STAFF
         };
 
-
         _context.Users.Add(user);
 
         await _context.SaveChangesAsync();
-
-
 
         var staff = new ParkingStaff
         {
@@ -77,41 +61,27 @@ public class StaffService : IStaffService
 
             Position = request.Position,
 
-
             CanManageReservations =
-                request.CanManageReservations,
+                request.Type == StaffType.ADMINISTRATIVE,
 
+            CanCheckInVehicle = true,
 
-            CanCheckInVehicle =
-                request.CanCheckInVehicle,
-
-
-            CanCheckOutVehicle =
-                request.CanCheckOutVehicle,
-
+            CanCheckOutVehicle = true,
 
             CanViewReports =
-                request.CanViewReports,
-
+                request.Type == StaffType.ADMINISTRATIVE,
 
             CanManageStaff =
-                request.CanManageStaff
+                request.Type == StaffType.ADMINISTRATIVE,
         };
-
 
         _context.ParkingStaff.Add(staff);
 
-
         await _context.SaveChangesAsync();
-
-
 
         return Map(staff, user, facility);
 
     }
-
-
-
 
     public async Task<IReadOnlyList<StaffResponse>> GetProviderStaffAsync(
         Guid providerUserId)
@@ -120,24 +90,17 @@ public class StaffService : IStaffService
         var provider = await _context.ParkingProviders
             .FirstAsync(x => x.UserId == providerUserId);
 
-
-
         var staff = await _context.ParkingStaff
             .Include(x => x.User)
             .Include(x => x.Facility)
             .Where(x => x.ProviderId == provider.Id)
             .ToListAsync();
 
-
-
         return staff
             .Select(x => Map(x, x.User, x.Facility))
             .ToList();
 
     }
-
-
-
 
     public async Task<StaffResponse?> GetMyProfileAsync(Guid userId)
     {
@@ -147,17 +110,11 @@ public class StaffService : IStaffService
             .Include(x => x.Facility)
             .FirstOrDefaultAsync(x => x.UserId == userId);
 
-
-
         return staff == null
             ? null
             : Map(staff, staff.User, staff.Facility);
 
     }
-
-
-
-
 
     public async Task UpdateStatusAsync(
         Guid providerUserId,
@@ -169,18 +126,11 @@ public class StaffService : IStaffService
             providerUserId,
             staffId);
 
-
-
         staff.IsActive = status;
-
 
         await _context.SaveChangesAsync();
 
     }
-
-
-
-
 
     public async Task UpdateAssignmentAsync(
         Guid providerUserId,
@@ -188,12 +138,9 @@ public class StaffService : IStaffService
         Guid facilityId)
     {
 
-
         var staff = await GetProviderStaffEntity(
             providerUserId,
             staffId);
-
-
 
         var facility = await _context.ParkingFacilities
             .FirstOrDefaultAsync(x =>
@@ -201,18 +148,11 @@ public class StaffService : IStaffService
                 x.ProviderId == staff.ProviderId)
             ?? throw new Exception("Invalid branch.");
 
-
-
         staff.FacilityId = facility.Id;
-
 
         await _context.SaveChangesAsync();
 
     }
-
-
-
-
 
     public async Task<IReadOnlyList<StaffResponse>> GetFacilityStaffAsync(
         Guid userId,
@@ -227,17 +167,11 @@ public class StaffService : IStaffService
                 x.FacilityId == facilityId)
             .ToListAsync();
 
-
-
         return result
             .Select(x => Map(x, x.User, x.Facility))
             .ToList();
 
     }
-
-
-
-
 
     private async Task<ParkingStaff> GetProviderStaffEntity(
         Guid providerUserId,
@@ -247,8 +181,6 @@ public class StaffService : IStaffService
         var provider = await _context.ParkingProviders
             .FirstAsync(x => x.UserId == providerUserId);
 
-
-
         return await _context.ParkingStaff
             .FirstOrDefaultAsync(x =>
                 x.Id == staffId &&
@@ -257,10 +189,6 @@ public class StaffService : IStaffService
             throw new Exception("Staff not found.");
 
     }
-
-
-
-
 
     private StaffResponse Map(
         ParkingStaff staff,
@@ -288,26 +216,20 @@ public class StaffService : IStaffService
 
             Position = staff.Position,
 
-
             CanManageReservations =
                 staff.CanManageReservations,
-
 
             CanCheckInVehicle =
                 staff.CanCheckInVehicle,
 
-
             CanCheckOutVehicle =
                 staff.CanCheckOutVehicle,
-
 
             CanViewReports =
                 staff.CanViewReports,
 
-
             CanManageStaff =
                 staff.CanManageStaff,
-
 
             IsActive = staff.IsActive,
 
@@ -330,13 +252,11 @@ public class StaffService : IStaffService
                 x => x.UserId == userId,
                 ct);
 
-
         if (staff == null)
         {
             throw new KeyNotFoundException(
                 "Staff not found.");
         }
-
 
         var reservations =
             await _context.Reservations
@@ -346,15 +266,11 @@ public class StaffService : IStaffService
                 x.StartTime.Date == DateTime.UtcNow.Date,
                 ct);
 
-
-
         var slots =
             await _context.ParkingSlots
             .Where(
                 x => x.FacilityId == staff.FacilityId)
             .ToListAsync(ct);
-
-
 
         return new StaffDashboardResponse
         {
@@ -366,10 +282,8 @@ public class StaffService : IStaffService
             FacilityName =
                 staff.Facility.Name,
 
-
             StaffType =
                 staff.Type.ToString(),
-
 
             CanManageReservations =
                 staff.CanManageReservations,
@@ -380,19 +294,15 @@ public class StaffService : IStaffService
             CanCheckOutVehicle =
                 staff.CanCheckOutVehicle,
 
-
             TodayReservationCount =
                 reservations,
-
 
             TotalSlots =
                 slots.Count,
 
-
             AvailableSlots =
                 slots.Count(
                     x => x.Status == SlotStatus.AVAILABLE),
-
 
             OccupiedSlots =
                 slots.Count(

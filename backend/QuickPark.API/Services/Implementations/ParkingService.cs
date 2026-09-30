@@ -392,7 +392,7 @@ public partial class ParkingService : IParkingService
         Guid providerUserId, Guid reservationId, CancellationToken ct = default)
     {
         var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
-        
+
         if (reservation.Status != ReservationStatus.PENDING)
         {
             throw new InvalidOperationException($"Cannot approve a reservation that is {reservation.Status.ToString().ToLowerInvariant()}.");
@@ -1183,8 +1183,6 @@ public partial class ParkingService : IParkingService
      bool isCheckIn,
     CancellationToken ct)
     {
-
-
         var reservation =
             await _context.Reservations
             .FirstOrDefaultAsync(
@@ -1194,17 +1192,11 @@ public partial class ParkingService : IParkingService
             throw new KeyNotFoundException(
                 "Reservation not found.");
 
-
-
-        // Owner access
-
         var provider =
             await _context.ParkingProviders
             .FirstOrDefaultAsync(
                 x => x.UserId == userId,
                 ct);
-
-
 
         if (provider != null)
         {
@@ -1213,12 +1205,6 @@ public partial class ParkingService : IParkingService
                 return reservation;
 
         }
-
-
-
-        // Staff access
-
-
 
         var staff =
             await _context.ParkingStaff
@@ -1229,13 +1215,11 @@ public partial class ParkingService : IParkingService
                 x.IsActive,
                 ct);
 
-
         if (staff == null)
         {
             throw new UnauthorizedAccessException(
                 "You do not have access to this parking facility.");
         }
-
 
         if (isCheckIn && !staff.CanCheckInVehicle)
         {
@@ -1243,13 +1227,11 @@ public partial class ParkingService : IParkingService
                 "You do not have permission to check-in vehicles.");
         }
 
-
         if (!isCheckIn && !staff.CanCheckOutVehicle)
         {
             throw new UnauthorizedAccessException(
                 "You do not have permission to check-out vehicles.");
         }
-
 
         return reservation;
     }
