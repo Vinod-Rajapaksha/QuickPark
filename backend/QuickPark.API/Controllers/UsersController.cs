@@ -10,7 +10,7 @@ namespace QuickPark.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "PLATFORM_ADMIN")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -21,6 +21,7 @@ namespace QuickPark.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "PLATFORM_ADMIN")]
         public async Task<IActionResult> GetUsers([FromQuery] string? search, [FromQuery] string? role, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int limit = 10)
         {
             var query = _context.Users.AsQueryable();
@@ -67,6 +68,7 @@ namespace QuickPark.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "PLATFORM_ADMIN")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
         {
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
@@ -102,6 +104,14 @@ namespace QuickPark.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
         {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isPlatformAdmin = User.IsInRole("PLATFORM_ADMIN");
+
+            if (currentUserId != id.ToString() && !isPlatformAdmin)
+            {
+                return Forbid();
+            }
+
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
@@ -124,6 +134,7 @@ namespace QuickPark.API.Controllers
         }
 
         [HttpPatch("{id}/status")]
+        [Authorize(Roles = "PLATFORM_ADMIN")]
         public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusRequest request)
         {
             var user = await _context.Users.FindAsync(id);
@@ -146,6 +157,7 @@ namespace QuickPark.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "PLATFORM_ADMIN")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
