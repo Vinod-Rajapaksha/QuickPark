@@ -49,6 +49,7 @@ export const ROUTES = {
   // Staff routes
   STAFF_DASHBOARD: "/staff/dashboard",
   ACTIVE_SESSIONS: "/sessions",
+  QR_SCANNER: "/staff/scanner",
   SUPPORT: "/support",
 
   // Admin routes
