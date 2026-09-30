@@ -27,6 +27,7 @@ import ProviderReservationApprovalPage from "../../pages/provider/ProviderReserv
 // Staff pages
 import StaffDashboardPage from "../../pages/staff/StaffDashboardPage";
 import ActiveSessionsPage from "../../pages/staff/ActiveSessionsPage";
+import QRScannerPage from "../../pages/staff/QRScannerPage";
 
 // Admin pages
 import AdminDashboardPage from "../../pages/admin/AdminDashboardPage";
@@ -183,6 +184,7 @@ export const router = createBrowserRouter([
                 path: ROUTES.PROVIDER_RESERVATION_APPROVAL,
                 element: <ProviderReservationApprovalPage />,
               },
+              { path: ROUTES.QR_SCANNER, element: <QRScannerPage /> },
             ],
           },
 
@@ -192,6 +194,7 @@ export const router = createBrowserRouter([
             children: [
               { path: ROUTES.STAFF_DASHBOARD, element: <StaffDashboardPage /> },
               { path: ROUTES.ACTIVE_SESSIONS, element: <ActiveSessionsPage /> },
+              { path: ROUTES.QR_SCANNER, element: <QRScannerPage /> },
               {
                 path: ROUTES.SUPPORT,
                 element: <div className="p-4">Support - Coming Soon</div>,

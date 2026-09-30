@@ -11,14 +11,16 @@ interface ReservationCardProps {
   reservation: Reservation;
   onView: (reservation: Reservation) => void;
   onCancel?: (reservation: Reservation) => void;
+  onPay?: (reservation: Reservation) => void;
+  onViewQr?: (reservation: Reservation) => void;
 }
 
-// One of the driver's own bookings. The reference is the short form of the id the server issued,
-// which is what the driver quotes at the gate.
 export const ReservationCard: React.FC<ReservationCardProps> = ({
   reservation,
   onView,
   onCancel,
+  onPay,
+  onViewQr,
 }) => {
   const cancellable = onCancel && canDriverCancel(reservation);
 
@@ -74,6 +76,32 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
+          {reservation.status === "CONFIRMED" && onViewQr && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={(event) => {
+                event.stopPropagation();
+                onViewQr(reservation);
+              }}
+            >
+              QR Code
+            </Button>
+          )}
+          {reservation.status === "PENDING" && onPay && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={(event) => {
+                event.stopPropagation();
+                onPay(reservation);
+              }}
+            >
+              Pay Now
+            </Button>
+          )}
           {cancellable && (
             <Button
               type="button"

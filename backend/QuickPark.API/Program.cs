@@ -32,12 +32,13 @@ builder.Services.AddScoped<IProviderVerificationService, ProviderVerificationSer
 builder.Services.AddScoped<IParkingService, ParkingService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 
-//feedback services
+// Services
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IParkingUsageValidator, ParkingUsageValidator>();
 builder.Services.AddScoped<IFeedbackReplyService, FeedbackReplyService>();
 builder.Services.AddScoped<IFeedbackReportService, FeedbackReportService>();
 builder.Services.AddScoped<IParkingAccessValidator, ParkingAccessValidator>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();

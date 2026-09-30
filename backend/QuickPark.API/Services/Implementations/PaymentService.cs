@@ -162,6 +162,47 @@ public class PaymentService : IPaymentService
         Guid driverUserId, ConfirmCardPaymentRequest request, CancellationToken ct = default) =>
         await SettleFromGatewayAsync(request.CallbackToken, driverUserId, ct);
 
+    public async Task<PaymentResponse> ConfirmExternalAsync(Guid driverUserId, Guid reservationId, string transactionId, CancellationToken ct = default)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+        await LockAsync(reservationId, ct);
+
+        var reservation = await _context.Set<Reservation>()
+            .FirstOrDefaultAsync(r => r.Id == reservationId, ct)
+            ?? throw new KeyNotFoundException("Reservation not found.");
+
+        if (reservation.DriverId != driverUserId)
+            throw new UnauthorizedAccessException("You can only confirm your own booking.");
+
+        EnsureSettleable(reservation);
+
+        var stage = StageFor(reservation.Status);
+        var payment = await _context.Set<Payment>()
+            .FirstOrDefaultAsync(p => p.ReservationId == reservationId && p.Stage == stage && p.Status != PaymentStatus.CANCELLED, ct);
+
+        if (payment == null)
+        {
+            payment = await NewAttemptAsync(reservation, driverUserId, PaymentMethod.CARD, stage, ct);
+        }
+
+        if (payment.Status == PaymentStatus.PAID)
+        {
+            await transaction.CommitAsync(ct);
+            return await ReadOrThrow(payment.Id, driverUserId, ct);
+        }
+
+        EnsureCanMove(payment.Status, PaymentStatus.PAID);
+        payment.GatewayTransactionId = transactionId;
+        payment.GatewayProvider = "PAYHERE";
+        payment.Amount = AmountFor(reservation, stage);
+
+        await SettleAsync(payment, reservation, isCash: false, note: "Paid via PayHere Frontend", ct);
+        await _context.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+
+        return await ReadOrThrow(payment.Id, driverUserId, ct);
+    }
+
     public async Task<PaymentResponse> HandleGatewayCallbackAsync(string? callbackToken, CancellationToken ct = default) =>
         await SettleFromGatewayAsync(callbackToken, null, ct);
 

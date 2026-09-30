@@ -27,3 +27,9 @@ public class ConfirmCardPaymentRequest
 {
     public string? CallbackToken { get; set; }
 }
+
+public class ExternalPaymentConfirmRequest
+{
+    public Guid ReservationId { get; set; }
+    public string? TransactionId { get; set; }
+}
