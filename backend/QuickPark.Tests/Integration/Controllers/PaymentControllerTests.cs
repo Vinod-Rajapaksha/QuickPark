@@ -10,7 +10,6 @@ using QuickPark.API.DTOs.Payments;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
-// The security shape of the money API, checked where it is decided: on the routes themselves.
 public class PaymentControllerTests
 {
 
@@ -23,6 +22,7 @@ public class PaymentControllerTests
             "POST api/payments/card/checkout",
             "POST api/payments/card/confirm",
             "POST api/payments/create",
+            "POST api/payments/external/confirm",
             "GET api/payments/me",
             "GET api/payments/provider",
             "GET api/payments/reservation/{reservationId:guid}",
@@ -32,7 +32,6 @@ public class PaymentControllerTests
             "POST api/payments/webhook"
         };
 
-        // Routing ignores case, so [controller] publishing "Payments" is the same route the frontend calls as "payments".
         var routes = RoutesOf(typeof(PaymentsController)).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Equal(expected.Length, routes.Count);
@@ -43,7 +42,6 @@ public class PaymentControllerTests
     [Fact]
     public void MoneyReadRoutes_AreNotDuplicatedAcrossControllers()
     {
-        // One way to ask each question: if a second controller grows an earnings route, this is where it gets caught.
         var all = RoutesOf(typeof(ProviderEarningsController))
             .Concat(RoutesOf(typeof(CommissionController)))
             .Concat(RoutesOf(typeof(ReportsController)))
@@ -82,7 +80,6 @@ public class PaymentControllerTests
 
             if (openToTheWorld)
             {
-                // The gateway webhook carries its own credential, which is why it is the only exception.
                 Assert.Equal(nameof(PaymentsController.Webhook), action.Name);
                 continue;
             }
@@ -97,6 +94,7 @@ public class PaymentControllerTests
     [InlineData("Create", "DRIVER")]
     [InlineData("CheckoutCard", "DRIVER")]
     [InlineData("ConfirmCard", "DRIVER")]
+    [InlineData("ConfirmExternal", "DRIVER")]
     [InlineData("GetMyPayments", "DRIVER")]
     [InlineData("ConfirmCash", "PARKING_OWNER")]
     [InlineData("GetProviderPayments", "PARKING_OWNER")]
@@ -118,7 +116,6 @@ public class PaymentControllerTests
     [Fact]
     public void TheThreeWritesBelongToThreeDifferentPrincipals()
     {
-        // The owner says cash arrived, the driver says the card went through, and only the admin can clear a commission. Nobody holds all three.
         Assert.Equal("PARKING_OWNER", Assert.Single(
             RequiresRoles(typeof(PaymentsController).GetMethod(nameof(PaymentsController.ConfirmCash))!,
                 typeof(PaymentsController))));
@@ -136,6 +133,7 @@ public class PaymentControllerTests
     [InlineData(typeof(CreatePaymentRequest))]
     [InlineData(typeof(CardCheckoutRequest))]
     [InlineData(typeof(ConfirmCardPaymentRequest))]
+    [InlineData(typeof(ExternalPaymentConfirmRequest))]
     [InlineData(typeof(CashConfirmationRequest))]
     [InlineData(typeof(RefundPaymentRequest))]
     [InlineData(typeof(SettleCommissionRequest))]
@@ -167,6 +165,7 @@ public class PaymentControllerTests
 
         Assert.IsType<UnauthorizedResult>(await payments.Create(new CreatePaymentRequest(), default));
         Assert.IsType<UnauthorizedResult>(await payments.ConfirmCard(new ConfirmCardPaymentRequest(), default));
+        Assert.IsType<UnauthorizedResult>(await payments.ConfirmExternal(new ExternalPaymentConfirmRequest(), default));
         Assert.IsType<UnauthorizedResult>(await payments.ConfirmCash(Guid.NewGuid(), null, default));
         Assert.IsType<UnauthorizedResult>(await payments.Refund(Guid.NewGuid(), null, default));
         Assert.IsType<UnauthorizedResult>(await payments.GetById(Guid.NewGuid(), default));
@@ -184,7 +183,6 @@ public class PaymentControllerTests
     [InlineData("v1.cGF5bWU.000000000000")]
     public async Task TheGatewayRouteRefusesAConfirmationItCannotVerify(string? token)
     {
-        // The webhook has no identity behind it, so the only thing that can pay a booking is a token this backend's own key signed.
         var payments = new PaymentsController(Context(), Config()) { ControllerContext = AnonymousContext() };
 
         var result = Assert.IsType<BadRequestObjectResult>(
@@ -210,11 +208,9 @@ public class PaymentControllerTests
                 .Select(a => VerbOf(a.GetType().Name))
                 .First(v => v is not null)!;
 
-            // [controller] expands to "Payments"; routing ignores case, so the assertions compare case-insensitively.
             return $"{verb} {Join(TemplateOf(controller), TemplateOf(action), controller)}";
         }).OrderBy(t => t).ToArray();
 
-    // The verb attributes are read by name and their Template by lookup: this project references the API but not ASP.NET Core's own abstract attribute types.
     private static readonly string[] Verbs = { "Get", "Post", "Put", "Patch", "Delete" };
 
     private static string? VerbOf(string attributeTypeName) =>
@@ -239,7 +235,6 @@ public class PaymentControllerTests
         };
     }
 
-    // [controller] is filled in by MVC from the controller name; the same rule, applied to the raw template.
     private static string Expand(string? template, Type controller)
     {
         if (string.IsNullOrEmpty(template)) return string.Empty;
@@ -255,7 +250,6 @@ public class PaymentControllerTests
         controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
             .Where(m => m.GetCustomAttributes().Any(a => VerbOf(a.GetType().Name) is not null));
 
-    // A route may name its roles on the action or on the controller; both count.
     private static IReadOnlyList<string> RequiresRoles(MethodInfo action, Type controller) =>
         action.GetCustomAttributes<AuthorizeAttribute>(inherit: false)
             .Concat(controller.GetCustomAttributes<AuthorizeAttribute>(inherit: false))
