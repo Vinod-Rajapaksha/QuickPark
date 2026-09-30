@@ -1,23 +1,26 @@
 using QuickPark.API.Enums;
 
-namespace QuickPark.API.Models;
+namespace QuickPark.API.DTOs.Staff;
 
-public class ParkingStaff
+public class StaffResponse
 {
     public Guid Id { get; set; }
-        = Guid.NewGuid();
 
     public Guid UserId { get; set; }
 
-    public User User { get; set; } = null!;
+    public string FullName { get; set; }
+        = string.Empty;
 
-    public Guid ProviderId { get; set; }
+    public string Email { get; set; }
+        = string.Empty;
 
-    public ParkingProvider Provider { get; set; } = null!;
+    public string Phone { get; set; }
+        = string.Empty;
 
     public Guid FacilityId { get; set; }
 
-    public ParkingFacility Facility { get; set; } = null!;
+    public string FacilityName { get; set; }
+        = string.Empty;
 
     public StaffType Type { get; set; }
 
@@ -35,11 +38,7 @@ public class ParkingStaff
     public bool CanManageStaff { get; set; }
 
     public bool IsActive { get; set; }
-        = true;
 
     public DateTime CreatedAt { get; set; }
-        = DateTime.UtcNow;
 
-    public DateTime UpdatedAt { get; set; }
-        = DateTime.UtcNow;
 }

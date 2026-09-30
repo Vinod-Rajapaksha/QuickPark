@@ -9,7 +9,7 @@ namespace QuickPark.API.Controllers;
 // The owner's bay board and bay states.
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "PARKING_OWNER")]
+[Authorize(Roles = "PARKING_OWNER,PARKING_STAFF")]
 [Tags("Parking slots")]
 public class ParkingSlotsController : ControllerBase
 {

@@ -303,6 +303,20 @@ public partial class ParkingService : IParkingService
         Guid providerUserId, Guid? facilityId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default)
     {
+        var staff =
+            await _context.ParkingStaff
+            .FirstOrDefaultAsync(
+                x =>
+                x.UserId == providerUserId &&
+                x.IsActive,
+                ct);
+
+
+        if (staff != null && !staff.CanManageReservations)
+        {
+            throw new UnauthorizedAccessException(
+                "Staff member does not have reservation management permission.");
+        }
         var provider = await _context.ParkingProviders.FirstOrDefaultAsync(p => p.UserId == providerUserId, ct)
             ?? throw new UnauthorizedAccessException("You can only manage your own parking properties.");
 
@@ -378,7 +392,7 @@ public partial class ParkingService : IParkingService
         Guid providerUserId, Guid reservationId, CancellationToken ct = default)
     {
         var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
-        
+
         if (reservation.Status != ReservationStatus.PENDING)
         {
             throw new InvalidOperationException($"Cannot approve a reservation that is {reservation.Status.ToString().ToLowerInvariant()}.");
@@ -402,9 +416,9 @@ public partial class ParkingService : IParkingService
     }
 
     public async Task<ReservationResponse> CheckInAsync(
-        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+        Guid userId, Guid reservationId, CancellationToken ct = default)
     {
-        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+        var reservation = await LoadReservationForGateActionAsync(userId, reservationId, true, ct);
 
         EnsureCanMove(reservation.Status, ReservationStatus.CHECKED_IN);
 
@@ -420,9 +434,9 @@ public partial class ParkingService : IParkingService
     }
 
     public async Task<ReservationResponse> CheckOutAsync(
-        Guid providerUserId, Guid reservationId, CancellationToken ct = default)
+        Guid userId, Guid reservationId, CancellationToken ct = default)
     {
-        var reservation = await LoadProviderReservationAsync(providerUserId, reservationId, ct);
+        var reservation = await LoadReservationForGateActionAsync(userId, reservationId, false, ct);
 
         EnsureCanMove(reservation.Status, ReservationStatus.CHECKED_OUT);
 
@@ -1161,6 +1175,65 @@ public partial class ParkingService : IParkingService
         await ReapplyVehicleTypeConfigurationAsync(vehicleType, null, ct);
 
         await _context.SaveChangesAsync(ct);
+    }
+
+    private async Task<Reservation> LoadReservationForGateActionAsync(
+    Guid userId,
+    Guid reservationId,
+     bool isCheckIn,
+    CancellationToken ct)
+    {
+        var reservation =
+            await _context.Reservations
+            .FirstOrDefaultAsync(
+                x => x.Id == reservationId,
+                ct)
+            ??
+            throw new KeyNotFoundException(
+                "Reservation not found.");
+
+        var provider =
+            await _context.ParkingProviders
+            .FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                ct);
+
+        if (provider != null)
+        {
+
+            if (reservation.ProviderId == provider.Id)
+                return reservation;
+
+        }
+
+        var staff =
+            await _context.ParkingStaff
+            .FirstOrDefaultAsync(
+                x =>
+                x.UserId == userId &&
+                x.FacilityId == reservation.FacilityId &&
+                x.IsActive,
+                ct);
+
+        if (staff == null)
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have access to this parking facility.");
+        }
+
+        if (isCheckIn && !staff.CanCheckInVehicle)
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to check-in vehicles.");
+        }
+
+        if (!isCheckIn && !staff.CanCheckOutVehicle)
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to check-out vehicles.");
+        }
+
+        return reservation;
     }
 
     private const int MaxRejectionReasonLength = 500;

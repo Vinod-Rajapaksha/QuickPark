@@ -35,9 +35,9 @@ public interface IParkingService
         Guid providerUserId, Guid reservationId, string message, CancellationToken ct = default);
 
     Task<ReservationResponse> CheckInAsync(
-        Guid providerUserId, Guid reservationId, CancellationToken ct = default);
+        Guid userId, Guid reservationId, CancellationToken ct = default);
     Task<ReservationResponse> CheckOutAsync(
-        Guid providerUserId, Guid reservationId, CancellationToken ct = default);
+        Guid userId, Guid reservationId, CancellationToken ct = default);
 
     Task<IReadOnlyList<ParkingFacilityDocumentResponse>> GetFacilityDocumentsAsync(
         Guid providerUserId, Guid facilityId, CancellationToken ct = default);
@@ -60,7 +60,7 @@ public interface IParkingService
     Task<ProviderSlotDetailsResponse> GetProviderSlotAsync(
         Guid providerUserId, Guid slotId, CancellationToken ct = default);
     Task<ProviderSlotRowResponse> UpdateSlotStatusAsync(
-        Guid providerUserId, Guid slotId, UpdateSlotRequest request, CancellationToken ct = default);
+        Guid userId, Guid slotId, UpdateSlotRequest request, CancellationToken ct = default);
 
     Task<IReadOnlyList<FacilityQueueRowResponse>> GetFacilitiesForReviewAsync(
         ParkingStatus? status, string? provider, CancellationToken ct = default);
