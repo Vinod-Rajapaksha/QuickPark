@@ -120,7 +120,7 @@ export const navigationConfig: NavigationItem[] = [
   },
   {
     label: "Providers",
-    path: ROUTES.ADMIN_PROVIDERS,
+    path: ROUTES.ADMIN_PROVIDER_APPROVALS,
     roles: [Role.PLATFORM_ADMIN],
     icon: "Shield",
   },
