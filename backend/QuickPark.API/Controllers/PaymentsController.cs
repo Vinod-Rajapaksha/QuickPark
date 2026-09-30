@@ -93,6 +93,25 @@ public class PaymentsController : ControllerBase
         }
     }
 
+    [HttpPost("external/confirm")]
+    [Authorize(Roles = DriverRole)]
+    [EndpointSummary("Confirm an external payment like PayHere from the frontend")]
+    [ProducesResponseType(typeof(PaymentResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ConfirmExternal(
+        [FromBody] ExternalPaymentConfirmRequest request, CancellationToken ct)
+    {
+        if (!this.TryGetUserId(out var userId)) return Unauthorized();
+
+        try
+        {
+            return Ok(await Payments().ConfirmExternalAsync(userId, request.ReservationId, request.TransactionId ?? Guid.NewGuid().ToString(), ct));
+        }
+        catch (Exception ex)
+        {
+            return this.FromException(ex);
+        }
+    }
+
     [HttpPost("webhook")]
     [AllowAnonymous]
     [EndpointSummary("Receive the gateway's payment confirmation")]
