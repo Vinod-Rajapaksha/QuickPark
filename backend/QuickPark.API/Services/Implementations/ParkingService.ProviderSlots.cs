@@ -86,9 +86,9 @@ public partial class ParkingService
     }
 
     public async Task<ProviderSlotRowResponse> UpdateSlotStatusAsync(
-        Guid providerUserId, Guid slotId, UpdateSlotRequest request, CancellationToken ct = default)
+        Guid userId, Guid slotId, UpdateSlotRequest request, CancellationToken ct = default)
     {
-        var (facility, slot) = await GetOwnedSlotAsync(providerUserId, slotId, ct);
+        var (facility, slot) = await GetStaffOrOwnerSlotAsync(userId, slotId, ct);
         var wanted = ParseOwnerSlotStatus(request.Status);
         var now = DateTime.UtcNow;
 
@@ -384,5 +384,65 @@ public partial class ParkingService
         }
 
         return parsed;
+    }
+
+    private async Task<(ParkingFacility Facility, ParkingSlot Slot)> GetStaffOrOwnerSlotAsync(
+    Guid userId,
+    Guid slotId,
+    CancellationToken ct)
+    {
+        var slot = await _context.ParkingSlots
+            .Include(x => x.Facility)
+            .Include(x => x.VehicleType)
+            .FirstOrDefaultAsync(
+                x => x.Id == slotId,
+                ct);
+
+
+        if (slot == null)
+        {
+            throw new KeyNotFoundException(
+                "Parking slot not found.");
+        }
+
+
+        var facility = slot.Facility;
+
+
+        // Provider access
+        var provider = await _context.ParkingProviders
+            .FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                ct);
+
+
+        if (provider != null &&
+            facility.ProviderId == provider.Id)
+        {
+            return (facility, slot);
+        }
+
+
+
+        // Staff access
+        var staff = await _context.ParkingStaff
+            .FirstOrDefaultAsync(
+                x =>
+                x.UserId == userId &&
+                x.FacilityId == facility.Id &&
+                x.IsActive,
+                ct);
+
+
+
+        if (staff != null)
+        {
+            return (facility, slot);
+        }
+
+
+
+        throw new UnauthorizedAccessException(
+            "You do not have access to manage slots in this branch.");
     }
 }

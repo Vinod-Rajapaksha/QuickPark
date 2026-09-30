@@ -15,6 +15,7 @@ public class ReservationsController : ControllerBase
 {
     private const string DriverRole = "DRIVER";
     private const string OwnerRole = "PARKING_OWNER";
+    private const string StaffRole = "PARKING_STAFF";
 
     private readonly IParkingService _parkingService;
 
@@ -62,7 +63,7 @@ public class ReservationsController : ControllerBase
 
     // Parking Owner booking list, optionally narrowed to one property.
     [HttpGet("provider")]
-    [Authorize(Roles = OwnerRole)]
+    [Authorize(Roles = OwnerRole + "," + StaffRole)]
     public async Task<IActionResult> GetProviderReservations(
         [FromQuery] Guid? facilityId, [FromQuery] string? status,
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct)
@@ -125,7 +126,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/check-in")]
-    [Authorize(Roles = OwnerRole)]
+    [Authorize(Roles = OwnerRole + "," + StaffRole)]
     [EndpointSummary("Check-in a confirmed reservation")]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -147,7 +148,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/check-out")]
-    [Authorize(Roles = OwnerRole)]
+    [Authorize(Roles = OwnerRole + "," + StaffRole)]
     [EndpointSummary("Check-out a checked-in reservation")]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
