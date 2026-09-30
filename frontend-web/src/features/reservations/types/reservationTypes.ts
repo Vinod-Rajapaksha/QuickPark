@@ -35,3 +35,25 @@ export interface Reservation {
 
 export type BookingGateAction =
   "CONFIRM" | "CHECK_IN" | "CHECK_OUT" | "NO_SHOW";
+
+export interface CreateReservationInput {
+  facilityId: string;
+  vehicleTypeId: string;
+  slotId?: string | null;
+  startTime: string;
+  endTime: string;
+}
+
+export interface DriverSlot {
+  slotId: string;
+  facilityId: string;
+  slotNumber: string;
+  vehicleTypeId: string;
+  vehicleTypeName: string;
+  bayLabel: string;
+  status: string;
+  availableForPeriod: boolean;
+  hourlyRate: number;
+  busyFrom: string | null;
+  busyUntil: string | null;
+}
