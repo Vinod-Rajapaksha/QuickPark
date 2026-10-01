@@ -23,6 +23,7 @@ import ProviderReservationsPage from "../../pages/provider/ReservationsPage";
 import ParkingDetailsPage from "../../pages/provider/ParkingDetailsPage";
 import ParkingEditPage from "../../pages/provider/ParkingEditPage";
 import ProviderReservationApprovalPage from "../../pages/provider/ProviderReservationApprovalPage";
+import ProviderApprovalsPage from "../../pages/provider/ProviderApprovalsPage";
 
 // Staff pages
 import StaffDashboardPage from "../../pages/staff/StaffDashboardPage";
@@ -179,6 +180,10 @@ export const router = createBrowserRouter([
               {
                 path: ROUTES.PROVIDER_RESERVATIONS,
                 element: <ProviderReservationsPage />,
+              },
+              {
+                path: ROUTES.PROVIDER_APPROVALS,
+                element: <ProviderApprovalsPage />,
               },
               {
                 path: ROUTES.PROVIDER_RESERVATION_APPROVAL,
