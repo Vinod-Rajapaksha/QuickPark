@@ -38,7 +38,7 @@ class AdminApprovalsScreen extends ConsumerWidget {
           'Facility $decision successfully',
           isError: false,
         );
-        ref.refresh(adminPendingFacilitiesProvider.future);
+        ref.invalidate(adminPendingFacilitiesProvider);
       }
     } catch (e) {
       if (context.mounted) {
@@ -75,7 +75,7 @@ class AdminApprovalsScreen extends ConsumerWidget {
                 bottom: 120,
               ),
               itemCount: facilities.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final facility =
                     facilities[index]['facility'] ?? facilities[index];
@@ -87,7 +87,7 @@ class AdminApprovalsScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
