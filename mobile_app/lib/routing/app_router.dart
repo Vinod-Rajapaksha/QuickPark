@@ -24,7 +24,13 @@ import '../features/provider/presentation/screens/provider_reservation_approval_
 import '../features/admin/presentation/screens/admin_layout.dart';
 import '../features/admin/presentation/screens/admin_dashboard_screen.dart';
 import '../features/admin/presentation/screens/admin_users_screen.dart';
-import '../features/admin/presentation/screens/admin_settings_screen.dart';
+import '../features/admin/presentation/screens/admin_approvals_screen.dart';
+import '../features/admin/presentation/screens/admin_profile_screen.dart';
+
+// Staff Screens
+import '../features/parking_staff/presentation/screens/staff_layout.dart';
+import '../features/parking_staff/presentation/screens/staff_home_screen.dart';
+import '../features/parking_staff/presentation/screens/staff_profile_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -34,6 +40,8 @@ String _getInitialRoute(int? role) {
     case 1:
       return '/provider/dashboard';
     case 2:
+      return '/staff/dashboard';
+    case 3:
       return '/admin/dashboard';
     case 0:
     default:
@@ -85,13 +93,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         final path = state.matchedLocation;
 
         if (role == 0 &&
-            (path.startsWith('/provider') || path.startsWith('/admin'))) {
+            (path.startsWith('/provider') || path.startsWith('/admin') || path.startsWith('/staff'))) {
           return '/driver/home';
         } else if (role == 1 &&
-            (path.startsWith('/driver') || path.startsWith('/admin'))) {
+            (path.startsWith('/driver') || path.startsWith('/admin') || path.startsWith('/staff'))) {
           return '/provider/dashboard';
         } else if (role == 2 &&
-            (path.startsWith('/driver') || path.startsWith('/provider'))) {
+            (path.startsWith('/driver') || path.startsWith('/admin') || path.startsWith('/provider'))) {
+          return '/staff/dashboard';
+        } else if (role == 3 &&
+            (path.startsWith('/driver') || path.startsWith('/provider') || path.startsWith('/staff'))) {
           return '/admin/dashboard';
         }
       }
@@ -182,6 +193,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // STAFF ROUTES
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            StaffLayout(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/staff/dashboard',
+                builder: (context, state) => const StaffHomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/staff/scanner',
+                builder: (context, state) => const ProviderScannerScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/staff/profile',
+                builder: (context, state) => const StaffProfileScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+
       // ADMIN ROUTES
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -206,8 +249,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/admin/settings',
-                builder: (context, state) => const AdminSettingsScreen(),
+                path: '/admin/approvals',
+                builder: (context, state) => const AdminApprovalsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/profile',
+                builder: (context, state) => const AdminProfileScreen(),
               ),
             ],
           ),
