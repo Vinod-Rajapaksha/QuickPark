@@ -29,7 +29,7 @@ class AdminUsersScreen extends ConsumerWidget {
           'User status updated',
           isError: false,
         );
-        ref.refresh(adminUsersProvider.future);
+        ref.invalidate(adminUsersProvider);
       }
     } catch (e) {
       if (context.mounted) {
@@ -52,7 +52,7 @@ class AdminUsersScreen extends ConsumerWidget {
       await dio.delete('/users/$userId');
       if (context.mounted) {
         AppErrorHandler.showSnackBar(context, 'User deleted', isError: false);
-        ref.refresh(adminUsersProvider.future);
+        ref.invalidate(adminUsersProvider);
       }
     } catch (e) {
       if (context.mounted) {
@@ -80,7 +80,7 @@ class AdminUsersScreen extends ConsumerWidget {
           'User updated successfully',
           isError: false,
         );
-        ref.refresh(adminUsersProvider.future);
+        ref.invalidate(adminUsersProvider);
       }
     } catch (e) {
       if (context.mounted) {
@@ -98,11 +98,28 @@ class AdminUsersScreen extends ConsumerWidget {
     WidgetRef ref,
     Map<String, dynamic> user,
   ) {
-    final fullNameCtrl = TextEditingController(text: user['fullName']);
-    final emailCtrl = TextEditingController(text: user['email']);
-    final phoneCtrl = TextEditingController(text: user['phone']);
-    final nicCtrl = TextEditingController(text: user['nic']);
+    final fullNameCtrl = TextEditingController(text: user['fullName'] ?? '');
+    final emailCtrl = TextEditingController(text: user['email'] ?? '');
+    final phoneCtrl = TextEditingController(text: user['phone'] ?? '');
+    final nicCtrl = TextEditingController(text: user['nic'] ?? '');
     final formKey = GlobalKey<FormState>();
+
+    final hasChangesNotifier = ValueNotifier<bool>(false);
+
+    void updateChanges() {
+      final changed = fullNameCtrl.text.trim() != (user['fullName'] ?? '') ||
+          emailCtrl.text.trim() != (user['email'] ?? '') ||
+          phoneCtrl.text.trim() != (user['phone'] ?? '') ||
+          nicCtrl.text.trim() != (user['nic'] ?? '');
+      if (hasChangesNotifier.value != changed) {
+        hasChangesNotifier.value = changed;
+      }
+    }
+
+    fullNameCtrl.addListener(updateChanges);
+    emailCtrl.addListener(updateChanges);
+    phoneCtrl.addListener(updateChanges);
+    nicCtrl.addListener(updateChanges);
 
     showModalBottomSheet(
       context: context,
@@ -188,31 +205,40 @@ class AdminUsersScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade600,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
-                          ),
-                          onPressed: () {
-                            if (formKey.currentState!.validate()) {
-                              Navigator.pop(context);
-                              _updateUser(context, ref, user['id'], {
-                                'fullName': fullNameCtrl.text.trim(),
-                                'email': emailCtrl.text.trim(),
-                                'phone': phoneCtrl.text.trim(),
-                                'nic': nicCtrl.text.trim(),
-                              });
-                            }
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: hasChangesNotifier,
+                          builder: (context, hasChanges, child) {
+                            return ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade600,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                disabledForegroundColor: Colors.grey.shade500,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              onPressed: hasChanges
+                                  ? () {
+                                      if (formKey.currentState!.validate()) {
+                                        Navigator.pop(context);
+                                        _updateUser(context, ref, user['id'], {
+                                          'fullName': fullNameCtrl.text.trim(),
+                                          'email': emailCtrl.text.trim(),
+                                          'phone': phoneCtrl.text.trim(),
+                                          'nic': nicCtrl.text.trim(),
+                                        });
+                                      }
+                                    }
+                                  : null,
+                              child: const Text(
+                                'Save Changes',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            );
                           },
-                          child: const Text(
-                            'Save Changes',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
                         ),
                       ),
                     ],
@@ -290,7 +316,7 @@ class AdminUsersScreen extends ConsumerWidget {
                 bottom: 120,
               ),
               itemCount: users.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final user = users[index];
                 final isActive = user['isActive'] == true;
@@ -304,7 +330,7 @@ class AdminUsersScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -539,7 +565,7 @@ class AdminUsersScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -573,9 +599,9 @@ class AdminUsersScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         text,
