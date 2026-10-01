@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-class AdminSettingsScreen extends ConsumerWidget {
-  const AdminSettingsScreen({super.key});
+class AdminProfileScreen extends ConsumerWidget {
+  const AdminProfileScreen({super.key});
 
   void _showLogoutConfirmation(BuildContext context, WidgetRef ref) {
     showCupertinoModalPopup(
@@ -139,7 +139,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Admin Center',
+                        'Profile',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 28,
