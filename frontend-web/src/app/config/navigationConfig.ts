@@ -74,9 +74,15 @@ export const navigationConfig: NavigationItem[] = [
   },
   {
     label: "Approvals",
-    path: ROUTES.PROVIDER_RESERVATION_APPROVAL,
+    path: ROUTES.PROVIDER_APPROVALS,
     roles: [Role.PARKING_OWNER],
     icon: "CheckSquare",
+  },
+  {
+    label: "Reservations",
+    path: ROUTES.PROVIDER_RESERVATIONS,
+    roles: [Role.PARKING_OWNER],
+    icon: "Calendar",
   },
   {
     label: "Revenue",
