@@ -93,16 +93,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         final path = state.matchedLocation;
 
         if (role == 0 &&
-            (path.startsWith('/provider') || path.startsWith('/admin') || path.startsWith('/staff'))) {
+            (path.startsWith('/provider') ||
+                path.startsWith('/admin') ||
+                path.startsWith('/staff'))) {
           return '/driver/home';
         } else if (role == 1 &&
-            (path.startsWith('/driver') || path.startsWith('/admin') || path.startsWith('/staff'))) {
+            (path.startsWith('/driver') ||
+                path.startsWith('/admin') ||
+                path.startsWith('/staff'))) {
           return '/provider/dashboard';
         } else if (role == 2 &&
-            (path.startsWith('/driver') || path.startsWith('/admin') || path.startsWith('/provider'))) {
+            (path.startsWith('/driver') ||
+                path.startsWith('/admin') ||
+                path.startsWith('/provider'))) {
           return '/staff/dashboard';
         } else if (role == 3 &&
-            (path.startsWith('/driver') || path.startsWith('/provider') || path.startsWith('/staff'))) {
+            (path.startsWith('/driver') ||
+                path.startsWith('/provider') ||
+                path.startsWith('/staff'))) {
           return '/admin/dashboard';
         }
       }
