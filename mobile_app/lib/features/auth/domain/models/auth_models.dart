@@ -65,10 +65,19 @@ class User {
         parsedRole = json['role'].toString().toUpperCase();
       } else if (json['role'] is int) {
         switch (json['role']) {
-          case 1: parsedRole = 'PARKING_OWNER'; break;
-          case 2: parsedRole = 'PARKING_STAFF'; break;
-          case 3: parsedRole = 'PLATFORM_ADMIN'; break;
-          case 0: default: parsedRole = 'DRIVER'; break;
+          case 1:
+            parsedRole = 'PARKING_OWNER';
+            break;
+          case 2:
+            parsedRole = 'PARKING_STAFF';
+            break;
+          case 3:
+            parsedRole = 'PLATFORM_ADMIN';
+            break;
+          case 0:
+          default:
+            parsedRole = 'DRIVER';
+            break;
         }
       }
     }
