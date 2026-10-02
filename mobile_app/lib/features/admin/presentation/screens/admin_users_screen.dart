@@ -107,7 +107,8 @@ class AdminUsersScreen extends ConsumerWidget {
     final hasChangesNotifier = ValueNotifier<bool>(false);
 
     void updateChanges() {
-      final changed = fullNameCtrl.text.trim() != (user['fullName'] ?? '') ||
+      final changed =
+          fullNameCtrl.text.trim() != (user['fullName'] ?? '') ||
           emailCtrl.text.trim() != (user['email'] ?? '') ||
           phoneCtrl.text.trim() != (user['phone'] ?? '') ||
           nicCtrl.text.trim() != (user['nic'] ?? '');
@@ -214,7 +215,9 @@ class AdminUsersScreen extends ConsumerWidget {
                                 foregroundColor: Colors.white,
                                 disabledBackgroundColor: Colors.grey.shade300,
                                 disabledForegroundColor: Colors.grey.shade500,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
