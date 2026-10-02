@@ -145,6 +145,13 @@ export const ProviderDashboardPage: React.FC = () => {
             >
               View Reservations
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(ROUTES.PROVIDER_STAFF)}
+              rightIcon={<ArrowRight size={16} />}
+            >
+              Manage Staff
+            </Button>
           </div>
 
           <div className="border-t border-slate-100 pt-8">
