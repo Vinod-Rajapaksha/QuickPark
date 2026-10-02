@@ -168,7 +168,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 subtitle: "Find & park",
                                 icon: CupertinoIcons.car_detailed,
                                 isSelected: _selectedRole == 'DRIVER',
-                                onTap: () => setState(() => _selectedRole = 'DRIVER'),
+                                onTap: () =>
+                                    setState(() => _selectedRole = 'DRIVER'),
                                 primaryColor: primaryColor,
                               ),
                             ),
@@ -179,7 +180,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 subtitle: "Rent spots",
                                 icon: CupertinoIcons.house_alt,
                                 isSelected: _selectedRole == 'PARKING_OWNER',
-                                onTap: () => setState(() => _selectedRole = 'PARKING_OWNER'),
+                                onTap: () => setState(
+                                  () => _selectedRole = 'PARKING_OWNER',
+                                ),
                                 primaryColor: primaryColor,
                               ),
                             ),
