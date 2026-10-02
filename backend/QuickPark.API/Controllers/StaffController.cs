@@ -43,11 +43,18 @@ public class StaffController : ControllerBase
         if (!this.TryGetUserId(out var userId))
             return Unauthorized();
 
-        return Ok(
-            await _staffService
-            .GetDashboardAsync(
-                userId,
-                ct));
+        try
+        {
+            return Ok(
+                await _staffService
+                .GetDashboardAsync(
+                    userId,
+                    ct));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
 }
