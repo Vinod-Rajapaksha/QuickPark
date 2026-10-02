@@ -24,7 +24,7 @@ class RegisterRequest {
   final String password;
   final String phone;
   final String nic;
-  final int role;
+  final String role;
 
   RegisterRequest({
     required this.fullName,
@@ -32,7 +32,7 @@ class RegisterRequest {
     required this.password,
     required this.phone,
     required this.nic,
-    this.role = 0, // Default to Driver
+    this.role = 'DRIVER',
   });
 
   Map<String, dynamic> toJson() => {
@@ -49,7 +49,7 @@ class User {
   final String id;
   final String fullName;
   final String email;
-  final int role;
+  final String role;
 
   User({
     required this.id,
@@ -59,12 +59,17 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    int parsedRole = 0;
+    String parsedRole = 'DRIVER';
     if (json['role'] != null) {
-      if (json['role'] is int) {
-        parsedRole = json['role'];
-      } else if (json['role'] is String) {
-        parsedRole = int.tryParse(json['role']) ?? 0;
+      if (json['role'] is String) {
+        parsedRole = json['role'].toString().toUpperCase();
+      } else if (json['role'] is int) {
+        switch (json['role']) {
+          case 1: parsedRole = 'PARKING_OWNER'; break;
+          case 2: parsedRole = 'PARKING_STAFF'; break;
+          case 3: parsedRole = 'PLATFORM_ADMIN'; break;
+          case 0: default: parsedRole = 'DRIVER'; break;
+        }
       }
     }
 
