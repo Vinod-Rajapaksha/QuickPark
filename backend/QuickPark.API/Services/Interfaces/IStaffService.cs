@@ -8,6 +8,11 @@ public interface IStaffService
         Guid providerUserId,
         CreateStaffRequest request);
 
+    Task<StaffResponse> UpdateStaffAsync(
+        Guid providerUserId,
+        Guid staffId,
+        UpdateStaffRequest request);
+
     Task<IReadOnlyList<StaffResponse>> GetProviderStaffAsync(
         Guid providerUserId);
 
