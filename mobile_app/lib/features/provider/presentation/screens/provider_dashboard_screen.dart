@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import 'package:mobile_app/core/network/api_client.dart';
 
 final providerDashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
@@ -9,12 +10,17 @@ final providerDashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
 ) async {
   final dio = ref.watch(dioProvider);
 
-  final profileRes = await dio.get('/providers/me').catchError((_) => null);
+  final profileRes = await dio
+      .get('/providers/me')
+      .then<Response<dynamic>?>((value) => value)
+      .catchError((_) => null);
   final propsRes = await dio
       .get('/parkingFacilities/me')
+      .then<Response<dynamic>?>((value) => value)
       .catchError((_) => null);
   final resRes = await dio
       .get('/Reservations/provider')
+      .then<Response<dynamic>?>((value) => value)
       .catchError((_) => null);
 
   return {
