@@ -34,16 +34,16 @@ import '../features/parking_staff/presentation/screens/staff_profile_screen.dart
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-String _getInitialRoute(int? role) {
+String _getInitialRoute(String? role) {
   if (role == null) return '/login';
   switch (role) {
-    case 1:
+    case 'PARKING_OWNER':
       return '/provider/dashboard';
-    case 2:
+    case 'PARKING_STAFF':
       return '/staff/dashboard';
-    case 3:
+    case 'PLATFORM_ADMIN':
       return '/admin/dashboard';
-    case 0:
+    case 'DRIVER':
     default:
       return '/driver/home';
   }
@@ -89,25 +89,25 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Role-based protection
       if (isAuth) {
-        final role = authState.user?.role ?? 0;
+        final role = authState.user?.role ?? 'DRIVER';
         final path = state.matchedLocation;
 
-        if (role == 0 &&
+        if (role == 'DRIVER' &&
             (path.startsWith('/provider') ||
                 path.startsWith('/admin') ||
                 path.startsWith('/staff'))) {
           return '/driver/home';
-        } else if (role == 1 &&
+        } else if (role == 'PARKING_OWNER' &&
             (path.startsWith('/driver') ||
                 path.startsWith('/admin') ||
                 path.startsWith('/staff'))) {
           return '/provider/dashboard';
-        } else if (role == 2 &&
+        } else if (role == 'PARKING_STAFF' &&
             (path.startsWith('/driver') ||
                 path.startsWith('/admin') ||
                 path.startsWith('/provider'))) {
           return '/staff/dashboard';
-        } else if (role == 3 &&
+        } else if (role == 'PLATFORM_ADMIN' &&
             (path.startsWith('/driver') ||
                 path.startsWith('/provider') ||
                 path.startsWith('/staff'))) {
