@@ -21,7 +21,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _isPasswordVisible = false;
-  int _selectedRole = 0; // 0: Driver, 1: Provider
+  String _selectedRole = 'DRIVER';
 
   @override
   void dispose() {
@@ -167,8 +167,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 title: "Driver",
                                 subtitle: "Find & park",
                                 icon: CupertinoIcons.car_detailed,
-                                isSelected: _selectedRole == 0,
-                                onTap: () => setState(() => _selectedRole = 0),
+                                isSelected: _selectedRole == 'DRIVER',
+                                onTap: () => setState(() => _selectedRole = 'DRIVER'),
                                 primaryColor: primaryColor,
                               ),
                             ),
@@ -178,8 +178,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 title: "Provider",
                                 subtitle: "Rent spots",
                                 icon: CupertinoIcons.house_alt,
-                                isSelected: _selectedRole == 1,
-                                onTap: () => setState(() => _selectedRole = 1),
+                                isSelected: _selectedRole == 'PARKING_OWNER',
+                                onTap: () => setState(() => _selectedRole = 'PARKING_OWNER'),
                                 primaryColor: primaryColor,
                               ),
                             ),
