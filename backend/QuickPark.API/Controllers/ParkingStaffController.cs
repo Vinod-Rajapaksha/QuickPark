@@ -69,6 +69,28 @@ public class ProviderStaffController : ControllerBase
 
     }
 
+    [HttpPut("{staffId:guid}")]
+    public async Task<IActionResult> Update(
+        Guid staffId,
+        [FromBody] UpdateStaffRequest request)
+    {
+        if (!this.TryGetUserId(out var userId))
+            return Unauthorized();
+        try
+        {
+            var result = await _staffService.UpdateStaffAsync(
+                userId,
+                staffId,
+                request);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPatch("{staffId:guid}/status")]
     public async Task<IActionResult> UpdateStatus(
         Guid staffId,

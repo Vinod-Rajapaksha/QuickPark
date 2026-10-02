@@ -24,18 +24,26 @@ import '../features/provider/presentation/screens/provider_reservation_approval_
 import '../features/admin/presentation/screens/admin_layout.dart';
 import '../features/admin/presentation/screens/admin_dashboard_screen.dart';
 import '../features/admin/presentation/screens/admin_users_screen.dart';
-import '../features/admin/presentation/screens/admin_settings_screen.dart';
+import '../features/admin/presentation/screens/admin_approvals_screen.dart';
+import '../features/admin/presentation/screens/admin_profile_screen.dart';
+
+// Staff Screens
+import '../features/parking_staff/presentation/screens/staff_layout.dart';
+import '../features/parking_staff/presentation/screens/staff_home_screen.dart';
+import '../features/parking_staff/presentation/screens/staff_profile_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-String _getInitialRoute(int? role) {
+String _getInitialRoute(String? role) {
   if (role == null) return '/login';
   switch (role) {
-    case 1:
+    case 'PARKING_OWNER':
       return '/provider/dashboard';
-    case 2:
+    case 'PARKING_STAFF':
+      return '/staff/dashboard';
+    case 'PLATFORM_ADMIN':
       return '/admin/dashboard';
-    case 0:
+    case 'DRIVER':
     default:
       return '/driver/home';
   }
@@ -81,17 +89,28 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Role-based protection
       if (isAuth) {
-        final role = authState.user?.role ?? 0;
+        final role = authState.user?.role ?? 'DRIVER';
         final path = state.matchedLocation;
 
-        if (role == 0 &&
-            (path.startsWith('/provider') || path.startsWith('/admin'))) {
+        if (role == 'DRIVER' &&
+            (path.startsWith('/provider') ||
+                path.startsWith('/admin') ||
+                path.startsWith('/staff'))) {
           return '/driver/home';
-        } else if (role == 1 &&
-            (path.startsWith('/driver') || path.startsWith('/admin'))) {
+        } else if (role == 'PARKING_OWNER' &&
+            (path.startsWith('/driver') ||
+                path.startsWith('/admin') ||
+                path.startsWith('/staff'))) {
           return '/provider/dashboard';
-        } else if (role == 2 &&
-            (path.startsWith('/driver') || path.startsWith('/provider'))) {
+        } else if (role == 'PARKING_STAFF' &&
+            (path.startsWith('/driver') ||
+                path.startsWith('/admin') ||
+                path.startsWith('/provider'))) {
+          return '/staff/dashboard';
+        } else if (role == 'PLATFORM_ADMIN' &&
+            (path.startsWith('/driver') ||
+                path.startsWith('/provider') ||
+                path.startsWith('/staff'))) {
           return '/admin/dashboard';
         }
       }
@@ -182,6 +201,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // STAFF ROUTES
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            StaffLayout(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/staff/dashboard',
+                builder: (context, state) => const StaffHomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/staff/scanner',
+                builder: (context, state) => const ProviderScannerScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/staff/profile',
+                builder: (context, state) => const StaffProfileScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+
       // ADMIN ROUTES
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -206,8 +257,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/admin/settings',
-                builder: (context, state) => const AdminSettingsScreen(),
+                path: '/admin/approvals',
+                builder: (context, state) => const AdminApprovalsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/profile',
+                builder: (context, state) => const AdminProfileScreen(),
               ),
             ],
           ),

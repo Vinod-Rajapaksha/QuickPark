@@ -116,6 +116,38 @@ public class StaffService : IStaffService
 
     }
 
+    public async Task<StaffResponse> UpdateStaffAsync(
+        Guid providerUserId,
+        Guid staffId,
+        UpdateStaffRequest request)
+    {
+        var staff = await GetProviderStaffEntity(providerUserId, staffId);
+        
+        var user = await _context.Users.FindAsync(staff.UserId) 
+            ?? throw new Exception("User not found.");
+
+        user.FullName = request.FullName;
+        user.Phone = request.Phone;
+        user.NIC = request.NIC;
+        
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        }
+        
+        staff.Type = request.Type;
+        staff.Position = request.Position;
+        staff.CanManageReservations = request.Type == StaffType.ADMINISTRATIVE;
+        staff.CanViewReports = request.Type == StaffType.ADMINISTRATIVE;
+        staff.CanManageStaff = request.Type == StaffType.ADMINISTRATIVE;
+
+        await _context.SaveChangesAsync();
+
+        var facility = await _context.ParkingFacilities.FindAsync(staff.FacilityId);
+        
+        return Map(staff, user, facility!);
+    }
+
     public async Task UpdateStatusAsync(
         Guid providerUserId,
         Guid staffId,
@@ -207,6 +239,8 @@ public class StaffService : IStaffService
             Email = user.Email,
 
             Phone = user.Phone,
+
+            NIC = user.NIC,
 
             FacilityId = facility.Id,
 

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-class AdminSettingsScreen extends ConsumerWidget {
-  const AdminSettingsScreen({super.key});
+class StaffProfileScreen extends ConsumerWidget {
+  const StaffProfileScreen({super.key});
 
   void _showLogoutConfirmation(BuildContext context, WidgetRef ref) {
     showCupertinoModalPopup(
@@ -12,7 +12,7 @@ class AdminSettingsScreen extends ConsumerWidget {
       builder: (BuildContext context) => CupertinoActionSheet(
         title: const Text('Sign Out'),
         message: const Text(
-          'Are you sure you want to sign out of the Admin panel?',
+          'Are you sure you want to sign out of your account?',
         ),
         actions: <CupertinoActionSheetAction>[
           CupertinoActionSheetAction(
@@ -139,7 +139,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Admin Center',
+                        'Profile',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 28,
@@ -173,7 +173,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                               child: Text(
                                 user?.fullName.isNotEmpty == true
                                     ? user!.fullName[0].toUpperCase()
-                                    : 'A',
+                                    : 'S',
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -190,7 +190,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              user?.fullName ?? 'Administrator',
+                              user?.fullName ?? 'Staff Member',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
@@ -216,7 +216,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Text(
-                                'System Admin',
+                                'Staff Account',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -235,7 +235,6 @@ class AdminSettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // Options List
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
@@ -255,17 +254,17 @@ class AdminSettingsScreen extends ConsumerWidget {
                   children: [
                     _buildProfileOption(
                       context: context,
-                      icon: CupertinoIcons.shield_lefthalf_fill,
-                      title: 'System Security',
-                      subtitle: 'Manage roles and access',
+                      icon: CupertinoIcons.person_fill,
+                      title: 'Personal Details',
+                      subtitle: 'Update your information',
                       onTap: () {},
                     ),
                     Divider(height: 1, indent: 80, color: Colors.grey.shade100),
                     _buildProfileOption(
                       context: context,
-                      icon: CupertinoIcons.chart_bar_alt_fill,
-                      title: 'System Analytics',
-                      subtitle: 'View global usage stats',
+                      icon: CupertinoIcons.settings_solid,
+                      title: 'Settings',
+                      subtitle: 'App preferences and notifications',
                       onTap: () {},
                     ),
                   ],
@@ -295,7 +294,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                   context: context,
                   icon: CupertinoIcons.square_arrow_right_fill,
                   title: 'Sign Out',
-                  subtitle: 'Log out of admin panel',
+                  subtitle: 'Log out of your account',
                   isDestructive: true,
                   onTap: () => _showLogoutConfirmation(context, ref),
                 ),

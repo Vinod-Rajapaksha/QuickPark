@@ -74,9 +74,15 @@ export const navigationConfig: NavigationItem[] = [
   },
   {
     label: "Approvals",
-    path: ROUTES.PROVIDER_RESERVATION_APPROVAL,
+    path: ROUTES.PROVIDER_APPROVALS,
     roles: [Role.PARKING_OWNER],
     icon: "CheckSquare",
+  },
+  {
+    label: "Reservations",
+    path: ROUTES.PROVIDER_RESERVATIONS,
+    roles: [Role.PARKING_OWNER],
+    icon: "Calendar",
   },
   {
     label: "Revenue",
@@ -89,6 +95,12 @@ export const navigationConfig: NavigationItem[] = [
     path: ROUTES.PROVIDER_ANALYTICS,
     roles: [Role.PARKING_OWNER],
     icon: "BarChart",
+  },
+  {
+    label: "Staff",
+    path: ROUTES.PROVIDER_STAFF,
+    roles: [Role.PARKING_OWNER],
+    icon: "Users",
   },
 
   // Parking_Staff
@@ -103,12 +115,6 @@ export const navigationConfig: NavigationItem[] = [
     path: ROUTES.QR_SCANNER,
     roles: [Role.PARKING_STAFF, Role.PARKING_OWNER],
     icon: "ScanLine",
-  },
-  {
-    label: "Support",
-    path: ROUTES.SUPPORT,
-    roles: [Role.PARKING_STAFF],
-    icon: "LifeBuoy",
   },
 
   // Platform_Admin

@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/nav_bar.dart';
 
-class AdminLayout extends StatelessWidget {
+class StaffLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
-  const AdminLayout({super.key, required this.navigationShell});
+  const StaffLayout({super.key, required this.navigationShell});
 
   void _goBranch(int index) {
     navigationShell.goBranch(
@@ -25,19 +25,14 @@ class AdminLayout extends StatelessWidget {
         onTap: _goBranch,
         items: [
           NavBarItem(
-            icon: CupertinoIcons.home,
-            activeIcon: CupertinoIcons.house_fill,
+            icon: CupertinoIcons.chart_bar,
+            activeIcon: CupertinoIcons.chart_bar_fill,
             label: 'Dashboard',
           ),
           NavBarItem(
-            icon: CupertinoIcons.group,
-            activeIcon: CupertinoIcons.group_solid,
-            label: 'Users',
-          ),
-          NavBarItem(
-            icon: CupertinoIcons.checkmark_square,
-            activeIcon: CupertinoIcons.checkmark_square_fill,
-            label: 'Approvals',
+            icon: CupertinoIcons.qrcode_viewfinder,
+            activeIcon: CupertinoIcons.qrcode_viewfinder,
+            label: 'Scan',
           ),
           NavBarItem(
             icon: CupertinoIcons.person,

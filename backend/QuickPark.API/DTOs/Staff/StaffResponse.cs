@@ -17,6 +17,9 @@ public class StaffResponse
     public string Phone { get; set; }
         = string.Empty;
 
+    public string NIC { get; set; }
+        = string.Empty;
+
     public Guid FacilityId { get; set; }
 
     public string FacilityName { get; set; }
