@@ -96,6 +96,12 @@ export const navigationConfig: NavigationItem[] = [
     roles: [Role.PARKING_OWNER],
     icon: "BarChart",
   },
+  {
+    label: "Staff",
+    path: ROUTES.PROVIDER_STAFF,
+    roles: [Role.PARKING_OWNER],
+    icon: "Users",
+  },
 
   // Parking_Staff
   {
@@ -109,12 +115,6 @@ export const navigationConfig: NavigationItem[] = [
     path: ROUTES.QR_SCANNER,
     roles: [Role.PARKING_STAFF, Role.PARKING_OWNER],
     icon: "ScanLine",
-  },
-  {
-    label: "Support",
-    path: ROUTES.SUPPORT,
-    roles: [Role.PARKING_STAFF],
-    icon: "LifeBuoy",
   },
 
   // Platform_Admin
