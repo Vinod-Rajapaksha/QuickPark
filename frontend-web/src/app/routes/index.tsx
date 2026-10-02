@@ -24,6 +24,7 @@ import ParkingDetailsPage from "../../pages/provider/ParkingDetailsPage";
 import ParkingEditPage from "../../pages/provider/ParkingEditPage";
 import ProviderReservationApprovalPage from "../../pages/provider/ProviderReservationApprovalPage";
 import ProviderApprovalsPage from "../../pages/provider/ProviderApprovalsPage";
+import ProviderStaffManagementPage from "../../pages/provider/StaffManagementPage";
 
 // Staff pages
 import StaffDashboardPage from "../../pages/staff/StaffDashboardPage";
@@ -189,6 +190,17 @@ export const router = createBrowserRouter([
                 path: ROUTES.PROVIDER_RESERVATION_APPROVAL,
                 element: <ProviderReservationApprovalPage />,
               },
+              {
+                path: ROUTES.PROVIDER_STAFF,
+                element: <ProviderStaffManagementPage />,
+              },
+            ],
+          },
+
+          // Shared Routes (Provider & Staff)
+          {
+            element: <ProtectedRoute allowedRoles={[Role.PARKING_OWNER, Role.PARKING_STAFF]} />,
+            children: [
               { path: ROUTES.QR_SCANNER, element: <QRScannerPage /> },
             ],
           },
@@ -199,11 +211,6 @@ export const router = createBrowserRouter([
             children: [
               { path: ROUTES.STAFF_DASHBOARD, element: <StaffDashboardPage /> },
               { path: ROUTES.ACTIVE_SESSIONS, element: <ActiveSessionsPage /> },
-              { path: ROUTES.QR_SCANNER, element: <QRScannerPage /> },
-              {
-                path: ROUTES.SUPPORT,
-                element: <div className="p-4">Support - Coming Soon</div>,
-              },
             ],
           },
 
