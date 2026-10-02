@@ -133,6 +133,33 @@ namespace QuickPark.API.Controllers
             return Ok(new { message = "User updated successfully" });
         }
 
+        [HttpPatch("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var currentUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserIdStr) || !Guid.TryParse(currentUserIdStr, out Guid currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.Users.FindAsync(currentUserId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            {
+                return BadRequest(new { message = "Incorrect current password." });
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Password updated successfully" });
+        }
+
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "PLATFORM_ADMIN")]
         public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusRequest request)
