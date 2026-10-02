@@ -46,6 +46,7 @@ export const ROUTES = {
   PROVIDER_RESERVATIONS: "/provider/reservations",
   PROVIDER_APPROVALS: "/provider/approvals",
   PROVIDER_RESERVATION_APPROVAL: "/provider/reservations/approval/:id",
+  PROVIDER_STAFF: "/provider/staff",
 
   // Staff routes
   STAFF_DASHBOARD: "/staff/dashboard",
