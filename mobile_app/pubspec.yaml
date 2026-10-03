@@ -54,6 +54,11 @@ dependencies:
   image_picker: ^1.2.3
 
   intl: any
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+  geolocator: ^14.1.1
+  flutter_hooks: ^0.21.3+1
+  payhere_mobilesdk_flutter: ^3.2.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
