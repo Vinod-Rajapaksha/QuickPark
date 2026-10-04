@@ -5,15 +5,6 @@ import 'package:mobile_app/core/network/api_client.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-final facilitySlotsProvider = FutureProvider.family<List<dynamic>, String>((
-  ref,
-  facilityId,
-) async {
-  final dio = ref.watch(dioProvider);
-  final res = await dio.get('/parkingFacilities/$facilityId/slots');
-  return res.data as List<dynamic>;
-});
-
 class DriverFacilityDetailsScreen extends ConsumerStatefulWidget {
   final String facilityId;
   final Map<String, dynamic>? facilityData;
@@ -39,8 +30,10 @@ class _DriverFacilityDetailsScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
-    final slotsAsync = ref.watch(facilitySlotsProvider(widget.facilityId));
-
+    final duration = _endTime.difference(_startTime);
+    final hours = duration.inMinutes / 60.0;
+    final vehicleTypes = <String, Map<String, dynamic>>{};
+    
     final name = widget.facilityData?['name'] ?? 'Parking Facility';
     final address = widget.facilityData?['address'] ?? 'Unknown location';
     final imageUrl =
@@ -48,31 +41,32 @@ class _DriverFacilityDetailsScreenState
             (widget.facilityData!['images'] as List).isNotEmpty
         ? (widget.facilityData!['images'] as List).first['url']
         : null;
+    
+    final allocations = widget.facilityData?['allocations'] as List<dynamic>? ?? [];
+    for (var a in allocations) {
+      final vId = a['vehicleTypeId'];
+      if (vId != null) {
+        vehicleTypes[vId] = {
+          'id': vId,
+          'name': a['vehicleTypeName'] ?? 'Unknown',
+          'rate': (a['hourlyRate'] as num?)?.toDouble() ?? 0.0,
+        };
+      }
+    }
 
-    final duration = _endTime.difference(_startTime);
-    final hours = duration.inMinutes / 60.0;
-    final vehicleTypes = <String, Map<String, dynamic>>{};
-    double hourlyRate = widget.facilityData?['basePrice']?.toDouble() ?? 0.0;
-
-    if (slotsAsync.hasValue) {
-      for (var slot in slotsAsync.value!) {
-        final vId = slot['vehicleTypeId'];
-        if (vId != null) {
-          vehicleTypes[vId] = {
-            'id': vId,
-            'name': slot['vehicleTypeName'] ?? 'Unknown',
-            'rate': slot['hourlyRate']?.toDouble() ?? hourlyRate,
-          };
+    if (_selectedVehicleTypeId == null && vehicleTypes.isNotEmpty) {
+      Future.microtask(() {
+        if (mounted) {
+          setState(() {
+            _selectedVehicleTypeId = vehicleTypes.keys.first;
+          });
         }
-      }
+      });
+    }
 
-      if (_selectedVehicleTypeId == null && vehicleTypes.isNotEmpty) {
-        _selectedVehicleTypeId = vehicleTypes.keys.first;
-      }
-
-      if (_selectedVehicleTypeId != null) {
-        hourlyRate = vehicleTypes[_selectedVehicleTypeId]!['rate'];
-      }
+    double hourlyRate = 0.0;
+    if (_selectedVehicleTypeId != null && vehicleTypes.containsKey(_selectedVehicleTypeId)) {
+      hourlyRate = vehicleTypes[_selectedVehicleTypeId]!['rate'];
     }
 
     final totalCost = hours > 0 ? (hours * hourlyRate) : 0.0;
@@ -138,39 +132,40 @@ class _DriverFacilityDetailsScreenState
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-                  slotsAsync.when(
-                    data: (_) {
-                      if (vehicleTypes.isEmpty) {
-                        return const Text('No spots available.');
-                      }
-                      return Wrap(
-                        spacing: 12,
-                        children: vehicleTypes.values.map((v) {
-                          final isSelected = _selectedVehicleTypeId == v['id'];
-                          return ChoiceChip(
-                            label: Text(v['name']),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(
-                                  () => _selectedVehicleTypeId = v['id'],
-                                );
-                              }
-                            },
-                            selectedColor: primaryColor.withValues(alpha: 0.2),
-                            labelStyle: TextStyle(
-                              color: isSelected ? primaryColor : Colors.black87,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                  if (vehicleTypes.isEmpty)
+                    const Text('No spots available.')
+                  else
+                    Wrap(
+                      spacing: 12,
+                      children: vehicleTypes.values.map((v) {
+                        final isSelected = _selectedVehicleTypeId == v['id'];
+                        return ChoiceChip(
+                          label: Text(v['name']),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(
+                                () => _selectedVehicleTypeId = v['id'],
+                              );
+                            }
+                          },
+                          showCheckmark: false,
+                          selectedColor: primaryColor.withValues(alpha: 0.2),
+                          labelStyle: TextStyle(
+                            color: isSelected ? primaryColor : Colors.black87,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: isSelected ? primaryColor : Colors.grey.shade300,
                             ),
-                          );
-                        }).toList(),
-                      );
-                    },
-                    loading: () => const CircularProgressIndicator(),
-                    error: (e, _) => Text('Error loading slots: $e'),
-                  ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   const SizedBox(height: 32),
 
                   // Time Pickers
