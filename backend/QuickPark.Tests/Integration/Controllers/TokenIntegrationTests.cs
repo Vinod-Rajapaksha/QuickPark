@@ -1,64 +1,27 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using QuickPark.API.Controllers;
-using QuickPark.API.Data;
-using QuickPark.API.DTOs.Auth;
-using QuickPark.API.Models;
+using QuickPark.Tests.Integration.Infrastructure;
+using QuickPark.Tests.Helpers;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
-public class TokenIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+public class TokenIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    private readonly WebApplicationFactory<Program> _factory;
 
-    public TokenIntegrationTests(WebApplicationFactory<Program> factory)
+    public TokenIntegrationTests(CustomWebApplicationFactory factory)
     {
-        _factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                var descriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-
-                if (descriptor != null)
-                {
-                    services.Remove(descriptor);
-                }
-
-                services.AddDbContext<AppDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase("QuickParkTestDb_Token");
-                });
-            });
-        });
-
-        _client = _factory.CreateClient();
+        _client = factory.CreateClient();
     }
 
     private async Task<string> GetAuthCookieAsync()
     {
-        var registerRequest = new RegisterRequest
-        {
-            FullName = "Token Test User",
-            Email = "token_test@example.com",
-            Password = "Password123",
-            Phone = "1234567890",
-            NIC = "123456789V",
-            Role = UserRole.DRIVER
-        };
+        var registerRequest = TestDataBuilder.CreateRegisterRequest("token_test@example.com");
 
         await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
 
-        var loginRequest = new LoginRequest
-        {
-            Email = "token_test@example.com",
-            Password = "Password123"
-        };
+        var loginRequest = TestDataBuilder.CreateLoginRequest("token_test@example.com");
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
         var setCookieHeader = loginResponse.Headers.GetValues("Set-Cookie").FirstOrDefault();
@@ -70,7 +33,7 @@ public class TokenIntegrationTests : IClassFixture<WebApplicationFactory<Program
     {
         // Authenticate
         var authCookie = await GetAuthCookieAsync();
-        
+
         var reservationId = Guid.NewGuid();
 
         // Generate Token
