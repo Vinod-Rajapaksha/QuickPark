@@ -9,6 +9,14 @@ namespace QuickPark.Tests.Integration.Infrastructure;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    public CustomWebApplicationFactory()
+    {
+        Environment.SetEnvironmentVariable("Jwt__Key", "a_very_long_secret_key_for_testing_purposes_only_123456789");
+        Environment.SetEnvironmentVariable("Jwt__Issuer", "QuickParkTest");
+        Environment.SetEnvironmentVariable("Jwt__Audience", "QuickParkTest");
+        Environment.SetEnvironmentVariable("Jwt__ExpirationMinutes", "60");
+        Environment.SetEnvironmentVariable("AuthCookie__Name", "quickpark_auth");
+    }
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var dbName = "QuickParkIntegrationTestDb_" + Guid.NewGuid().ToString();
