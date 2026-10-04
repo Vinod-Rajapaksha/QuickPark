@@ -1,27 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using QuickPark.API.Data;
-using QuickPark.API.DTOs.Auth;
-using QuickPark.API.Models;
 using QuickPark.API.Options;
 using QuickPark.API.Services.Implementations;
+using QuickPark.Tests.Fixtures;
+using QuickPark.Tests.Helpers;
 
 namespace QuickPark.Tests.Unit.Services;
 
-public class AuthServiceTests
+public class AuthServiceTests : IClassFixture<DatabaseFixture>
 {
     private readonly AppDbContext _context;
     private readonly IOptions<JwtOptions> _jwtOptions;
     private readonly AuthService _authService;
 
-    public AuthServiceTests()
+    public AuthServiceTests(DatabaseFixture fixture)
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        _context = new AppDbContext(options);
-        
+        _context = fixture.Context;
+
         _jwtOptions = Options.Create(new JwtOptions
         {
             Key = "a_very_long_secret_key_for_testing_purposes_only_123456789",
@@ -37,15 +33,7 @@ public class AuthServiceTests
     public async Task RegisterAsync_WithValidData_ReturnsUserResponse()
     {
         // Arrange
-        var request = new RegisterRequest
-        {
-            FullName = "Test User",
-            Email = "test@example.com",
-            Password = "Password123",
-            Phone = "1234567890",
-            NIC = "123456789V",
-            Role = UserRole.DRIVER
-        };
+        var request = TestDataBuilder.CreateRegisterRequest("test_register@example.com");
 
         // Act
         var result = await _authService.RegisterAsync(request);
@@ -54,7 +42,7 @@ public class AuthServiceTests
         result.Should().NotBeNull();
         result.Email.Should().Be(request.Email);
         result.FullName.Should().Be(request.FullName);
-        
+
         var userInDb = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
         userInDb.Should().NotBeNull();
         BCrypt.Net.BCrypt.Verify(request.Password, userInDb!.PasswordHash).Should().BeTrue();
@@ -64,23 +52,11 @@ public class AuthServiceTests
     public async Task RegisterAsync_WithDuplicateEmail_ThrowsException()
     {
         // Arrange
-        var existingUser = new User
-        {
-            FullName = "Existing User",
-            Email = "duplicate@example.com",
-            PasswordHash = "hashed",
-            Role = UserRole.DRIVER
-        };
+        var existingUser = TestDataBuilder.CreateUser("duplicate@example.com");
         _context.Users.Add(existingUser);
         await _context.SaveChangesAsync();
 
-        var request = new RegisterRequest
-        {
-            FullName = "New User",
-            Email = "duplicate@example.com",
-            Password = "Password123",
-            Role = UserRole.DRIVER
-        };
+        var request = TestDataBuilder.CreateRegisterRequest("duplicate@example.com");
 
         // Act
         Func<Task> act = async () => await _authService.RegisterAsync(request);
@@ -93,22 +69,11 @@ public class AuthServiceTests
     public async Task LoginAsync_WithValidCredentials_ReturnsJwtToken()
     {
         // Arrange
-        var user = new User
-        {
-            FullName = "Login User",
-            Email = "login@example.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123"),
-            Role = UserRole.DRIVER,
-            IsActive = true
-        };
+        var user = TestDataBuilder.CreateUser("login@example.com");
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        var request = new LoginRequest
-        {
-            Email = "login@example.com",
-            Password = "Password123"
-        };
+        var request = TestDataBuilder.CreateLoginRequest("login@example.com");
 
         // Act
         var token = await _authService.LoginAsync(request);
@@ -121,22 +86,12 @@ public class AuthServiceTests
     public async Task LoginAsync_WithInvalidPassword_ThrowsException()
     {
         // Arrange
-        var user = new User
-        {
-            FullName = "Login User",
-            Email = "wrongpass@example.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123"),
-            Role = UserRole.DRIVER,
-            IsActive = true
-        };
+        var user = TestDataBuilder.CreateUser("wrongpass@example.com");
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        var request = new LoginRequest
-        {
-            Email = "wrongpass@example.com",
-            Password = "WrongPassword"
-        };
+        var request = TestDataBuilder.CreateLoginRequest("wrongpass@example.com");
+        request.Password = "WrongPassword";
 
         // Act
         Func<Task> act = async () => await _authService.LoginAsync(request);
@@ -149,13 +104,7 @@ public class AuthServiceTests
     public async Task GetUserByIdAsync_WithValidId_ReturnsUser()
     {
         // Arrange
-        var user = new User
-        {
-            FullName = "Test User",
-            Email = "findme@example.com",
-            PasswordHash = "hashed",
-            Role = UserRole.DRIVER
-        };
+        var user = TestDataBuilder.CreateUser("findme@example.com");
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
