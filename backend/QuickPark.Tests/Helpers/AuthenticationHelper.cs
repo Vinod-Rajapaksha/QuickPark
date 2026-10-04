@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using QuickPark.API.Models;
 
 namespace QuickPark.Tests.Helpers;
 
