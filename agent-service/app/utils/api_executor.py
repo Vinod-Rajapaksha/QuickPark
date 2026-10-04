@@ -11,6 +11,12 @@ def execute_with_api_key_rotation(api_call_func):
     Rotates the API key if a 429 Too Many Requests or 503 Unavailable error occurs.
     Tries up to the total number of available keys.
     """
+    from app.config.settings import settings
+    if settings.AGENT_TEST_MODE:
+        from app.utils.mock_llm import MockGeminiClient
+        logger.info("AGENT_TEST_MODE is active. Using Mock LLM.")
+        return api_call_func(MockGeminiClient())
+
     keys = api_key_manager.get_all_keys()
     if not keys:
         logger.warning("No API keys available.")
