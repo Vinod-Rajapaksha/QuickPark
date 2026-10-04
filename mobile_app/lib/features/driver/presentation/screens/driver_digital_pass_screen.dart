@@ -258,10 +258,7 @@ class _DriverDigitalPassScreenState
         Container(
           width: 15,
           height: 30,
-          decoration: const BoxDecoration(
-            color: Colors
-                .transparent,
-          ),
+          decoration: const BoxDecoration(color: Colors.transparent),
         ),
         Expanded(
           child: LayoutBuilder(

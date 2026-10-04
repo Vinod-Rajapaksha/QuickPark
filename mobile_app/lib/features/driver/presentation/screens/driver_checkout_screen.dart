@@ -306,8 +306,7 @@ class _DriverCheckoutScreenState extends ConsumerState<DriverCheckoutScreen>
   Widget _buildSwipeToPay(Color primaryColor) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxDrag =
-            constraints.maxWidth - 60;
+        final maxDrag = constraints.maxWidth - 60;
         return Container(
           height: 60,
           decoration: BoxDecoration(
