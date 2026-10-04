@@ -4,7 +4,23 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/nav_bar.dart';
 import '../../../agent/presentation/widgets/agent_bubble_fab.dart';
 
-class DriverLayout extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class HideAgentBubbleNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void hide() => state = true;
+  void show() => state = false;
+}
+
+final hideAgentBubbleProvider = NotifierProvider<HideAgentBubbleNotifier, bool>(
+  () {
+    return HideAgentBubbleNotifier();
+  },
+);
+
+class DriverLayout extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const DriverLayout({super.key, required this.navigationShell});
@@ -17,11 +33,13 @@ class DriverLayout extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hideAgent = ref.watch(hideAgentBubbleProvider);
+
     return Scaffold(
       extendBody: true,
       body: navigationShell,
-      floatingActionButton: const AgentBubbleFAB(),
+      floatingActionButton: hideAgent ? null : const AgentBubbleFAB(),
       bottomNavigationBar: NavBar(
         currentIndex: navigationShell.currentIndex,
         onTap: _goBranch,

@@ -18,7 +18,10 @@ public class DbSeeder
 
     public async Task SeedAsync()
     {
-        await _context.Database.MigrateAsync();
+        if (_context.Database.IsRelational())
+        {
+            await _context.Database.MigrateAsync();
+        }
 
         if (!await _context.Users.AnyAsync(u => u.Role == UserRole.PLATFORM_ADMIN))
         {

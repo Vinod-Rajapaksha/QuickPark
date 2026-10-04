@@ -12,6 +12,9 @@ import '../features/driver/presentation/screens/driver_layout.dart';
 import '../features/driver/presentation/screens/driver_home_screen.dart';
 import '../features/driver/presentation/screens/driver_bookings_screen.dart';
 import '../features/driver/presentation/screens/driver_profile_screen.dart';
+import '../features/driver/presentation/screens/driver_facility_details_screen.dart';
+import '../features/driver/presentation/screens/driver_checkout_screen.dart';
+import '../features/driver/presentation/screens/driver_digital_pass_screen.dart';
 
 // Provider Screens
 import '../features/provider/presentation/screens/provider_layout.dart';
@@ -138,6 +141,30 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/driver/home',
                 builder: (context, state) => const DriverHomeScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'facility/:id',
+                    builder: (context, state) {
+                      final facilityId = state.pathParameters['id']!;
+                      final extra = state.extra as Map<String, dynamic>?;
+                      return DriverFacilityDetailsScreen(
+                        facilityId: facilityId,
+                        facilityData: extra,
+                      );
+                    },
+                  ),
+                  GoRoute(
+                    path: 'checkout',
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>;
+                      return DriverCheckoutScreen(
+                        reservationRequest: extra['reservationRequest'],
+                        facilityData: extra['facilityData'],
+                        totalCost: extra['totalCost'],
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -146,6 +173,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/driver/bookings',
                 builder: (context, state) => const DriverBookingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'pass',
+                    builder: (context, state) {
+                      final booking = state.extra as Map<String, dynamic>;
+                      return DriverDigitalPassScreen(booking: booking);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
