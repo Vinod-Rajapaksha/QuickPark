@@ -4,13 +4,23 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QuickPark.API.Data;
+using Testcontainers.PostgreSql;
 
 namespace QuickPark.Tests.Integration.Infrastructure;
 
-public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private readonly PostgreSqlContainer _dbContainer;
+
     public CustomWebApplicationFactory()
     {
+        _dbContainer = new PostgreSqlBuilder()
+            .WithImage("postgres:15-alpine")
+            .WithDatabase("quickpark_test_db")
+            .WithUsername("postgres")
+            .WithPassword("postgres")
+            .Build();
+
         Environment.SetEnvironmentVariable("Jwt__Key", "a_very_long_secret_key_for_testing_purposes_only_123456789");
         Environment.SetEnvironmentVariable("Jwt__Issuer", "QuickParkTest");
         Environment.SetEnvironmentVariable("Jwt__Audience", "QuickParkTest");
@@ -18,10 +28,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Cookie__Name", "quickpark_auth");
         Environment.SetEnvironmentVariable("Cookie__ExpirationMinutes", "60");
     }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var dbName = "QuickParkIntegrationTestDb_" + Guid.NewGuid().ToString();
-
         builder.ConfigureAppConfiguration((context, config) =>
         {
             var inMemorySettings = new Dictionary<string, string>
@@ -47,8 +56,19 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseInMemoryDatabase(dbName);
+                options.UseNpgsql(_dbContainer.GetConnectionString());
             });
         });
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _dbContainer.StartAsync();
+    }
+
+    new public async Task DisposeAsync()
+    {
+        await _dbContainer.StopAsync();
+        await _dbContainer.DisposeAsync();
     }
 }
