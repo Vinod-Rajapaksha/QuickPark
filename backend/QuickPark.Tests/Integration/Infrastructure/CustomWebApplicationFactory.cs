@@ -15,7 +15,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Jwt__Issuer", "QuickParkTest");
         Environment.SetEnvironmentVariable("Jwt__Audience", "QuickParkTest");
         Environment.SetEnvironmentVariable("Jwt__ExpirationMinutes", "60");
-        Environment.SetEnvironmentVariable("AuthCookie__Name", "quickpark_auth");
+        Environment.SetEnvironmentVariable("Cookie__Name", "quickpark_auth");
+        Environment.SetEnvironmentVariable("Cookie__ExpirationMinutes", "60");
     }
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
