@@ -27,6 +27,15 @@ export const ParkingListPage: React.FC = () => {
   const [pendingDelete, setPendingDelete] = useState<ParkingFacility | null>(null);
   const { options } = useRegistrationOptions();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 2;
+  const totalPages = Math.ceil(facilities.length / ITEMS_PER_PAGE);
+  const currentFacilities = facilities.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -95,30 +104,56 @@ export const ParkingListPage: React.FC = () => {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {facilities.map((facility) => (
-            <ParkingCard
-              key={facility.facilityId}
-              facility={facility}
-              vehicleTypes={options.vehicleTypes}
-              onOpenSetup={(target) =>
-                navigate(ROUTES.facilitySetupPath(target.facilityId))
-              }
-              onOpenSlots={(target) =>
-                navigate(ROUTES.facilitySlotsPath(target.facilityId))
-              }
-              onOpenRevenue={(target) =>
-                navigate(ROUTES.facilityRevenuePath(target.facilityId))
-              }
-              onSaveHours={async (input) =>
-                (await update(facility.facilityId, input)) !== null
-              }
-              onSaveRates={async (allocations) =>
-                (await saveRates(facility.facilityId, allocations)) !== null
-              }
-              onDelete={setPendingDelete}
-            />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {currentFacilities.map((facility) => (
+              <ParkingCard
+                key={facility.facilityId}
+                facility={facility}
+                vehicleTypes={options.vehicleTypes}
+                onOpenSetup={(target) =>
+                  navigate(ROUTES.facilitySetupPath(target.facilityId))
+                }
+                onOpenSlots={(target) =>
+                  navigate(ROUTES.facilitySlotsPath(target.facilityId))
+                }
+                onOpenRevenue={(target) =>
+                  navigate(ROUTES.facilityRevenuePath(target.facilityId))
+                }
+                onSaveHours={async (input) =>
+                  (await update(facility.facilityId, input)) !== null
+                }
+                onSaveRates={async (allocations) =>
+                  (await saveRates(facility.facilityId, allocations)) !== null
+                }
+                onDelete={setPendingDelete}
+              />
+            ))}
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-slate-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
