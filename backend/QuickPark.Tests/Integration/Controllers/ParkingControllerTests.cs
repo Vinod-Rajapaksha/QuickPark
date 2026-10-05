@@ -6,42 +6,339 @@ using Microsoft.AspNetCore.Mvc;
 using QuickPark.API.Controllers;
 using QuickPark.API.DTOs.Parking;
 using QuickPark.API.DTOs.Slots;
-using QuickPark.API.Services.Interfaces;
+using QuickPark.API.Enums;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
+// The Parking Owner's facility surface, checked where the contract is decided: on the routes
+// themselves. A real host would need a live database, and every rule below is an attribute rule, so
+// they are read by reflection rather than served over HTTP.
 public class ParkingControllerTests
 {
-    private static readonly Type Catalogue = typeof(ParkingFacilitiesController);
+    private const string Owner = "PARKING_OWNER";
+    private const string Admin = "PLATFORM_ADMIN";
+    private const string Staff = "PARKING_STAFF";
+
+    private static readonly Type Facilities = typeof(ParkingFacilitiesController);
+    private static readonly Type Slots = typeof(ParkingSlotsController);
 
     [Fact]
-    public void ParkingFacilitiesController_ExposesExactlyTheAgreedRoutes()
+    public void FacilitiesController_ExposesExactlyTheAgreedRoutes()
     {
         var expected = new[]
         {
-            "GET api/parkingfacilities",
-            "POST api/parkingfacilities",
-            "GET api/parkingfacilities/{id:guid}",
-            "PUT api/parkingfacilities/{id:guid}",
-            "DELETE api/parkingfacilities/{id:guid}",
-            "GET api/parkingfacilities/{id:guid}/slots",
-            "GET api/parkingfacilities/{id:guid}/documents",
-            "POST api/parkingfacilities/{id:guid}/documents",
-            "POST api/parkingfacilities/{id:guid}/submit",
-            "PUT api/parkingfacilities/{id:guid}/allocations",
-            "GET api/parkingfacilities/me",
-            "GET api/parkingfacilities/me/{id:guid}",
-            "DELETE api/parkingfacilities/documents/{documentId:guid}",
-            "GET api/parkingfacilities/registration-options",
-            "GET api/parkingfacilities/admin",
-            "GET api/parkingfacilities/admin/pending",
-            "GET api/parkingfacilities/admin/{id:guid}",
-            "PUT api/parkingfacilities/admin/{id:guid}",
-            "PUT api/parkingfacilities/admin/{id:guid}/sections/{section}",
-            "POST api/parkingfacilities/admin/owner-identity/sync"
+            "GET api/ParkingFacilities",
+            "GET api/ParkingFacilities/{id:guid}",
+            "GET api/ParkingFacilities/{id:guid}/slots",
+            "GET api/ParkingFacilities/me",
+            "GET api/ParkingFacilities/me/{id:guid}",
+            "POST api/ParkingFacilities",
+            "PUT api/ParkingFacilities/{id:guid}",
+            "DELETE api/ParkingFacilities/{id:guid}",
+            "GET api/ParkingFacilities/{id:guid}/documents",
+            "POST api/ParkingFacilities/{id:guid}/documents",
+            "DELETE api/ParkingFacilities/documents/{documentId:guid}",
+            "GET api/ParkingFacilities/registration-options",
+            "PUT api/ParkingFacilities/{id:guid}/allocations",
+            "POST api/ParkingFacilities/{id:guid}/submit",
+            "GET api/ParkingFacilities/admin/pending",
+            "GET api/ParkingFacilities/admin",
+            "POST api/ParkingFacilities/admin/owner-identity/sync",
+            "GET api/ParkingFacilities/admin/{id:guid}",
+            "PUT api/ParkingFacilities/admin/{id:guid}",
+            "PUT api/ParkingFacilities/admin/{id:guid}/sections/{section}"
         };
 
-        var routes = RoutesOf(Catalogue).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Routing ignores case, so [controller] publishing "ParkingFacilities" is the same route the
+        // frontend calls in lower case.
+        var routes = RoutesOf(Facilities).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.Equal(expected.Length, routes.Count);
+
+        foreach (var route in expected) Assert.Contains(route, routes);
+    }
+
+    [Theory]
+    [InlineData("Create", "POST api/ParkingFacilities", Owner)]
+    [InlineData("Update", "PUT api/ParkingFacilities/{id:guid}", Owner)]
+    [InlineData("Delete", "DELETE api/ParkingFacilities/{id:guid}", Owner)]
+    [InlineData("GetMyFacilities", "GET api/ParkingFacilities/me", Owner)]
+    [InlineData("GetMyFacility", "GET api/ParkingFacilities/me/{id:guid}", Owner)]
+    [InlineData("GetDocuments", "GET api/ParkingFacilities/{id:guid}/documents", Owner)]
+    [InlineData("UploadDocument", "POST api/ParkingFacilities/{id:guid}/documents", Owner)]
+    [InlineData("DeleteDocument", "DELETE api/ParkingFacilities/documents/{documentId:guid}", Owner)]
+    [InlineData("GetRegistrationOptions", "GET api/ParkingFacilities/registration-options", Owner)]
+    [InlineData("SaveAllocations", "PUT api/ParkingFacilities/{id:guid}/allocations", Owner)]
+    [InlineData("SubmitForReview", "POST api/ParkingFacilities/{id:guid}/submit", Owner)]
+    public void TheProviderRegisterUpdateDeleteAndSubmitRoutesBelongToTheParkingOwner(
+        string actionName, string route, string expectedRole)
+    {
+        Assert.Contains(route, RoutesOf(Facilities));
+
+        Assert.Equal(new[] { expectedRole }, RequiresRoles(Facilities.GetMethod(actionName)!, Facilities));
+    }
+
+    [Theory]
+    [InlineData("GetPendingFacilities")]
+    [InlineData("GetFacilitiesForReview")]
+    [InlineData("SyncOwnerIdentity")]
+    [InlineData("GetFacilityForReview")]
+    [InlineData("ReviewFacility")]
+    [InlineData("ReviewFacilitySection")]
+    public void TheApprovalSurfaceIsGatedToThePlatformAdminAlone(string actionName)
+    {
+        var roles = RequiresRoles(Facilities.GetMethod(actionName)!, Facilities);
+
+        Assert.Equal(new[] { Admin }, roles);
+
+        // The owner who brought the property forward cannot be the one who passes it.
+        Assert.DoesNotContain(Owner, roles);
+    }
+
+    [Fact]
+    public void NoProviderRouteSitsUnderTheAdminPrefix()
+    {
+        // Two route families under one controller: nothing an owner calls can be mistaken for a
+        // review call, and nothing a reviewer calls is reachable as a plain property id.
+        var adminTemplates = Actions(Facilities).Where(IsAdminAction).Select(TemplateOf).ToArray();
+        var providerTemplates = Actions(Facilities).Where(a => !IsAdminAction(a)).Select(TemplateOf).ToArray();
+
+        Assert.All(adminTemplates, template =>
+            Assert.StartsWith("admin", template!, StringComparison.OrdinalIgnoreCase));
+
+        Assert.DoesNotContain(adminTemplates,
+            template => providerTemplates.Contains(template, StringComparer.OrdinalIgnoreCase));
+
+        // {id:guid} never matches the literal "admin", so the two families cannot collide.
+        Assert.All(providerTemplates, template =>
+            Assert.False((template ?? "none").Contains("admin", StringComparison.OrdinalIgnoreCase),
+                $"Provider route '{template}' collides with the review queue."));
+    }
+
+    [Fact]
+    public void TheWholeFacilityControllerIsSignedInOnlyAndNeverAnonymous()
+    {
+        Assert.True(ClassRequiresAuthentication(Facilities),
+            "Facility registration must not be readable by an anonymous caller.");
+
+        Assert.Empty(Facilities.GetCustomAttributes(inherit: false).OfType<AllowAnonymousAttribute>());
+
+        Assert.DoesNotContain(Actions(Facilities), action =>
+            action.GetCustomAttributes(inherit: false).OfType<AllowAnonymousAttribute>().Any());
+    }
+
+    [Fact]
+    public void ThePublicPartOfTheFacilityControllerIsTheDriverFacingCatalogueOnly()
+    {
+        // Only three reads are open to any signed-in account, and they are the marketplace ones.
+        var unGated = Actions(Facilities)
+            .Where(action => RequiresRoles(action, Facilities).Count == 0)
+            .Select(action => action.Name)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(new[] { "GetById", "GetSlots", "Search" }, unGated);
+    }
+
+    [Fact]
+    public void TheOwnerIsTakenFromTheCookieAndNeverFromThePayload()
+    {
+        // Every facility action resolves the owner from the signed-in id and takes no owner id from
+        // the body, so an owner cannot register a property into somebody else's account.
+        var namesTheCallerCouldSupply = new[] { "providerUserId", "ownerId", "providerId" };
+
+        var offenders = Actions(Facilities)
+            .Where(action => action.Name != nameof(ParkingFacilitiesController.SyncOwnerIdentity))
+            .SelectMany(action => action.GetParameters()
+                .Where(p => p.ParameterType == typeof(Guid) &&
+                            namesTheCallerCouldSupply.Contains(p.Name, StringComparer.OrdinalIgnoreCase))
+                .Select(p => $"{action.Name}.{p.Name}"))
+            .ToArray();
+
+        Assert.Empty(offenders);
+    }
+
+    [Fact]
+    public async Task AProviderRouteWithNoAccountInTheCookieIsTurnedAway()
+    {
+        var facilities = new ParkingFacilitiesController(null!) { ControllerContext = AnonymousContext() };
+
+        Assert.IsType<UnauthorizedResult>(await facilities.Create(new CreateParkingRequest(), default));
+        Assert.IsType<UnauthorizedResult>(
+            await facilities.Update(Guid.NewGuid(), new UpdateParkingRequest(), default));
+        Assert.IsType<UnauthorizedResult>(await facilities.Delete(Guid.NewGuid(), default));
+        Assert.IsType<UnauthorizedResult>(await facilities.GetMyFacilities(default));
+        Assert.IsType<UnauthorizedResult>(await facilities.GetMyFacility(Guid.NewGuid(), default));
+        Assert.IsType<UnauthorizedResult>(await facilities.GetDocuments(Guid.NewGuid(), default));
+        Assert.IsType<UnauthorizedResult>(await facilities.DeleteDocument(Guid.NewGuid(), default));
+        Assert.IsType<UnauthorizedResult>(
+            await facilities.SaveAllocations(Guid.NewGuid(), new SaveAllocationsRequest(), default));
+        Assert.IsType<UnauthorizedResult>(await facilities.SubmitForReview(Guid.NewGuid(), default));
+        Assert.IsType<UnauthorizedResult>(
+            await facilities.ReviewFacility(Guid.NewGuid(), new ReviewFacilityRequest(), default));
+    }
+
+    [Fact]
+    public void ProofIsUploadedAsAMultipartFormNotAsJson()
+    {
+        var upload = Facilities.GetMethod(nameof(ParkingFacilitiesController.UploadDocument))!;
+
+        // The file arrives as a form part; only the proof type is named as an explicit [FromForm].
+        var file = Assert.Single(upload.GetParameters().Where(p => p.ParameterType == typeof(IFormFile)));
+        Assert.Equal("file", file.Name);
+
+        var documentType = Assert.Single(upload.GetParameters().Where(p => p.Name == "documentType"));
+        Assert.Equal(typeof(string), documentType.ParameterType);
+        Assert.True(documentType.GetCustomAttributes().Any(a => a.GetType().Name == "FromFormAttribute"),
+            "documentType is posted beside the file, not read out of a JSON body.");
+    }
+
+    [Fact]
+    public void OneProofUploadIsCappedOnTheRouteAtSixMegabytes()
+    {
+        var upload = Facilities.GetMethod(nameof(ParkingFacilitiesController.UploadDocument))!;
+
+        var limit = Assert.Single(upload.GetCustomAttributes()
+            .Where(a => a.GetType().Name == "RequestSizeLimitAttribute"));
+
+        // The attribute keeps its number in a claim value rather than a public property, so the whole
+        // object is rendered and the byte count looked for in it.
+        var rendered = string.Join("|", limit.GetType()
+            .GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Select(member => Render(member, limit)));
+
+        Assert.True(rendered.Contains((6 * 1024 * 1024L).ToString(), StringComparison.Ordinal),
+            $"The route cap is not the six megabytes the upload guard assumes. Found: {rendered}");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("PASSPORT")]
+    [InlineData("PROPERTY_PHOTOS")]
+    [InlineData("land-document")]
+    [InlineData("land owner nic")]
+    public async Task OnlyTheNamedProofTypesAreAccepted(string? documentType)
+    {
+        // The upload refuses a type it cannot name before it looks at the file at all.
+        var facilities = new ParkingFacilitiesController(null!) { ControllerContext = OwnerContext() };
+
+        var refusal = Assert.IsType<BadRequestObjectResult>(
+            await facilities.UploadDocument(Guid.NewGuid(), documentType, null!, default));
+
+        Assert.Equal(StatusCodes.Status400BadRequest, refusal.StatusCode);
+    }
+
+    // COVERAGE NOTE: the guard is Enum.TryParse, which is case-insensitive, ignores surrounding
+    // whitespace and reads the raw number of the value. A client posting any of these is not refused,
+    // even though the message the owner is shown only ever names the five types in upper case.
+    [Theory]
+    [InlineData("3")]
+    [InlineData(" 3 ")]
+    [InlineData("property_photo")]
+    [InlineData("PROPERTY_PHOTO")]
+    [InlineData("Property_Photo")]
+    public async Task TheProofTypeGateIsLenientAboutHowATypeIsSpelled(string documentType)
+    {
+        var facilities = new ParkingFacilitiesController(null!) { ControllerContext = OwnerContext() };
+
+        var result = await facilities.UploadDocument(Guid.NewGuid(), documentType, null!, default);
+
+        Assert.IsNotType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task TheRefusalOnAnUnknownProofTypeNamesEveryTypeTheOwnerCanSend()
+    {
+        var facilities = new ParkingFacilitiesController(null!) { ControllerContext = OwnerContext() };
+
+        var refusal = Assert.IsType<BadRequestObjectResult>(
+            await facilities.UploadDocument(Guid.NewGuid(), "Aadhaar", null!, default));
+
+        var message = ReadProperty(refusal.Value!, "message") as string;
+
+        Assert.NotNull(message);
+
+        foreach (var name in Enum.GetNames<FacilityDocumentType>()) Assert.Contains(name, message);
+
+        // Five named types and no more: the list the owner is handed is the whole enum.
+        Assert.Equal(5, Enum.GetNames<FacilityDocumentType>().Count(name => message.Contains(name)));
+    }
+
+    [Fact]
+    public async Task TheReviewQueueRefusesAStatusThatIsNotAFacilityState()
+    {
+        var facilities = new ParkingFacilitiesController(null!) { ControllerContext = OwnerContext() };
+
+        var refusal = Assert.IsType<BadRequestObjectResult>(
+            await facilities.GetFacilitiesForReview("SOLD", null, default));
+
+        var message = ReadProperty(refusal.Value!, "message") as string;
+
+        foreach (var name in Enum.GetNames<ParkingStatus>()) Assert.Contains(name, message!);
+    }
+
+    [Theory]
+    [InlineData("OWNERSHIP")]
+    [InlineData("basic information")]
+    [InlineData("")]
+    public async Task ASectionDecisionIsRefusedUnlessItNamesOneOfTheFourReviewSections(string section)
+    {
+        var facilities = new ParkingFacilitiesController(null!) { ControllerContext = OwnerContext() };
+
+        Assert.IsType<BadRequestObjectResult>(await facilities.ReviewFacilitySection(
+            Guid.NewGuid(), section, new ReviewFacilitySectionRequest { Decision = "APPROVED" }, default));
+    }
+
+    [Fact]
+    public async Task TheFourSectionsTheAdminCanRuleOnAreTheFourTheOwnerSubmits()
+    {
+        var facilities = new ParkingFacilitiesController(null!) { ControllerContext = OwnerContext() };
+
+        var refusal = Assert.IsType<BadRequestObjectResult>(
+            await facilities.ReviewFacilitySection(
+                Guid.NewGuid(), "TAX", new ReviewFacilitySectionRequest { Decision = "APPROVED" }, default));
+
+        var message = (ReadProperty(refusal.Value!, "message") as string)!;
+
+        Assert.Equal(Enum.GetNames<FacilitySection>(),
+            message[(message.IndexOf("one of", StringComparison.Ordinal) + "one of".Length)..]
+                .TrimEnd('.')
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
+
+    [Fact]
+    public void TheWholePropertyDecisionPayloadCarriesOnlyAChoiceAndAReason()
+    {
+        Assert.Equal(new[] { "Decision", "RejectionReason" },
+            typeof(ReviewFacilityRequest).GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray());
+
+        Assert.Equal(new[] { "Decision", "Remarks" },
+            typeof(ReviewFacilitySectionRequest).GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray());
+    }
+
+    [Fact]
+    public void TheOwnerListsWithoutNamingAProviderIdInTheRoute()
+    {
+        // "me" is the only way to ask for your own properties, so the queue cannot be walked by id.
+        var routes = RoutesOf(Facilities);
+
+        Assert.Contains("GET api/ParkingFacilities/me", routes, StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain(routes, route => route.Contains("provider", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void SlotsController_ExposesExactlyTheOwnersBayBoard()
+    {
+        var expected = new[]
+        {
+            "GET api/ParkingSlots/provider/facilities/{facilityId:guid}",
+            "GET api/ParkingSlots/provider/slots/{slotId:guid}",
+            "PATCH api/ParkingSlots/provider/slots/{slotId:guid}/status"
+        };
+
+        var routes = RoutesOf(Slots).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Equal(expected.Length, routes.Count);
 
@@ -49,303 +346,149 @@ public class ParkingControllerTests
     }
 
     [Fact]
-    public void ADriverReachesTheCatalogueThroughThreeReadsOnly()
+    public void TheBayBoardIsOpenedToTheOwnersFloorCrewAndNobodyElse()
     {
-        var routes = RoutesOf(Catalogue).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        Assert.True(ClassRequiresAuthentication(Slots));
 
-        Assert.Contains("GET api/parkingfacilities", routes);
-        Assert.Contains("GET api/parkingfacilities/{id:guid}", routes);
-        Assert.Contains("GET api/parkingfacilities/{id:guid}/slots", routes);
-    }
+        Assert.Equal(new[] { Owner, Staff }, ClassRoles(Slots));
 
-    [Theory]
-    [InlineData(nameof(ParkingFacilitiesController.Search))]
-    [InlineData(nameof(ParkingFacilitiesController.GetById))]
-    [InlineData(nameof(ParkingFacilitiesController.GetSlots))]
-    public void AnySignedInRole_MayBrowseTheCatalogue(string actionName)
-    {
-        Assert.True(ClassRequiresAuthentication(Catalogue),
-            "The catalogue can be browsed without an account.");
+        Assert.DoesNotContain(Actions(Slots), action =>
+            action.GetCustomAttributes(inherit: false).OfType<AllowAnonymousAttribute>().Any());
 
-        Assert.Empty(RequiresRoles(ActionOf(Catalogue, actionName), Catalogue));
-    }
-
-    [Theory]
-    [InlineData(nameof(ParkingFacilitiesController.GetMyFacilities), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.GetMyFacility), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.Create), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.Update), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.Delete), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.GetDocuments), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.UploadDocument), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.DeleteDocument), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.GetRegistrationOptions), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.SaveAllocations), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.SubmitForReview), "PARKING_OWNER")]
-    [InlineData(nameof(ParkingFacilitiesController.GetPendingFacilities), "PLATFORM_ADMIN")]
-    [InlineData(nameof(ParkingFacilitiesController.GetFacilitiesForReview), "PLATFORM_ADMIN")]
-    [InlineData(nameof(ParkingFacilitiesController.GetFacilityForReview), "PLATFORM_ADMIN")]
-    [InlineData(nameof(ParkingFacilitiesController.ReviewFacility), "PLATFORM_ADMIN")]
-    [InlineData(nameof(ParkingFacilitiesController.ReviewFacilitySection), "PLATFORM_ADMIN")]
-    [InlineData(nameof(ParkingFacilitiesController.SyncOwnerIdentity), "PLATFORM_ADMIN")]
-    public void TheOwnersPaperworkAndTheApprovalDesk_NeverAnswerADriver(string actionName, string expectedRole)
-    {
-        var action = ActionOf(Catalogue, actionName);
-
-        Assert.Equal(new[] { expectedRole }, RequiresRoles(action, Catalogue));
-        Assert.Null(action.GetCustomAttribute<AllowAnonymousAttribute>());
+        // No action widens the class gate: an action-level [Authorize] names the crew roles too.
+        Assert.All(Actions(Slots).Where(a => a.GetCustomAttributes<AuthorizeAttribute>(inherit: false).Any()),
+            action => Assert.Equal(new[] { Owner, Staff }, RequiresRoles(action, Slots)));
     }
 
     [Fact]
-    public void NothingOnTheCatalogue_IsOpenToTheWorld()
+    public void ADriverOrAdminTokenCannotReachTheBayBoardBecauseNoRouteOpensItUp()
     {
-        Assert.Null(Catalogue.GetCustomAttribute<AllowAnonymousAttribute>());
-
-        Assert.Empty(RoutedActions(Catalogue)
-            .Where(action => action.GetCustomAttribute<AllowAnonymousAttribute>() is not null));
-    }
-
-    [Theory]
-    [InlineData("GetBoard")]
-    [InlineData("GetSlot")]
-    [InlineData("UpdateSlotStatus")]
-    public void TheOwnersBayBoard_IsNotHowADriverFindsABay(string actionName)
-    {
-        var board = typeof(ParkingSlotsController);
-
-        Assert.Equal(new[] { "PARKING_OWNER", "PARKING_STAFF" }, RequiresRoles(ActionOf(board, actionName), board));
-
-        // A driver reads bays from the property itself, which is why that route carries no role at all.
-        Assert.Empty(RequiresRoles(
-            ActionOf(Catalogue, nameof(ParkingFacilitiesController.GetSlots)), Catalogue));
-    }
-
-    [Fact]
-    public async Task EveryRouteThatNeedsToKnowWhoIsAsking_TurnsAwayAnAnonymousCaller()
-    {
-        var parking = new ParkingFacilitiesController(Mock.Of<IParkingService>())
-        {
-            ControllerContext = AnonymousContext()
-        };
-
-        var id = Guid.NewGuid();
-
-        Assert.IsType<UnauthorizedResult>(await parking.GetMyFacilities(default));
-        Assert.IsType<UnauthorizedResult>(await parking.GetMyFacility(id, default));
-        Assert.IsType<UnauthorizedResult>(await parking.Create(new CreateParkingRequest(), default));
-        Assert.IsType<UnauthorizedResult>(await parking.Update(id, new UpdateParkingRequest(), default));
-        Assert.IsType<UnauthorizedResult>(await parking.Delete(id, default));
-        Assert.IsType<UnauthorizedResult>(await parking.GetDocuments(id, default));
-        Assert.IsType<UnauthorizedResult>(await parking.UploadDocument(id, null, null, default));
-        Assert.IsType<UnauthorizedResult>(await parking.DeleteDocument(id, default));
-        Assert.IsType<UnauthorizedResult>(await parking.SaveAllocations(id, new SaveAllocationsRequest(), default));
-        Assert.IsType<UnauthorizedResult>(await parking.SubmitForReview(id, default));
-        Assert.IsType<UnauthorizedResult>(await parking.ReviewFacility(id, new ReviewFacilityRequest(), default));
-        Assert.IsType<UnauthorizedResult>(
-            await parking.ReviewFacilitySection(id, "DOCUMENTS", new ReviewFacilitySectionRequest(), default));
-    }
-
-    [Fact]
-    public async Task TheCatalogueRoutes_AnswerWithExactlyWhatTheCatalogueFound()
-    {
-        var facility = new ParkingResponse { FacilityId = Guid.NewGuid(), Name = "Fort Park" };
-        var bay = new SlotResponse { SlotId = Guid.NewGuid(), SlotNumber = "C-01" };
-
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.SearchApprovedAsync(It.IsAny<ParkingSearchRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { facility });
-        service.Setup(s => s.GetApprovedFacilityAsync(facility.FacilityId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(facility);
-        service.Setup(s => s.GetFacilitySlotsAsync(facility.FacilityId, null, null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { bay });
-
-        var parking = new ParkingFacilitiesController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var found = Assert.IsType<OkObjectResult>(
-            await parking.Search(new ParkingSearchRequest { Name = "fort" }, default));
-        Assert.Same(facility, Assert.Single((IReadOnlyList<ParkingResponse>)found.Value!));
-
-        var opened = Assert.IsType<OkObjectResult>(await parking.GetById(facility.FacilityId, default));
-        Assert.Same(facility, opened.Value);
-
-        var bays = Assert.IsType<OkObjectResult>(
-            await parking.GetSlots(facility.FacilityId, null, null, null, default));
-        Assert.Same(bay, Assert.Single((IReadOnlyList<SlotResponse>)bays.Value!));
-    }
-
-    [Fact]
-    public async Task TheSlotsRoute_HandsTheDriversWholeWindowToTheCatalogue()
-    {
-        var facilityId = Guid.NewGuid();
-        var vehicleTypeId = Guid.NewGuid();
-        var from = new DateTime(2026, 3, 9, 10, 0, 0, DateTimeKind.Utc);
-        var to = from.AddHours(2);
-
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetFacilitySlotsAsync(facilityId, vehicleTypeId, from, to, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<SlotResponse>());
-
-        var parking = new ParkingFacilitiesController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        await parking.GetSlots(facilityId, vehicleTypeId, from, to, default);
-
-        service.Verify(s =>
-            s.GetFacilitySlotsAsync(facilityId, vehicleTypeId, from, to, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task APropertyThatIsNotInTheCatalogue_IsReportedMissingNotBroken()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetApprovedFacilityAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ParkingResponse?)null);
-
-        var parking = new ParkingFacilitiesController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<NotFoundObjectResult>(await parking.GetById(Guid.NewGuid(), default));
-
-        Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
-        Assert.Equal("Approved parking property not found.", MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task ARefusalFromTheCatalogueComesBackAsABadRequestThatSaysWhy()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.SearchApprovedAsync(It.IsAny<ParkingSearchRequest>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException(
-                "A radius needs a location to measure from. Send latitude and longitude too."));
-
-        var parking = new ParkingFacilitiesController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<BadRequestObjectResult>(
-            await parking.Search(new ParkingSearchRequest { RadiusKm = 5 }, default));
-
-        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
-        Assert.Equal(
-            "A radius needs a location to measure from. Send latitude and longitude too.",
-            MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task AReferenceToAPropertyNobodyRegisteredIsStillAMissingResource()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetFacilitySlotsAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(),
-                It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new KeyNotFoundException("Parking property not found."));
-
-        var parking = new ParkingFacilitiesController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<NotFoundObjectResult>(
-            await parking.GetSlots(Guid.NewGuid(), null, null, null, default));
-
-        Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
-        Assert.Equal("Parking property not found.", MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task AFailureInsideTheCatalogue_NeverRepeatsItsOwnWordsToTheDriver()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.SearchApprovedAsync(It.IsAny<ParkingSearchRequest>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("connection string opened: Password=hunter2"));
-
-        var parking = new ParkingFacilitiesController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<ObjectResult>(await parking.Search(new ParkingSearchRequest(), default));
-
-        Assert.Equal(StatusCodes.Status500InternalServerError, result.StatusCode);
-        Assert.Equal("An unexpected error occurred.", MessageOf(result.Value));
-    }
-
-    // ---- Payload shape ----
-
-    [Fact]
-    public void ADriverAsksTheCatalogueWithWordsACoordinateAndAWalletBand()
-    {
-        Assert.Equal(
-            new[] { "City", "District", "HasEvCharging", "Latitude", "Longitude", "MaxHourlyRate",
-                    "MinHourlyRate", "Name", "Province", "RadiusKm" },
-            typeof(ParkingSearchRequest).GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray());
-    }
-
-    [Fact]
-    public void ASearchCannotPointAtOnePropertyOneVehicleTypeOrAnApprovalState()
-    {
-        var properties = typeof(ParkingSearchRequest).GetProperties();
-
-        Assert.DoesNotContain(properties, p =>
-            p.PropertyType == typeof(Guid) || p.PropertyType == typeof(Guid?));
-
-        Assert.DoesNotContain(properties, p => p.Name.Contains("Status", StringComparison.OrdinalIgnoreCase));
-    }
-
-    [Fact]
-    public void ThePublicBayBoardNamesTheBayNeverTheDriverStandingInIt()
-    {
-        var personal = typeof(SlotResponse).GetProperties()
-            .Where(p => p.Name.StartsWith("Driver", StringComparison.OrdinalIgnoreCase) ||
-                        p.Name.Contains("Phone", StringComparison.OrdinalIgnoreCase))
-            .Select(p => p.Name)
+        // DRIVER and PLATFORM_ADMIN appear nowhere on this controller, so the policy has nothing to
+        // match them against; only the owner and the staff working their bays are ever admitted.
+        var everyRole = Actions(Slots).SelectMany(a => RequiresRoles(a, Slots))
+            .Concat(ClassRoles(Slots))
+            .Distinct()
             .ToArray();
 
-        Assert.True(personal.Length == 0,
-            $"SlotResponse publishes {string.Join(", ", personal)} to anyone who asks for a bay.");
+        Assert.Equal(new[] { Owner, Staff }, everyRole);
     }
 
-    // ---- Helpers ----
+    [Fact]
+    public void AManualBayChangeIsAPatchAndCarriesOnlyAStateAndAReason()
+    {
+        // PATCH, not PUT: the owner flips one field of one bay and rewrites no booking.
+        Assert.Contains("PATCH api/ParkingSlots/provider/slots/{slotId:guid}/status", RoutesOf(Slots));
 
-    private static string MessageOf(object? body) =>
-        body?.GetType().GetProperty("message")?.GetValue(body) as string ?? string.Empty;
+        Assert.Equal(new[] { "Reason", "Status" },
+            typeof(UpdateSlotRequest).GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray());
+    }
 
-    private static MethodInfo ActionOf(Type controller, string actionName) => controller.GetMethod(actionName)!;
+    [Fact]
+    public async Task TheBayBoardRefusesACallerWithNoAccount()
+    {
+        var slots = new ParkingSlotsController(null!) { ControllerContext = AnonymousContext() };
+
+        Assert.IsType<UnauthorizedResult>(await slots.GetBoard(Guid.NewGuid(), null, null, null, null, default));
+        Assert.IsType<UnauthorizedResult>(await slots.GetSlot(Guid.NewGuid(), default));
+        Assert.IsType<UnauthorizedResult>(
+            await slots.UpdateSlotStatus(Guid.NewGuid(), new UpdateSlotRequest(), default));
+    }
+
+    [Fact]
+    public void TheBayBoardTakesAFilterAndAPairOfDatesButCarriesNoStateOfItsOwn()
+    {
+        var board = Slots.GetMethod(nameof(ParkingSlotsController.GetBoard))!;
+
+        Assert.Equal(new[] { "facilityId", "vehicleTypeId", "status", "from", "to", "ct" },
+            board.GetParameters().Select(p => p.Name).ToArray());
+
+        // Reading the board is a GET: the only write an owner has on a bay is the status PATCH.
+        Assert.DoesNotContain(RoutesOf(Slots), route =>
+            route.StartsWith("POST", StringComparison.OrdinalIgnoreCase) ||
+            route.StartsWith("PUT", StringComparison.OrdinalIgnoreCase) ||
+            route.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void TheOwnerCannotPublishOrWithdrawTheirOwnProperty()
+    {
+        // Approving is not one of the owner's verbs: no owner-gated route can set a facility status,
+        // and the submit route only hands the property to the admin queue.
+        var ownerRoutes = Actions(Facilities)
+            .Where(action => RequiresRoles(action, Facilities).Contains(Owner))
+            .Select(action => VerbOf(action) + " " + Join(TemplateOf(Facilities), TemplateOf(action), Facilities))
+            .ToArray();
+
+        Assert.DoesNotContain(ownerRoutes, route => route.Contains("admin", StringComparison.OrdinalIgnoreCase));
+
+        Assert.DoesNotContain(typeof(CreateParkingRequest).GetProperties(), p =>
+            p.Name.Equals("Status", StringComparison.OrdinalIgnoreCase) ||
+            p.Name.Equals("DocumentsComplete", StringComparison.OrdinalIgnoreCase) ||
+            p.Name.Equals("ReadyForSubmission", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void TheOwnerSeesDocumentCountsAndNeverADocumentUrl()
+    {
+        // The list and detail responses summarise proof; the upload response alone echoes the stored
+        // URL, so a leaked facility list cannot hand out the deed image.
+        var summaryNames = typeof(ParkingFacilityDocumentSummary).GetProperties().Select(p => p.Name).ToArray();
+
+        Assert.DoesNotContain("Url", summaryNames);
+        Assert.DoesNotContain("PublicId", summaryNames);
+        Assert.DoesNotContain("FileName", summaryNames);
+
+        Assert.Contains("Url", typeof(ParkingFacilityDocumentResponse).GetProperties().Select(p => p.Name));
+    }
+
+    private static string Render(MemberInfo member, object target)
+    {
+        try
+        {
+            return member switch
+            {
+                PropertyInfo property => property.GetValue(target)?.ToString() ?? string.Empty,
+                FieldInfo field => field.GetValue(target)?.ToString() ?? string.Empty,
+                _ => string.Empty
+            };
+        }
+        catch (Exception)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static object? ReadProperty(object target, string name) =>
+        target.GetType().GetProperty(name)?.GetValue(target);
+
+    private static ControllerContext OwnerContext()
+    {
+        var identity = new ClaimsIdentity(authenticationType: Owner);
+        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()));
+
+        return new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
+        };
+    }
 
     private static ControllerContext AnonymousContext() => new() { HttpContext = new DefaultHttpContext() };
 
-    private static ControllerContext SignedInAs(Guid userId) => new()
-    {
-        HttpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
-            }, "test"))
-        }
-    };
-
     private static IEnumerable<string> RoutesOf(Type controller) =>
-        RoutedActions(controller).Select(action =>
-        {
-            var verb = action.GetCustomAttributes()
-                .Select(a => VerbOf(a.GetType().Name))
-                .First(v => v is not null)!;
+        Actions(controller).Select(action =>
+            $"{VerbOf(action)} {Join(TemplateOf(controller), TemplateOf(action), controller)}")
+            .OrderBy(t => t, StringComparer.Ordinal)
+            .ToArray();
 
-            return $"{verb} {Join(TemplateOf(controller), TemplateOf(action), controller)}";
-        }).OrderBy(t => t).ToArray();
+    private static readonly string[] VerbNames = { "Get", "Post", "Put", "Patch", "Delete" };
 
-    private static readonly string[] Verbs = { "Get", "Post", "Put", "Patch", "Delete" };
-
+    // The verb attributes are read by name and their Template by lookup: this project references the
+    // API but not ASP.NET Core's own abstract attribute types.
     private static string? VerbOf(string attributeTypeName) =>
-        Verbs.FirstOrDefault(v => attributeTypeName == $"Http{v}Attribute")?.ToUpperInvariant();
+        VerbNames.FirstOrDefault(v => attributeTypeName == $"Http{v}Attribute")?.ToUpperInvariant();
+
+    private static string? VerbOf(MethodInfo action) =>
+        action.GetCustomAttributes().Select(a => VerbOf(a.GetType().Name)).FirstOrDefault(v => v is not null);
 
     private static string? TemplateOf(MemberInfo member) =>
         member.GetCustomAttributes()
@@ -366,6 +509,7 @@ public class ParkingControllerTests
         };
     }
 
+    // [controller] is filled in by MVC from the controller name; the same rule, applied to the raw template.
     private static string Expand(string? template, Type controller)
     {
         if (string.IsNullOrEmpty(template)) return string.Empty;
@@ -377,13 +521,24 @@ public class ParkingControllerTests
         return template.Replace("[controller]", token);
     }
 
-    private static IEnumerable<MethodInfo> RoutedActions(Type controller) =>
+    private static IEnumerable<MethodInfo> Actions(Type controller) =>
         controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Where(m => m.GetCustomAttributes().Any(a => VerbOf(a.GetType().Name) is not null));
+            .Where(m => VerbOf(m) is not null);
+
+    private static bool IsAdminAction(MethodInfo action) =>
+        RequiresRoles(action, Facilities).Contains(Admin) ||
+        (TemplateOf(action) ?? string.Empty).StartsWith("admin", StringComparison.OrdinalIgnoreCase);
 
     private static IReadOnlyList<string> RequiresRoles(MethodInfo action, Type controller) =>
         action.GetCustomAttributes<AuthorizeAttribute>(inherit: false)
             .Concat(controller.GetCustomAttributes<AuthorizeAttribute>(inherit: false))
+            .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
+            .SelectMany(a => a.Roles!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Distinct()
+            .ToArray();
+
+    private static IReadOnlyList<string> ClassRoles(Type controller) =>
+        controller.GetCustomAttributes<AuthorizeAttribute>(inherit: false)
             .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
             .SelectMany(a => a.Roles!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Distinct()
