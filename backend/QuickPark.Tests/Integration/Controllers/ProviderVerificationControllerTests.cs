@@ -122,27 +122,27 @@ public class ProviderVerificationControllerTests
     }
 
     [Fact]
-    public void AnOwnerWithNothingOnFileIsToldSoRatherThanShownAnEmptyAnswer()
+    public async Task AnOwnerWithNothingOnFileIsToldSoRatherThanShownAnEmptyAnswer()
     {
         var controller = new ProviderVerificationController(new FakeVerification())
         {
             ControllerContext = Context(Owner)
         };
 
-        var missing = Assert.IsType<NotFoundObjectResult>(controller.GetMyNicDocument(default).Result);
+        var missing = Assert.IsType<NotFoundObjectResult>(await controller.GetMyNicDocument(default));
 
         Assert.Equal("No NIC document has been uploaded.", Message(missing));
     }
 
     [Fact]
-    public void AnOwnerWithProofOnFileGetsTheAddressBack()
+    public async Task AnOwnerWithProofOnFileGetsTheAddressBack()
     {
         var controller = new ProviderVerificationController(new FakeVerification { NicUrl = "https://proof.invalid/nic/1" })
         {
             ControllerContext = Context(Owner)
         };
 
-        var ok = Assert.IsType<OkObjectResult>(controller.GetMyNicDocument(default).Result);
+        var ok = Assert.IsType<OkObjectResult>(await controller.GetMyNicDocument(default));
 
         // The answer is a one-field envelope rather than the profile, so a leaked response cannot hand
         // out anything besides the address of the document the owner already uploaded.
@@ -151,16 +151,16 @@ public class ProviderVerificationControllerTests
     }
 
     [Fact]
-    public void AnAdminReviewingAPersonIsGivenTheSameAnswerOrTheSameRefusal()
+    public async Task AnAdminReviewingAPersonIsGivenTheSameAnswerOrTheSameRefusal()
     {
         var empty = new ProviderVerificationController(new FakeVerification()) { ControllerContext = Context(Admin) };
-        Assert.IsType<NotFoundObjectResult>(empty.GetProviderNicDocument(OwnerId, default).Result);
+        Assert.IsType<NotFoundObjectResult>(await empty.GetProviderNicDocument(OwnerId, default));
 
         var present = new ProviderVerificationController(new FakeVerification { NicUrl = "https://proof.invalid/nic/2" })
         {
             ControllerContext = Context(Admin)
         };
-        Assert.IsType<OkObjectResult>(present.GetProviderNicDocument(OwnerId, default).Result);
+        Assert.IsType<OkObjectResult>(await present.GetProviderNicDocument(OwnerId, default));
     }
 
     [Theory]
@@ -168,14 +168,14 @@ public class ProviderVerificationControllerTests
     [InlineData("approve")]
     [InlineData("")]
     [InlineData("   ")]
-    public void AnOwnerIsClearedOrBlockedOnlyByANameTheAdminCanGive(string status)
+    public async Task AnOwnerIsClearedOrBlockedOnlyByANameTheAdminCanGive(string status)
     {
         // "approve" is refused because the guard matches the stored enum name, not a friendly label: a
         // reviewer has to send the exact word the state machine uses.
         var controller = new ProviderVerificationController(new FakeVerification()) { ControllerContext = Context(Admin) };
 
         var refusal = Assert.IsType<BadRequestObjectResult>(
-            controller.UpdateVerificationStatus(OwnerId, new UpdateVerificationStatusRequest { Status = status }, default).Result);
+            await controller.UpdateVerificationStatus(OwnerId, new UpdateVerificationStatusRequest { Status = status }, default));
 
         Assert.Equal("Status must be either APPROVED or REJECTED.", Message(refusal));
     }
@@ -184,7 +184,7 @@ public class ProviderVerificationControllerTests
     [InlineData("APPROVED")]
     [InlineData("REJECTED")]
     [InlineData("PENDING")]
-    public void TwoWordsAreTheVerdictAndAThirdIsSilentlyAdmitted(string status)
+    public async Task TwoWordsAreTheVerdictAndAThirdIsSilentlyAdmitted(string status)
     {
         // COVERAGE NOTE: the guard is Enum.TryParse without an IsDefined check, so "PENDING" — the state
         // the upload itself sets and the message never offers — passes the gate and reaches the service.
@@ -193,21 +193,22 @@ public class ProviderVerificationControllerTests
         var fake = new FakeVerification();
         var controller = new ProviderVerificationController(fake) { ControllerContext = Context(Admin) };
 
-        var result = controller.UpdateVerificationStatus(OwnerId, new UpdateVerificationStatusRequest { Status = status }, default).Result;
+        var result = await controller.UpdateVerificationStatus(
+            OwnerId, new UpdateVerificationStatusRequest { Status = status }, default);
 
         Assert.IsNotType<BadRequestObjectResult>(result);
         Assert.Equal("UpdateVerificationStatusAsync", Assert.Single(fake.Calls).Method);
     }
 
     [Fact]
-    public void TheVerdictIsAboutTheOwnerNamedInTheRouteAndByTheAdminInTheCookie()
+    public async Task TheVerdictIsAboutTheOwnerNamedInTheRouteAndByTheAdminInTheCookie()
     {
         // The two ids never come from the same place: the subject is addressed, the decider is proved.
         var fake = new FakeVerification();
         var controller = new ProviderVerificationController(fake) { ControllerContext = Context(Admin) };
 
-        controller.UpdateVerificationStatus(
-            OwnerId, new UpdateVerificationStatusRequest { Status = "REJECTED", Remarks = "The NIC is unreadable." }, default).Wait();
+        await controller.UpdateVerificationStatus(
+            OwnerId, new UpdateVerificationStatusRequest { Status = "REJECTED", Remarks = "The NIC is unreadable." }, default);
 
         var call = Assert.Single(fake.Calls);
 
@@ -226,18 +227,18 @@ public class ProviderVerificationControllerTests
     }
 
     [Fact]
-    public void AnEmptyQueueIsAnAnswerNotAnError()
+    public async Task AnEmptyQueueIsAnAnswerNotAnError()
     {
         var controller = new ProviderVerificationController(new FakeVerification()) { ControllerContext = Context(Admin) };
 
-        Assert.IsType<OkObjectResult>(controller.GetPendingVerifications(default).Result);
+        Assert.IsType<OkObjectResult>(await controller.GetPendingVerifications(default));
     }
 
     [Theory]
     [InlineData("UploadMyNic")]
     [InlineData("GetMyNicDocument")]
     [InlineData("UpdateVerificationStatus")]
-    public void AVerificationRouteCalledWithNoAccountInTheCookieIsTurnedAway(string actionName)
+    public async Task AVerificationRouteCalledWithNoAccountInTheCookieIsTurnedAway(string actionName)
     {
         var controller = new ProviderVerificationController(null!)
         {
@@ -256,18 +257,20 @@ public class ProviderVerificationControllerTests
             })
             .ToArray();
 
-        Assert.IsType<UnauthorizedResult>(((Task<IActionResult>)method.Invoke(controller, arguments)!).Result);
+        var answer = (Task<IActionResult>)method.Invoke(controller, arguments)!;
+
+        Assert.IsType<UnauthorizedResult>(await answer);
     }
 
     [Fact]
-    public void UploadingTheProofIsWhatPutsTheOwnerInTheQueue()
+    public async Task UploadingTheProofIsWhatPutsTheOwnerInTheQueue()
     {
         // The owner's own upload does not choose a state: it takes no status from the caller, so the
         // PENDING verdict is the service's to set and the queue is the admin's to read.
         var fake = new FakeVerification();
         var controller = new ProviderVerificationController(fake) { ControllerContext = Context(Owner) };
 
-        controller.UploadMyNic(null!, default).Wait();
+        await controller.UploadMyNic(null!, default);
 
         var call = Assert.Single(fake.Calls);
         Assert.Equal("UploadNicDocumentAsync", call.Method);
