@@ -13,12 +13,14 @@ class DriverCheckoutScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> reservationRequest;
   final Map<String, dynamic> facilityData;
   final double totalCost;
+  final String? existingReservationId;
 
   const DriverCheckoutScreen({
     super.key,
     required this.reservationRequest,
     required this.facilityData,
     required this.totalCost,
+    this.existingReservationId,
   });
 
   @override
@@ -70,11 +72,15 @@ class _DriverCheckoutScreenState extends ConsumerState<DriverCheckoutScreen>
         (paymentId) async {
           try {
             final dio = ref.read(dioProvider);
-            final res = await dio.post(
-              '/reservations',
-              data: widget.reservationRequest,
-            );
-            final reservationId = res.data['id'];
+            String reservationId = widget.existingReservationId ?? '';
+
+            if (reservationId.isEmpty) {
+              final res = await dio.post(
+                '/reservations',
+                data: widget.reservationRequest,
+              );
+              reservationId = res.data['id'];
+            }
 
             await dio.post(
               '/payments/external/confirm',
