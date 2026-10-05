@@ -141,6 +141,7 @@ const QRScannerPage: React.FC = () => {
       setConfirmConfig({ isOpen: false, action: null });
       resetScanner();
     } catch (err) {
+      console.error("Failed to perform reservation action:", err);
       toast.error(`Failed to ${action}. Please try again.`);
       setConfirmConfig({ isOpen: false, action: null });
     }
