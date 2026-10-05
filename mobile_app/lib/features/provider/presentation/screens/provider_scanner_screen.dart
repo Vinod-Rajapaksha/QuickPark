@@ -4,8 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_app/core/network/api_client.dart';
+import 'package:mobile_app/core/widgets/app_button.dart';
+import 'package:mobile_app/features/provider/domain/reservation_repository.dart';
+import 'package:mobile_app/features/provider/presentation/providers/reservation_provider.dart';
 import 'package:mobile_app/features/provider/presentation/widgets/reservation_scan_modal.dart';
+import 'package:mobile_app/features/reservations/domain/models/reservation.dart';
+import 'package:mobile_app/features/reservations/domain/reservation_qr_codec.dart';
 import 'package:mobile_app/core/widgets/app_error.dart';
 import 'package:mobile_app/core/widgets/app_loader.dart';
 
@@ -140,6 +144,8 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
     final String? rawCode = barcodes.first.rawValue;
     if (rawCode == null || rawCode.isEmpty) return;
 
+    final reservationId = ReservationQrCodec.decode(rawCode);
+
     setState(() {
       _isProcessing = true;
       _isScannerActive = false;
@@ -148,97 +154,55 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
     _pauseScanner();
 
     try {
-      final data = await _fetchReservationDetails(rawCode);
-      if (data != null && mounted) {
-        await _showReservationModal(data);
-      } else if (mounted) {
-        AppErrorHandler.showErrorModal(
-          context: context,
-          title: 'Invalid QR Code',
-          message:
-              'The scanned code is not associated with any active reservation. Please try again.',
-          onRetry: () {
-            if (mounted) {
-              _isScannerActive = true;
-              _resumeScanner();
-            }
-          },
+      if (reservationId == null) {
+        await _showFailure(
+          'Not a QuickPark ticket',
+          'This code is not a QuickPark reservation. Scan the QR the driver '
+              'was shown at booking time.',
         );
+        return;
       }
-    } catch (e) {
+
+      final reservation = await ref
+          .read(reservationRepositoryProvider)
+          .getReservationById(reservationId);
+
+      if (mounted) await _showReservationModal(reservation);
+    } catch (error) {
       if (mounted) {
-        AppErrorHandler.showErrorModal(
-          context: context,
-          title: 'Verification Failed',
-          message:
-              'Unable to verify QR code. Please check your network connection and try again.',
-          onRetry: () {
-            if (mounted) {
-              _isScannerActive = true;
-              _resumeScanner();
-            }
-          },
+        await _showFailure(
+          'Verification Failed',
+          AppErrorHandler.messageFrom(
+            error,
+            fallback:
+                'No reservation matches this code, or the server could not be '
+                'reached.',
+          ),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
           _isProcessing = false;
+          _isScannerActive = true;
         });
+        _resumeScanner();
       }
     }
   }
 
-  Future<Map<String, dynamic>?> _fetchReservationDetails(String code) async {
-    try {
-      final dio = ref.read(dioProvider);
-      final response = await dio.get('/reservations/scan/$code');
-      if (response.statusCode == 200 && response.data != null) {
-        return response.data as Map<String, dynamic>;
-      }
-    } catch (_) {}
-    return null;
+  Future<void> _showFailure(String title, String message) {
+    return AppErrorHandler.showErrorModal(
+      context: context,
+      title: title,
+      message: message,
+      // Closing the sheet is the retry: the scanner restarts in the finally
+      // block of _handleBarcode.
+      onRetry: () {},
+    );
   }
 
-  Future<void> _updateStatus(
-    String id,
-    String action,
-    Map<String, dynamic> currentData,
-  ) async {
-    try {
-      final dio = ref.read(dioProvider);
-      final response = await dio.put(
-        '/reservations/$id/status',
-        data: {'action': action},
-      );
-
-      if (mounted) {
-        if (response.statusCode == 200) {
-          AppErrorHandler.showSnackBar(
-            context,
-            'Reservation action ($action) processed successfully!',
-            isError: false,
-          );
-        } else {
-          AppErrorHandler.showSnackBar(
-            context,
-            'Failed to update status. Please try again.',
-            isError: true,
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        AppErrorHandler.showSnackBar(
-          context,
-          'Error updating status: $e',
-          isError: true,
-        );
-      }
-    }
-  }
-
-  Future<void> _showReservationModal(Map<String, dynamic> data) async {
+  Future<void> _showReservationModal(Reservation reservation) async {
     await showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -247,14 +211,44 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return ReservationScanModal(data: data, onUpdateStatus: _updateStatus);
+      builder: (sheetContext) {
+        return ReservationScanModal(
+          reservation: reservation,
+          onAction: _runAction,
+        );
       },
     );
+  }
 
-    if (mounted) {
-      _isScannerActive = true;
-      _resumeScanner();
+  /// The server owns the booking transition, so the sheet only closes once the
+  /// action has come back, and the rule the server refused is shown verbatim.
+  Future<void> _runAction(Reservation reservation, String action) async {
+    final notifier = ref.read(reservationActionProvider.notifier);
+    final isCheckOut = action == 'check-out';
+
+    try {
+      final updated = isCheckOut
+          ? await notifier.checkOut(reservation.reservationId)
+          : await notifier.checkIn(reservation.reservationId);
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      AppErrorHandler.showSnackBar(
+        context,
+        isCheckOut
+            ? '${updated.driverName} checked out.'
+            : '${updated.driverName} checked in.',
+        isError: false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      AppErrorHandler.showSnackBar(
+        context,
+        AppErrorHandler.messageFrom(
+          error,
+          fallback: 'The booking could not be updated.',
+        ),
+      );
     }
   }
 
@@ -358,6 +352,8 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
               controller: _scannerController,
               scanWindow: scanWindow,
               onDetect: _handleBarcode,
+              errorBuilder: (context, error) =>
+                  _CameraErrorView(error: error, onRetry: _resumeScanner),
             ),
             CustomPaint(painter: ScannerOverlay(scanWindow: scanWindow)),
             if (_isProcessing)
@@ -416,6 +412,75 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A denied or broken camera used to leave the owner on a black screen with no
+/// explanation; the plugin reports the reason, so it is shown with a retry.
+class _CameraErrorView extends StatelessWidget {
+  final MobileScannerException error;
+  final VoidCallback onRetry;
+
+  const _CameraErrorView({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPermissionDenied =
+        error.errorCode == MobileScannerErrorCode.permissionDenied;
+
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isPermissionDenied
+                  ? Icons.no_photography_outlined
+                  : Icons.videocam_off_outlined,
+              color: Colors.white,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isPermissionDenied
+                  ? 'Camera access needed'
+                  : 'Camera unavailable',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isPermissionDenied
+                  ? 'Allow camera access for QuickPark in your device settings, '
+                        'then try again.'
+                  : error.errorCode == MobileScannerErrorCode.unsupported
+                  ? 'This device cannot scan QR codes.'
+                  : 'The camera could not be started. Try again.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.8),
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'Try again',
+              icon: Icons.refresh,
+              onPressed: onRetry,
+              backgroundColor: Colors.blueAccent,
+              foregroundColor: Colors.white,
             ),
           ],
         ),

@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/nav_bar.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class ProviderProfileScreen extends ConsumerWidget {
@@ -296,7 +298,7 @@ class ProviderProfileScreen extends ConsumerWidget {
                       icon: CupertinoIcons.doc_text_fill,
                       title: 'Verification Documents',
                       subtitle: 'Update your KYC',
-                      onTap: () {},
+                      onTap: () => context.push('/provider/verification'),
                     ),
                   ],
                 ),
@@ -331,7 +333,7 @@ class ProviderProfileScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: NavBarMetrics.reservedHeight(context)),
           ],
         ),
       ),

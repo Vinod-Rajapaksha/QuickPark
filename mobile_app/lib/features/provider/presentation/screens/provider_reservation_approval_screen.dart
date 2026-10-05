@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/features/provider/presentation/providers/reservation_provider.dart';
 import 'package:mobile_app/features/reservations/domain/models/reservation.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_app/core/widgets/nav_bar.dart';
 
 class ProviderReservationApprovalScreen extends ConsumerStatefulWidget {
   const ProviderReservationApprovalScreen({super.key});
@@ -216,7 +217,12 @@ class _ProviderReservationApprovalScreenState
     final timeFormat = DateFormat('hh:mm a');
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.fromLTRB(
+        16.0,
+        16.0,
+        16.0,
+        NavBarMetrics.reservedHeight(context),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_app/core/widgets/app_button.dart';
+import 'package:mobile_app/features/reservations/domain/models/reservation.dart';
 
 class ReservationScanModal extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final void Function(
-    String id,
-    String action,
-    Map<String, dynamic> currentData,
-  )
-  onUpdateStatus;
+  final Reservation reservation;
+  final void Function(Reservation reservation, String action) onAction;
 
   const ReservationScanModal({
     super.key,
-    required this.data,
-    required this.onUpdateStatus,
+    required this.reservation,
+    required this.onAction,
   });
 
   Widget _buildStatusChip(String status) {
@@ -107,8 +104,10 @@ class ReservationScanModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = data['status'] as String? ?? 'UNKNOWN';
-    final id = data['id'] as String;
+    final status = reservation.status.toUpperCase();
+    final times =
+        '${DateFormat('dd MMM, HH:mm').format(reservation.startTime)}'
+        ' - ${DateFormat('HH:mm').format(reservation.endTime)}';
 
     return Container(
       decoration: const BoxDecoration(
@@ -117,120 +116,136 @@ class ReservationScanModal extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Drag Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Reservation',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
+          padding: EdgeInsets.fromLTRB(
+            24,
+            12,
+            24,
+            24 + MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  _buildStatusChip(status),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Details Card
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: Column(
+                const SizedBox(height: 24),
+
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildDetailItem(
-                      Icons.person_outline,
-                      'Driver',
-                      data['driver']?['fullName'] ?? 'N/A',
+                    const Expanded(
+                      child: Text(
+                        'Reservation',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
                     ),
-                    _buildDetailItem(
-                      Icons.directions_car_outlined,
-                      'Vehicle Type',
-                      data['vehicleType']?['name'] ?? 'N/A',
-                    ),
-                    _buildDetailItem(
-                      Icons.local_parking_outlined,
-                      'Slot',
-                      data['slotNumber'] ?? 'N/A',
-                    ),
-                    _buildDetailItem(
-                      Icons.access_time,
-                      'Duration',
-                      '${data['startTime'] ?? 'N/A'} - ${data['endTime'] ?? 'N/A'}',
-                    ),
+                    _buildStatusChip(status),
                   ],
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-              // Action Buttons
-              if (status.toUpperCase() == 'CONFIRMED')
-                AppButton(
-                  label: 'Check In Driver',
-                  icon: Icons.login,
-                  onPressed: () => onUpdateStatus(id, 'check-in', data),
-                  backgroundColor: Colors.blue.shade600,
-                  foregroundColor: Colors.white,
-                )
-              else if (status.toUpperCase() == 'CHECKED_IN')
-                AppButton(
-                  label: 'Check Out Driver',
-                  icon: Icons.logout,
-                  onPressed: () => onUpdateStatus(id, 'check-out', data),
-                  backgroundColor: Colors.orange.shade600,
-                  foregroundColor: Colors.white,
-                )
-              else
+                // Details Card
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.grey.shade600,
-                        size: 20,
+                      _buildDetailItem(
+                        Icons.person_outline,
+                        'Driver',
+                        reservation.driverName,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'No actions available for status: $status',
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      _buildDetailItem(
+                        Icons.phone_outlined,
+                        'Phone',
+                        reservation.driverPhone,
+                      ),
+                      _buildDetailItem(
+                        Icons.directions_car_outlined,
+                        'Vehicle Type',
+                        reservation.vehicleTypeName,
+                      ),
+                      _buildDetailItem(
+                        Icons.local_parking_outlined,
+                        'Slot',
+                        reservation.slotNumber,
+                      ),
+                      _buildDetailItem(
+                        Icons.access_time,
+                        'Duration',
+                        times,
                       ),
                     ],
                   ),
                 ),
-            ],
+                const SizedBox(height: 32),
+
+                // Action Buttons
+                if (status == 'CONFIRMED')
+                  AppButton(
+                    label: 'Check In Driver',
+                    icon: Icons.login,
+                    onPressed: () => onAction(reservation, 'check-in'),
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                  )
+                else if (status == 'CHECKED_IN')
+                  AppButton(
+                    label: 'Check Out Driver',
+                    icon: Icons.logout,
+                    onPressed: () => onAction(reservation, 'check-out'),
+                    backgroundColor: Colors.orange.shade600,
+                    foregroundColor: Colors.white,
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.grey.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'No actions available for status: $status',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

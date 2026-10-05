@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:gal/gal.dart';
+import '../../domain/reservation_qr_codec.dart';
 
 class ReservationQrCode extends StatefulWidget {
   final String reservationId;
@@ -51,8 +52,7 @@ class _ReservationQrCodeState extends State<ReservationQrCode> {
 
   @override
   Widget build(BuildContext context) {
-    // The payload uses a specific prefix for legendary validation
-    final payload = 'qp-res-v1:${widget.reservationId}';
+    final payload = ReservationQrCodec.encode(widget.reservationId);
 
     return Column(
       mainAxisSize: MainAxisSize.min,

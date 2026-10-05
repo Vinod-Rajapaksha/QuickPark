@@ -22,6 +22,7 @@ import '../features/provider/presentation/screens/provider_dashboard_screen.dart
 import '../features/provider/presentation/screens/provider_scanner_screen.dart';
 import '../features/provider/presentation/screens/provider_profile_screen.dart';
 import '../features/provider/presentation/screens/provider_reservation_approval_screen.dart';
+import '../features/provider/presentation/screens/provider_verification_screen.dart';
 
 // Admin Screens
 import '../features/admin/presentation/screens/admin_layout.dart';
@@ -267,6 +268,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+
+      // Full-screen provider pages pushed above the tab shell
+      GoRoute(
+        path: '/provider/verification',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProviderVerificationScreen(),
       ),
 
       // ADMIN ROUTES

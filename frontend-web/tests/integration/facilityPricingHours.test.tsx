@@ -164,7 +164,7 @@ const fieldIn = (typeName: string, labelText: string): HTMLInputElement => {
 
 // Readings built from several JSX expressions only match on the whole element's text.
 const elementReading = (text: string): HTMLElement => {
-  const nodes = [...globalThis.document.querySelectorAll("p, span")];
+  const nodes = [...globalThis.document.querySelectorAll<HTMLElement>("p, span")];
   const found = nodes.find((node) => (node.textContent ?? "").replace(/\s+/g, " ").trim() === text);
   if (!found) throw new Error(`Nothing on the page reads "${text}".`);
   return found;

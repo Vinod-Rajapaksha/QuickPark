@@ -64,7 +64,7 @@ const reservation = (over: Partial<Reservation> = {}): Reservation => ({
 
 // Readings built from several JSX expressions only match on the whole element's text.
 const elementReading = (text: string): HTMLElement => {
-  const nodes = [...globalThis.document.querySelectorAll("p, span, h2")];
+  const nodes = [...globalThis.document.querySelectorAll<HTMLElement>("p, span, h2")];
   const found = nodes.find(
     (node) => (node.textContent ?? "").replace(/\s+/g, " ").trim() === text,
   );

@@ -43,4 +43,28 @@ class ReservationApi {
   Future<void> sendMessage(String id, String message) async {
     await _dio.post('/Reservations/$id/message', data: {'message': message});
   }
+
+  Future<Reservation> checkIn(String id) async {
+    final response = await _dio.post('/Reservations/$id/check-in');
+    return Reservation.fromJson(response.data);
+  }
+
+  Future<Reservation> checkOut(String id) async {
+    final response = await _dio.post('/Reservations/$id/check-out');
+    return Reservation.fromJson(response.data);
+  }
+
+  /// The owner's bay state: AVAILABLE, MAINTENANCE or DISABLED. The backend refuses
+  /// a change while a vehicle holds the bay, so its message is the authority here.
+  Future<Map<String, dynamic>> updateSlotStatus(
+    String slotId, {
+    required String status,
+    String? reason,
+  }) async {
+    final response = await _dio.patch(
+      '/ParkingSlots/provider/slots/$slotId/status',
+      data: {'status': status, 'reason': reason},
+    );
+    return response.data as Map<String, dynamic>;
+  }
 }

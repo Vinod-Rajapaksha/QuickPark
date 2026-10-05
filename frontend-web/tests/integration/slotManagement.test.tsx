@@ -108,7 +108,7 @@ const board = (rows: ParkingSlotRow[], over: Partial<SlotBoard> = {}): SlotBoard
 });
 
 const elementReading = (text: string): HTMLElement => {
-  const nodes = [...globalThis.document.querySelectorAll("p, span, h2, h3, h4")];
+  const nodes = [...globalThis.document.querySelectorAll<HTMLElement>("p, span, h2, h3, h4")];
   const found = nodes.find(
     (node) => (node.textContent ?? "").replace(/\s+/g, " ").trim() === text,
   );

@@ -237,12 +237,12 @@ public class FacilityApprovalStateMachineTests : IDisposable
         var facility = Submitted(ParkingStatus.APPROVED);
         Rows(facility, SectionReviewStatus.APPROVED, First, Admin);
 
-        Assert.True(Mapping.ToResponse(facility).IsEditable);
+        Assert.True(FacilityMapping.ToResponse(facility).IsEditable);
 
         ReopenSection(facility, FacilitySection.PRICING, First.AddDays(1));
 
         Assert.Equal(ParkingStatus.PENDING_APPROVAL, facility.Status);
-        Assert.False(Mapping.ToResponse(facility).IsEditable);
+        Assert.False(FacilityMapping.ToResponse(facility).IsEditable);
     }
 
     // ---- submitting opens, and re-opens, the four tabs ----
@@ -330,10 +330,10 @@ public class FacilityApprovalStateMachineTests : IDisposable
         // vehicle type never reaches OpenSectionsForSubmission, so it can never be queued half-built.
         var facility = Property(ParkingStatus.DRAFT);
 
-        var gaps = Mapping.Missing(facility);
+        var gaps = FacilityMapping.Missing(facility);
 
         Assert.NotEmpty(gaps);
-        Assert.False(Mapping.ToResponse(facility).ReadyForSubmission);
+        Assert.False(FacilityMapping.ToResponse(facility).ReadyForSubmission);
         Assert.Empty(facility.SectionReviews);
     }
 

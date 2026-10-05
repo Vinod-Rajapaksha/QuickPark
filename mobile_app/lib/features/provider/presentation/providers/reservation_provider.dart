@@ -63,6 +63,36 @@ class ReservationActionNotifier extends Notifier<AsyncValue<void>> {
       rethrow;
     }
   }
+
+  /// The returns carry the reservation's new status, which is what the scanner
+  /// shows after an action: the server owns the transition, the client only reports it.
+  Future<Reservation> checkIn(String id) async {
+    state = const AsyncLoading();
+    try {
+      final repository = ref.read(reservationRepositoryProvider);
+      final reservation = await repository.checkIn(id);
+      ref.invalidate(pendingReservationProvider);
+      state = const AsyncData(null);
+      return reservation;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<Reservation> checkOut(String id) async {
+    state = const AsyncLoading();
+    try {
+      final repository = ref.read(reservationRepositoryProvider);
+      final reservation = await repository.checkOut(id);
+      ref.invalidate(pendingReservationProvider);
+      state = const AsyncData(null);
+      return reservation;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
 }
 
 final reservationActionProvider =
