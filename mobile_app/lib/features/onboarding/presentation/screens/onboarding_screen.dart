@@ -160,8 +160,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     itemBuilder: (context, index) {
                       return Padding(
                         padding: const EdgeInsets.all(40.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             AnimatedBuilder(
                               animation: _iconAnimationController,
@@ -233,6 +234,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                             ),
                           ],
                         ),
+                       ),
                       );
                     },
                   ),
