@@ -1,421 +1,255 @@
-# 🚗 QuickPark
+# QuickPark: Smart, Secure & Scalable Parking Platform
 
-### 🚀 Smart, Secure & Scalable Parking Reservation Platform
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
 
-**QuickPark** is a modern full-stack parking reservation platform designed to make finding, reserving, and managing parking spaces faster, easier, and more convenient.
-
-The platform connects **drivers, parking owners, and parking staff** through a centralized system that enables users to discover available parking spaces, make reservations, receive a unique QR-based parking token, and manage parking operations efficiently.
-
-It strongly focuses on:
-
-* 🅿️ Smart Parking Reservation
-* 📍 Parking Space Discovery
-* 🎟️ QR-Based Reservation Tokens
-* 👤 Role-Based Access Control
-* 💳 Reservation & Payment Management
-* 📱 Customer Mobile Experience
-* 🖥️ Parking Owner & Staff Management
-* 🤖 Agentic AI Assistance
-* 🔐 Security & Data Protection
-* ⚡ Performance & Scalability
+**QuickPark** is an enterprise-grade, multi-tenant parking reservation and management ecosystem. It seamlessly connects Drivers, Parking Owners, Operational Staff, and Administrators through real-time availability tracking, dynamic QR token verification, automated payments, and AI-driven assistant tools.
 
 ---
 
-## 🛠️ Technology Stack
+## Table of Contents
 
-| Layer                 | Technology                    |
-| --------------------- | ----------------------------- |
-| 🌐 Web Application    | React + TypeScript            |
-| 🎨 UI                 | Tailwind CSS                  |
-| 📱 Mobile Application | Flutter                       |
-| 🧠 Backend            | ASP.NET Core Web API (.NET 8) |
-| 🗄️ Database          | PostgreSQL                    |
-| 🔐 Authentication     | JWT Access & Refresh Tokens   |
-| 🤖 AI                 | Agentic AI                    |
-| 📦 ORM                | Entity Framework Core         |
-| 📚 API Documentation  | Swagger / OpenAPI             |
-| 🧪 API Testing        | Postman                       |
-| 🔄 Version Control    | Git & GitHub                  |
-| ⚙️ CI/CD              | GitHub Actions                |
-| ☁️ Deployment         | Cloud Hosting                 |
-
----
-
-## 🎯 Why QuickPark?
-
-Finding a reliable parking space can be difficult, especially in busy cities, commercial areas, tourist destinations, and high-demand locations.
-
-Drivers often need to:
-
-* Search for available parking manually
-* Travel around looking for empty spaces
-* Wait in queues
-* Worry about parking availability
-* Manage reservations through informal methods
-
-**QuickPark solves these problems by bringing parking discovery and reservation into one digital platform.**
-
-Users can search for parking spaces, view availability, reserve a suitable space, and receive a digital parking token that can be used during parking entry.
+- [Overview & Architecture](#overview--architecture)
+- [System Components & Services](#system-components--services)
+- [Technology Stack](#technology-stack)
+- [Key Features](#key-features)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Environment Configuration](#environment-configuration)
+  - [Quick Start with Docker Compose](#quick-start-with-docker-compose)
+  - [Manual Service Setup](#manual-service-setup)
+- [API Documentation](#api-documentation)
+- [Testing & Quality Assurance](#testing--quality-assurance)
+- [Deployment & DevOps](#deployment--devops)
+- [Security Architecture](#security-architecture)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## ✨ Core Functionalities
+## Overview & Architecture
 
-### 🅿️ Smart Parking Discovery
+QuickPark adopts a modern micro-service & modular architecture designed for horizontal scalability, zero-downtime operations, and robust role-based security.
 
-Drivers can discover parking locations based on their requirements.
+```mermaid
+graph TD
+    subgraph Clients
+        M[Mobile App - Flutter]
+        W[Web Console - React + Vite]
+    end
 
-Features include:
+    subgraph Gateway / Load Balancer
+        N[Nginx / Reverse Proxy]
+    end
 
-* 📍 Location-based parking search
-* 🅿️ Available parking spaces
-* 💰 Parking price information
-* 🕐 Operating hours
-* 📊 Parking availability
-* 🔎 Search and filtering
-* 📌 Parking location details
+    subgraph Services
+        API[Core API Service - ASP.NET Core 8]
+        AI[Agentic AI Service - FastAPI / Python]
+    end
 
----
+    subgraph Storage & Infrastructure
+        DB[(PostgreSQL Database)]
+        RD[(Redis Cache / Message Broker)]
+    end
 
-### 📅 Parking Reservation
-
-Drivers can reserve parking spaces before arriving at the location.
-
-Users can:
-
-* Select a parking location
-* Select a suitable date and time
-* Choose a parking space
-* Review reservation details
-* Confirm the reservation
-* View reservation history
-
-This helps drivers reduce unnecessary searching and waiting time.
-
----
-
-### 🎟️ QR-Based Parking Token
-
-After a successful reservation, QuickPark generates a **unique parking token represented through a QR code**.
-
-The QR token can be used by parking staff to:
-
-* Verify the reservation
-* Confirm customer details
-* Validate parking access
-* Prevent unauthorized reservations
-* Speed up parking entry verification
-
-The QR-based approach provides a faster and more reliable alternative to manually checking reservation information.
+    M -->|HTTPS / REST / WebSocket| N
+    W -->|HTTPS / REST| N
+    N -->|Route /api/v1| API
+    N -->|Route /agent| AI
+    API -->|EF Core 8| DB
+    API -->|Pub/Sub & Cache| RD
+    AI -->|Data / Context Query| API
+```
 
 ---
 
-### 👤 Customer Management
+## System Components & Services
 
-Drivers receive a personalized experience through their account.
-
-Customers can:
-
-* Register and log in
-* Manage their profile
-* Search parking locations
-* Make reservations
-* View active reservations
-* View reservation history
-* Access QR parking tokens
-* Manage cancellations
-* View payment information
-* Submit ratings and feedback
+| Directory | Service / Component | Description | Tech Stack |
+| :--- | :--- | :--- | :--- |
+| `backend/` | **Core Web API** | Business logic, JWT auth, parking reservation, payments, and RBAC endpoints | .NET 8, EF Core, PostgreSQL |
+| `agent-service/` | **AI Agent Service** | Natural language processing, parking recommendations, and intelligent query execution | FastAPI, Python 3.11+, LangChain / OpenAI |
+| `frontend-web/` | **Web Management Portal** | Admin & Owner management dashboard, spot configuration, analytics, staff panel | React 18, TypeScript, Tailwind CSS |
+| `mobile_app/` | **Mobile Application** | Customer app for discovering spots, making reservations, dynamic QR token display | Flutter 3.x, Dart |
+| `e2e/` | **End-to-End Tests** | Cross-platform automated integration and user scenario tests | Playwright |
+| `performance_tests/` | **Performance Tests** | Load testing, stress testing, and throughput benchmarks | k6 |
 
 ---
 
-### 🏢 Parking Owner Management
+## Technology Stack
 
-Parking owners can digitally manage their parking facilities.
+### Backend & APIs
+- **Framework:** ASP.NET Core 8 Web API
+- **ORM & Migrations:** Entity Framework Core 8
+- **Database:** PostgreSQL 16
+- **Authentication:** JWT (JSON Web Tokens) with Access & Refresh Token rotation
+- **Caching & Messaging:** Redis
 
-They can:
+### AI & Agent Service
+- **Framework:** FastAPI (Python 3.11+)
+- **AI Core:** Agentic AI workflow for natural language booking queries and intelligent search
+- **API Specs:** Swagger / OpenAPI 3.0
 
-* Register parking locations
-* Manage parking spaces
-* Configure parking availability
-* Set pricing information
-* Monitor reservations
-* View parking utilization
-* Manage parking information
-* Monitor customer feedback
+### Frontend & Mobile
+- **Web App:** React 18, TypeScript, Vite, Tailwind CSS
+- **Mobile App:** Flutter 3.x (iOS & Android)
+- **State Management:** Redux Toolkit / React Query (Web), Provider / BLoC (Mobile)
 
----
-
-### 👮 Parking Staff
-
-Parking staff support daily parking operations.
-
-Staff members can:
-
-* Verify customer reservations
-* Scan QR parking tokens
-* Validate parking access
-* Monitor parking activity
-* Handle parking entry verification
-* Manage operational parking activities
+### DevOps & Infrastructure
+- **Containerization:** Docker & Docker Compose
+- **CI/CD:** GitHub Actions
+- **API Testing:** Postman, Swagger UI
 
 ---
 
-## 💳 Payment & Billing
+## Key Features
 
-QuickPark is designed with a structured reservation and payment management system.
+### 1. Smart Discovery & Real-Time Booking
+- Real-time geolocation-based search for nearest available parking spots.
+- Live vacancy status, hourly/daily pricing rate comparisons, and spot reservation locks.
 
-The platform supports:
+### 2. Dynamic QR Token Verification
+- Instant cryptographic QR code generation upon successful reservation.
+- On-site staff mobile scanner interface for quick check-in / check-out verification.
 
-* 💰 Reservation-based pricing
-* 🧾 Billing information
-* 💳 Payment status tracking
-* 📋 Reservation payment records
-* 🔄 Payment verification
-* 📊 Transaction history
+### 3. Agentic AI Parking Assistant
+- Natural language query handling (e.g., "Find me parking near City Center under $5/hr for tomorrow morning").
+- Smart automated reservation creation and contextual guidance.
 
-The architecture also allows future integration with external payment gateways.
-
----
-
-## ⭐ Rating & Feedback
-
-QuickPark enables customers to provide feedback after using parking services.
-
-Customers can:
-
-* ⭐ Rate parking facilities
-* 📝 Submit feedback
-* 📊 View service quality information
-
-Parking owners can use feedback to understand customer satisfaction and improve their services.
+### 4. Multi-Tenant Owner & Operational Management
+- **Owners:** Add/manage facilities, configure slot availability, dynamic pricing, track revenue.
+- **Staff:** Scan entry tokens, validate parking status, monitor live facility occupancy.
+- **Admins:** Platform-wide analytics, user audit logs, system security monitoring.
 
 ---
 
-## 🤖 Agentic AI
+## Getting Started
 
-QuickPark integrates **Agentic AI** to provide intelligent assistance beyond traditional rule-based functionality.
+### Prerequisites
 
-The AI capability can assist users with tasks such as:
-
-* 🔎 Finding suitable parking options
-* 📍 Recommending parking locations
-* 🕐 Supporting reservation decisions
-* 💰 Comparing parking options
-* 💬 Answering parking-related questions
-* 🧠 Providing context-aware recommendations
-* 🅿️ Select a suitable available parking space
-* 📅 Create a parking reservation
-* 📋 Check existing reservations
-* ❌ Cancel reservations where permitted
-* 💬 Answer reservation-related questions
-
-The agentic approach allows the system to use available application information to provide more useful and intelligent assistance to users.
+Ensure you have the following installed on your developer machine:
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v24.0+)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Node.js](https://nodejs.org/) (v18+ or v20+) & `npm`
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (v3.16+)
+- [Python](https://www.python.org/) (v3.11+)
 
 ---
 
-## 🔐 Security Architecture
+### Environment Configuration
 
-Security is a core priority of QuickPark.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Vinod-Rajapaksha/QuickPark.git
+   cd QuickPark
+   ```
 
-### 🔑 Authentication & Authorization
-
-* JWT-based authentication
-* Access & refresh token mechanism
-* Role-Based Access Control (RBAC)
-* Protected API endpoints
-* Token expiration handling
-* Secure logout
-* Role-specific permissions
-
-Supported system roles include:
-
-* 👤 Customer
-* 🏢 Parking Owner
-* 👮 Parking Staff
-* 🛡️ Administrator
+2. Copy the example environment file and configure variables:
+   ```bash
+   cp .env.example .env
+   ```
 
 ---
 
-### 🔒 Data Security
+### Quick Start with Docker Compose
 
-QuickPark follows secure development practices including:
+To launch the complete infrastructure (Database, Core API, Agent Service, and Web Frontend) with a single command:
 
-* Password hashing
-* Environment variable protection
-* Secure authentication
-* Input validation
-* Request authorization
-* Centralized exception handling
-* Secure API communication
-* Database access protection
+```bash
+docker-compose up -d --build
+```
 
----
-
-### 🛡️ API Protection
-
-The backend is designed to protect against common application-level security threats.
-
-Security considerations include:
-
-* Request validation
-* Authorization checks
-* Input sanitization
-* Rate limiting
-* Secure HTTP headers
-* Exception handling
-* Authentication token validation
-* Protection against unauthorized resource access
+After startup, access the services at:
+- **Web Portal:** `http://localhost` (Port 80)
+- **Core API:** `http://localhost:8080/swagger`
+- **Agent Service Docs:** `http://localhost:8000/docs`
+- **PostgreSQL:** `localhost:5432`
+- **Redis:** `localhost:6379`
 
 ---
 
-## ⚡ Performance & Scalability
+### Manual Service Setup
 
-QuickPark is designed to support increasing numbers of:
+<details>
+<summary>Click to expand manual setup instructions for each service</summary>
 
-* 👥 Customers
-* 🅿️ Parking facilities
-* 🚗 Parking spaces
-* 📅 Reservations
-* 💳 Transactions
+#### 1. Core Backend Service (.NET 8)
+```bash
+cd backend
+dotnet restore
+dotnet build
+dotnet run --project QuickPark.API
+```
 
-Performance considerations include:
+#### 2. AI Agent Service (FastAPI)
+```bash
+cd agent-service
+python -m venv .venv
+# On Windows: .venv\Scripts\activate | On Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
 
-* Optimized database queries
-* PostgreSQL indexing
-* Pagination
-* Efficient API responses
-* Asynchronous processing
-* Proper resource management
-* API performance monitoring
-* Scalable backend architecture
+#### 3. Web Frontend (React + Vite)
+```bash
+cd frontend-web
+npm install
+npm run dev
+```
 
----
+#### 4. Mobile Application (Flutter)
+```bash
+cd mobile_app
+flutter pub get
+flutter run
+```
 
-## 📱 Mobile Application
-
-The QuickPark mobile application provides customers with convenient access to parking services.
-
-Customers can use the mobile application to:
-
-* 🔐 Securely log in
-* 📍 Discover parking locations
-* 🔎 Search and filter parking
-* 📅 Make reservations
-* 🎟️ Access QR parking tokens
-* 📋 View reservation history
-* 💳 Check payment information
-* ⭐ Submit feedback
-* 🤖 Interact with AI assistance
-
-The mobile experience is designed for quick interaction while users are travelling.
+</details>
 
 ---
 
-## 🖥️ Web Application
+## API Documentation
 
-The web application provides management capabilities for operational users.
+Interactive API documentation is auto-generated for all microservices:
 
-It supports:
-
-* 🏢 Parking Owner management
-* 👮 Parking Staff operations
-* 🛡️ Administrator management
-* 📊 Parking analytics
-* 📅 Reservation monitoring
-* 👥 User management
-* 🅿️ Parking space management
-* ⭐ Feedback monitoring
-
-The interface uses role-based access to ensure each user receives the appropriate functionality.
+- **Core ASP.NET Core API:** `http://localhost:8080/swagger`
+- **AI Agent API:** `http://localhost:8000/docs` or `http://localhost:8000/redoc`
 
 ---
 
-## 📊 Monitoring & Analytics
+## Testing & Quality Assurance
 
-QuickPark provides useful operational information for parking management.
+QuickPark maintains strict quality controls with unit, integration, end-to-end, and performance test suites.
 
-Potential analytics include:
+```bash
+# Core API Unit & Integration Tests
+cd backend && dotnet test QuickPark.Tests
 
-* 📈 Reservation statistics
-* 🅿️ Parking utilization
-* 💰 Revenue information
-* 👥 Customer activity
-* ⭐ Rating performance
-* 📅 Reservation trends
-* 🚗 Parking demand
+# AI Agent Service Tests
+cd agent-service && pytest
 
-These insights help parking owners and administrators make better operational decisions.
+# End-to-End Tests (Playwright)
+cd e2e && npx playwright test
 
----
-
-## 🧪 Testing & Quality Assurance
-
-Quality is considered throughout the development lifecycle.
-
-Testing areas include:
-
-* 🧪 Unit Testing
-* 🔗 Integration Testing
-* 🌐 API Testing
-* 📱 Mobile Application Testing
-* 🖥️ Web Application Testing
-* 🔐 Authentication Testing
-* 🛡️ Authorization Testing
-* ✅ Input Validation Testing
-* 🚨 Error Handling Testing
-* 🔒 Security Testing
-* ⚡ Performance Testing
-* 👤 User Acceptance Testing
-
-API endpoints can be tested using tools such as **Postman** and **Swagger**.
+# Performance Load Tests
+cd performance_tests && k6 run k6_planning_test.js
+```
 
 ---
 
-## 🔄 Development & Collaboration
+## Security Architecture
 
-QuickPark follows modern software engineering practices.
-
-The development process includes:
-
-* 📋 Agile development
-* 🏃 Sprint planning
-* 📝 Task management
-* 🧩 Work breakdown
-* 🌿 Git branching
-* 👥 Collaborative development
-* 🔍 Code reviews
-* 🧪 Continuous testing
-* ⚙️ CI/CD automation
-* 📦 Version control
-* 🚀 Continuous integration
-
-GitHub is used to support collaborative development and source-code management.
+- **Authentication & Authorization:** JWT Access Tokens with HTTP-Only Refresh Tokens and strict Role-Based Access Control (RBAC).
+- **Data Protection:** Password hashing, HTTPS TLS encryption in transit, parameterization against SQL Injection.
+- **API Security:** CORS origin filtering, rate limiting, and request sanitization middleware.
 
 ---
 
-## ☁️ Deployment & DevOps
+## License
 
-QuickPark is designed with deployment and automation in mind.
-
-The development lifecycle includes:
-
-* 🔄 Continuous Integration
-* 🚀 Continuous Deployment
-* 🧪 Automated testing
-* 📦 Build automation
-* 🔐 Environment configuration
-* ☁️ Cloud deployment
-* 📊 Application monitoring
-
-GitHub Actions can be used to automate build, test, and deployment processes.
-
----
-
-## 🚀 QuickPark Vision
-
-> **Park smarter. Reserve faster. Travel easier.**
-
-QuickPark aims to transform traditional parking into a **smart, connected, and user-friendly digital experience** by bringing drivers, parking owners, and parking staff together on a single platform.
-
-From discovering a parking space to receiving a QR-based parking token, QuickPark makes the entire parking experience **simpler, faster, and more secure.**
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
