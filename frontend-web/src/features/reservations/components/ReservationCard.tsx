@@ -89,7 +89,7 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({
               QR Code
             </Button>
           )}
-          {reservation.status === "PENDING" && onPay && (
+          {reservation.status === "PENDING" && (!reservation.isAgentBooking || reservation.isApprovedByProvider) && onPay && (
             <Button
               type="button"
               variant="primary"
