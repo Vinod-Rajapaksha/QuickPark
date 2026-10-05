@@ -188,7 +188,7 @@ public class ParkingFacilitiesController : ControllerBase
     [Authorize(Roles = OwnerRole)]
     [RequestSizeLimit(6 * 1024 * 1024)]
     public async Task<IActionResult> UploadDocument(
-        Guid id, string? documentType, IFormFile? file, CancellationToken ct)
+        Guid id, [FromForm] string? documentType, IFormFile? file, CancellationToken ct)
     {
         if (!this.TryGetUserId(out var userId)) return Unauthorized();
 

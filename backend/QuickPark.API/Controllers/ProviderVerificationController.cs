@@ -27,7 +27,7 @@ public class ProviderVerificationController : ControllerBase
     [HttpPost("me/nic")]
     [Authorize(Roles = OwnerRole)]
     [RequestSizeLimit(6 * 1024 * 1024)]
-    public async Task<IActionResult> UploadMyNic(IFormFile file, CancellationToken ct)
+    public async Task<IActionResult> UploadMyNic([FromForm] IFormFile file, CancellationToken ct)
     {
         if (!this.TryGetUserId(out var userId)) return Unauthorized();
 

@@ -10,9 +10,6 @@ using QuickPark.Tests.Helpers;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
-// "Monitor reservations" and the owner's answer to a booking. The owner's queue, the four actions they
-// can take on it, and the verbs the driver owns are all attribute rules on ReservationsController, so
-// they are read here rather than served over HTTP; a live host would need a database.
 public class ReservationControllerTests
 {
     private const string Owner = "PARKING_OWNER";
@@ -28,6 +25,8 @@ public class ReservationControllerTests
         var expected = new[]
         {
             "POST api/Reservations",
+            "GET api/Reservations/price",
+            "GET api/Reservations/availability",
             "GET api/Reservations/me",
             "GET api/Reservations/provider",
             "GET api/Reservations/{id:guid}",
@@ -62,8 +61,6 @@ public class ReservationControllerTests
     [InlineData("CheckOut", "POST api/Reservations/{id:guid}/check-out")]
     public void TheQueueAndTheBayOperationsAreSharedWithTheOwnersFloorStaff(string actionName, string route)
     {
-        // Staff work the bay physically, so they read the queue and record arrival and departure.
-        // Accepting, refusing or answering a booking stays the owner's, pinned by the test above.
         Assert.Contains(route, RoutesOf(Controller));
         Assert.Equal(new[] { Owner, Staff }, RequiresRoles(Action(actionName)));
     }
@@ -80,8 +77,6 @@ public class ReservationControllerTests
     [Fact]
     public void AnAdminHasNoWayIntoTheBookingDesk()
     {
-        // Approving a driver's booking is the owner's business, not the platform's: no reservation
-        // action is ever gated to PLATFORM_ADMIN, and none is left open to every signed-in role.
         var everyRole = EnumerateRoles();
 
         Assert.DoesNotContain(Admin, everyRole);
@@ -92,16 +87,13 @@ public class ReservationControllerTests
     [Fact]
     public void OnlyTheDetailReadAndTheCancelAreSharedBecauseBothSidesNeedThem()
     {
-        // A booking is read by whoever made it and by whoever owns the bay, and either side may end it.
-        // Neither can be role-gated, so the service is the only thing standing between one account and
-        // another person's booking — the route promises nothing on its own.
         var shared = Actions(Controller)
             .Where(action => RequiresRoles(action).Count == 0)
             .Select(action => action.Name)
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(new[] { "Cancel", "GetById" }, shared);
+        Assert.Equal(new[] { "Cancel", "GetAvailability", "GetById", "GetPrice" }, shared);
 
         Assert.True(ClassRequiresAuthentication(Controller));
     }
@@ -114,8 +106,6 @@ public class ReservationControllerTests
         Assert.Equal(new[] { "facilityId", "status", "from", "to", "ct" },
             monitor.GetParameters().Select(p => p.Name).ToArray());
 
-        // The owner is taken from the cookie, never from the query, so one owner cannot read
-        // another's bookings by swapping a facility id into a different account's queue.
         Assert.DoesNotContain(monitor.GetParameters(), p =>
             p.Name is "providerUserId" or "ownerId" or "providerId" or "driverId");
     }
