@@ -120,10 +120,25 @@ class PlanningAgent:
                     if part.function_call:
                         call = part.function_call
                         if call.name == "request_reservation_approval":
+                            args_dict = dict(call.args)
+                            
+                            try:
+                                from app.tools.calculate_price import calculate_price
+                                price_info = calculate_price(
+                                    facility_id=args_dict.get('facility_id'),
+                                    start_time=args_dict.get('start_time'),
+                                    end_time=args_dict.get('end_time'),
+                                    vehicle_type=args_dict.get('vehicle_type')
+                                )
+                                if price_info and 'totalAmount' in price_info:
+                                    args_dict['estimated_price'] = price_info['totalAmount']
+                            except Exception as e:
+                                logger.error(f"Failed to calculate real price: {e}")
+
                             return {
                                 "text": "I can help with that! Please review and confirm your reservation details below.",
                                 "action_type": "reservation_approval",
-                                "action_payload": call.args
+                                "action_payload": args_dict
                             }
                     
             return {"text": response.text, "action_type": None, "action_payload": None}
