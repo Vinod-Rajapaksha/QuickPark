@@ -183,8 +183,10 @@ class ProviderDashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -196,7 +198,8 @@ class ProviderDashboardScreen extends ConsumerWidget {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
         trailing: const Icon(CupertinoIcons.chevron_right, size: 20),
-        onTap: onTap,
+          onTap: onTap,
+        ),
       ),
     );
   }
