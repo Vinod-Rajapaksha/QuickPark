@@ -4,8 +4,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/core/network/api_client.dart';
+import '../../../feedback/presentation/widgets/parking_feedback_dialog.dart';
+import '../../../feedback/presentation/providers/feedback_provider.dart';
 
 final qrTokenProvider = FutureProvider.family<String, String>((
   ref,
@@ -82,7 +85,7 @@ class _DriverDigitalPassScreenState
             children: [
               _buildTicketCard(context, isExpired),
               const SizedBox(height: 32),
-              _buildQuickActions(context),
+              _buildQuickActions(context, isExpired),
             ],
           ),
         ),
@@ -344,35 +347,36 @@ class _DriverDigitalPassScreenState
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, bool isExpired) {
     return Row(
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Extend Time coming soon')),
-              );
-            },
-            icon: const Icon(CupertinoIcons.clock_fill),
-            label: const Text('Extend'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Theme.of(context).primaryColor,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton.icon(
             onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Navigation opening...')),
+              final lat = widget.booking['latitude'];
+              final lng = widget.booking['longitude'];
+
+              String destination;
+              if (lat != null && lng != null && lat != 0 && lng != 0) {
+                destination = '$lat,$lng';
+              } else {
+                destination = Uri.encodeComponent(
+                  '${widget.booking['facilityName'] ?? ''} ${widget.booking['city'] ?? ''}',
+                );
+              }
+
+              final url = Uri.parse(
+                'https://www.google.com/maps/dir/?api=1&destination=$destination',
               );
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url);
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not open map.')),
+                  );
+                }
+              }
             },
             icon: const Icon(CupertinoIcons.location_fill),
             label: const Text('Navigate'),
@@ -386,6 +390,54 @@ class _DriverDigitalPassScreenState
             ),
           ),
         ),
+        if (isExpired) ...[
+          const SizedBox(width: 16),
+          Consumer(
+            builder: (context, ref, child) {
+              final feedbacksAsync = ref.watch(myParkingFeedbackProvider);
+              final hasFeedback = feedbacksAsync.maybeWhen(
+                data: (feedbacks) => feedbacks.any(
+                  (f) =>
+                      f.reservationId ==
+                      (widget.booking['reservationId'] ?? widget.booking['id']),
+                ),
+                orElse: () => false,
+              );
+
+              if (hasFeedback) return const SizedBox.shrink();
+
+              return Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => ParkingFeedbackDialog(
+                        parkingId:
+                            widget.booking['parkingId'] ??
+                            widget.booking['facilityId'] ??
+                            '',
+                        reservationId:
+                            widget.booking['reservationId'] ??
+                            widget.booking['id'] ??
+                            '',
+                      ),
+                    );
+                  },
+                  icon: const Icon(CupertinoIcons.star_fill),
+                  label: const Text('Rate'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ],
     );
   }
