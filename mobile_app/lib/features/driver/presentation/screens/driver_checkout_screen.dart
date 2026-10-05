@@ -7,17 +7,20 @@ import 'package:mobile_app/core/network/api_client.dart';
 import 'package:payhere_mobilesdk_flutter/payhere_mobilesdk_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mobile_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:dio/dio.dart';
 
 class DriverCheckoutScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> reservationRequest;
   final Map<String, dynamic> facilityData;
   final double totalCost;
+  final String? existingReservationId;
 
   const DriverCheckoutScreen({
     super.key,
     required this.reservationRequest,
     required this.facilityData,
     required this.totalCost,
+    this.existingReservationId,
   });
 
   @override
@@ -69,7 +72,23 @@ class _DriverCheckoutScreenState extends ConsumerState<DriverCheckoutScreen>
         (paymentId) async {
           try {
             final dio = ref.read(dioProvider);
-            await dio.post('/reservations', data: widget.reservationRequest);
+            String reservationId = widget.existingReservationId ?? '';
+
+            if (reservationId.isEmpty) {
+              final res = await dio.post(
+                '/reservations',
+                data: widget.reservationRequest,
+              );
+              reservationId = res.data['id'];
+            }
+
+            await dio.post(
+              '/payments/external/confirm',
+              data: {
+                'reservationId': reservationId,
+                'transactionId': paymentId,
+              },
+            );
 
             if (mounted) {
               setState(() {
@@ -79,11 +98,20 @@ class _DriverCheckoutScreenState extends ConsumerState<DriverCheckoutScreen>
 
               await Future.delayed(const Duration(seconds: 2));
               if (mounted) {
-                context.go('/driver/bookings');
+                context.go('/driver/bookings?tab=1');
               }
             }
           } catch (e) {
-            _showError('Booking failed after payment: $e');
+            String errorMsg = e.toString();
+            if (e is DioException && e.response?.data != null) {
+              final data = e.response!.data;
+              if (data is Map && data['message'] != null) {
+                errorMsg = data['message'].toString();
+              } else {
+                errorMsg = data.toString();
+              }
+            }
+            _showError('Booking/Payment failed: $errorMsg');
           }
         },
         (error) {

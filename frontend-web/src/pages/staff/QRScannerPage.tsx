@@ -8,6 +8,7 @@ import {
   MapPin,
   Car,
   ShieldAlert,
+  CreditCard,
 } from "lucide-react";
 import { AxiosError } from "axios";
 import { axiosClient } from "../../services/api/axiosClient";
@@ -15,6 +16,7 @@ import { reservationApi } from "../../features/reservations/api/reservationApi";
 import type { Reservation } from "../../features/reservations/types/reservationTypes";
 import Card from "../../components/common/Card/Card";
 import Button from "../../components/common/Button/Button";
+import ConfirmDialog from "../../components/common/ConfirmDialog/ConfirmDialog";
 import { toast } from "react-hot-toast";
 
 const QRScannerPage: React.FC = () => {
@@ -25,6 +27,11 @@ const QRScannerPage: React.FC = () => {
     message: string;
     reservation?: Reservation;
   } | null>(null);
+
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    action: "check-in" | "check-out" | null;
+  }>({ isOpen: false, action: null });
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   useEffect(() => {
@@ -82,9 +89,20 @@ const QRScannerPage: React.FC = () => {
 
         const reservation = await reservationApi.getById(reservationId);
 
+        let statusMsg = "Booking Verified";
+        if (reservation.status === "CONFIRMED") {
+          statusMsg = "Valid Booking Found";
+        } else if (reservation.status === "CHECKED_IN") {
+          statusMsg = "Ready for Check-Out";
+        } else if (reservation.status === "CHECKED_OUT") {
+          statusMsg = "Already Checked Out";
+        } else if (reservation.status === "CANCELLED") {
+          statusMsg = "Booking Cancelled";
+        }
+
         setValidationResult({
           success: true,
-          message: "Check-in Approved",
+          message: statusMsg,
           reservation,
         });
         toast.success("Valid QR Code!");
@@ -108,6 +126,29 @@ const QRScannerPage: React.FC = () => {
   const resetScanner = () => {
     setScanResult(null);
     setValidationResult(null);
+  };
+
+  const handleAction = async () => {
+    if (!validationResult?.reservation || !confirmConfig.action) return;
+    const action = confirmConfig.action;
+
+    try {
+      const { reservationId } = validationResult.reservation;
+      await axiosClient.post(`/reservations/${reservationId}/${action}`);
+      toast.success(
+        action === "check-in" ? "Check-in successful!" : "Check-out successful!"
+      );
+      setConfirmConfig({ isOpen: false, action: null });
+      resetScanner();
+    } catch (err) {
+      console.error("Failed to perform reservation action:", err);
+      toast.error(`Failed to ${action}. Please try again.`);
+      setConfirmConfig({ isOpen: false, action: null });
+    }
+  };
+
+  const openConfirmDialog = (action: "check-in" | "check-out") => {
+    setConfirmConfig({ isOpen: true, action });
   };
 
   const formatDate = (dateString: string) => {
@@ -212,6 +253,9 @@ const QRScannerPage: React.FC = () => {
                     <p className="font-semibold text-slate-900">
                       {validationResult.reservation.driverName}
                     </p>
+                    <p className="text-sm text-slate-500">
+                      {validationResult.reservation.driverPhone || "No Phone"}
+                    </p>
                   </div>
                 </div>
 
@@ -258,27 +302,60 @@ const QRScannerPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="space-y-1 pt-2">
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <CreditCard size={14} />
+                    <span className="text-xs font-semibold uppercase">
+                      Payment
+                    </span>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700 font-bold border border-emerald-100">
+                    LKR {validationResult.reservation.totalAmount.toFixed(2)}
+                  </div>
+                </div>
               </div>
             )}
 
-            <div className="mt-8 flex w-full max-w-md gap-4">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={resetScanner}
-              >
-                Scan Another
-              </Button>
-              {validationResult.success && (
-                <Button
-                  variant="primary"
-                  className="flex-1 shadow-md shadow-primary-500/20"
-                  onClick={resetScanner}
-                >
-                  Confirm Entry
-                </Button>
-              )}
-            </div>
+            {validationResult.success && validationResult.reservation && (
+              <div className="mt-6 flex flex-col items-center gap-4">
+                {validationResult.reservation.status !== "CONFIRMED" && validationResult.reservation.status !== "CHECKED_IN" && (
+                  <div className="text-center text-sm font-medium text-slate-500 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200">
+                    No actions available for status: {validationResult.reservation.status.replace("_", " ")}
+                  </div>
+                )}
+                
+                <div className="flex w-full max-w-md gap-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={resetScanner}
+                  >
+                    Scan Another
+                  </Button>
+                  
+                  {validationResult.reservation.status === "CONFIRMED" && (
+                    <Button
+                      variant="primary"
+                      className="flex-1 shadow-md shadow-primary-500/20 bg-blue-600 hover:bg-blue-700"
+                      onClick={() => openConfirmDialog("check-in")}
+                    >
+                      Check In Driver
+                    </Button>
+                  )}
+                  
+                  {validationResult.reservation.status === "CHECKED_IN" && (
+                    <Button
+                      variant="primary"
+                      className="flex-1 shadow-md shadow-orange-500/20 bg-orange-600 hover:bg-orange-700"
+                      onClick={() => openConfirmDialog("check-out")}
+                    >
+                      Check Out Driver
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
       </Card>
@@ -291,6 +368,17 @@ const QRScannerPage: React.FC = () => {
           100% { top: 100%; opacity: 0; }
         }
       `}</style>
+      
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        title={`Confirm ${confirmConfig.action === "check-in" ? "Check-In" : "Check-Out"}`}
+        description={`Are you sure you want to ${confirmConfig.action === "check-in" ? "check in" : "check out"} this driver?`}
+        confirmText="Confirm"
+        cancelText="Cancel"
+        type={confirmConfig.action === "check-in" ? "info" : "warning"}
+        onConfirm={handleAction}
+        onClose={() => setConfirmConfig({ isOpen: false, action: null })}
+      />
     </div>
   );
 };

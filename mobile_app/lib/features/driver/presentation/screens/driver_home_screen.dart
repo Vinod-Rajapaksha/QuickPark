@@ -154,33 +154,18 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   final MapController _mapController = MapController();
   Map<String, dynamic>? _selectedFacility;
   StreamSubscription? _mapEventSub;
+  bool _showSearchHereButton = false;
 
   @override
   void initState() {
     super.initState();
     _mapEventSub = _mapController.mapEventStream.listen((event) {
       if (event is MapEventMoveEnd) {
-        final zoom = event.camera.zoom;
-        int radius = 100;
-        if (zoom > 16) {
-          radius = 2;
-        } else if (zoom > 14) {
-          radius = 5;
-        } else if (zoom > 12) {
-          radius = 15;
-        } else if (zoom > 10) {
-          radius = 30;
+        if (!_showSearchHereButton) {
+          setState(() {
+            _showSearchHereButton = true;
+          });
         }
-
-        ref
-            .read(mapFilterProvider.notifier)
-            .updateFilter(
-              (state) => state.copyWith(
-                latitude: event.camera.center.latitude,
-                longitude: event.camera.center.longitude,
-                radiusKm: radius,
-              ),
-            );
       }
     });
   }
@@ -216,12 +201,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
           // Map
           locationAsync.when(
             data: (userLoc) {
-              final initialCenter = userLoc ?? const LatLng(6.9271, 79.8612);
+              final initialCenter = userLoc ?? const LatLng(7.8731, 80.7718);
               return FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: initialCenter,
-                  initialZoom: 13.0,
+                  initialZoom: userLoc != null ? 13.0 : 7.5,
                   onTap: (_, _) {
                     setState(() => _selectedFacility = null);
                     ref.read(hideAgentBubbleProvider.notifier).show();
@@ -267,7 +252,17 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                         final lng = f['longitude'] as double?;
                         if (lat == null || lng == null) return null;
 
-                        final isSelected = _selectedFacility?['id'] == f['id'];
+                        final isSelected =
+                            _selectedFacility?['facilityId'] == f['facilityId'];
+
+                        final allocations =
+                            f['allocations'] as List<dynamic>? ?? [];
+                        double basePrice = 0.0;
+                        if (allocations.isNotEmpty) {
+                          basePrice = allocations
+                              .map((a) => (a['hourlyRate'] as num).toDouble())
+                              .reduce((a, b) => a < b ? a : b);
+                        }
 
                         return Marker(
                           point: LatLng(lat, lng),
@@ -315,7 +310,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Rs.${f['basePrice'] ?? 0}',
+                                    'Rs.$basePrice',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: isSelected
@@ -342,54 +337,102 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        onSubmitted: (val) {
-                          ref
-                              .read(mapFilterProvider.notifier)
-                              .updateFilter(
-                                (state) => state.copyWith(name: val),
-                              );
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Where do you want to park?',
-                          prefixIcon: const Icon(CupertinoIcons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            onSubmitted: (val) {
+                              ref
+                                  .read(mapFilterProvider.notifier)
+                                  .updateFilter(
+                                    (state) => state.copyWith(name: val),
+                                  );
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Where do you want to park?',
+                              prefixIcon: const Icon(CupertinoIcons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
+                            ),
                           ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: IconButton(
+                            icon: const Icon(
+                              CupertinoIcons.slider_horizontal_3,
+                            ),
+                            onPressed: _showFilterSheet,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_showSearchHereButton) ...[
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _showSearchHereButton = false;
+                        });
+                        final center = _mapController.camera.center;
+                        final zoom = _mapController.camera.zoom;
+                        int radius = 100;
+                        if (zoom > 16) {
+                          radius = 2;
+                        } else if (zoom > 14) {
+                          radius = 5;
+                        } else if (zoom > 12) {
+                          radius = 15;
+                        } else if (zoom > 10) {
+                          radius = 30;
+                        }
+
+                        ref
+                            .read(mapFilterProvider.notifier)
+                            .updateFilter(
+                              (state) => state.copyWith(
+                                latitude: center.latitude,
+                                longitude: center.longitude,
+                                radiusKm: radius,
+                              ),
+                            );
+                      },
+                      icon: const Icon(CupertinoIcons.search, size: 16),
+                      label: const Text('Search this area'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: theme.primaryColor,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: IconButton(
-                        icon: const Icon(CupertinoIcons.slider_horizontal_3),
-                        onPressed: _showFilterSheet,
-                      ),
-                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -491,8 +534,25 @@ class _FacilityCard extends StatelessWidget {
 
     final name = facility['name'] ?? 'Parking Facility';
     final address = facility['address'] ?? 'Unknown location';
-    final basePrice = facility['basePrice'] ?? 0;
-    final isAvailable = facility['isActive'] == true;
+
+    final allocations = facility['allocations'] as List<dynamic>? ?? [];
+    double basePrice = 0.0;
+    if (allocations.isNotEmpty) {
+      basePrice = allocations
+          .map((a) => (a['hourlyRate'] as num).toDouble())
+          .reduce((a, b) => a < b ? a : b);
+    }
+
+    final slotGroups = facility['slotGroups'] as List<dynamic>? ?? [];
+    int availableSlots = 0;
+    if (slotGroups.isNotEmpty) {
+      availableSlots = slotGroups
+          .map((g) => (g['available'] as num?)?.toInt() ?? 0)
+          .fold(0, (a, b) => a + b);
+    }
+
+    final isAvailable = availableSlots > 0;
+    final hasEvCharging = facility['hasEvCharging'] == true;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -578,6 +638,23 @@ class _FacilityCard extends StatelessWidget {
                             fontSize: 12,
                           ),
                         ),
+                        if (hasEvCharging) ...[
+                          const SizedBox(width: 12),
+                          Icon(
+                            CupertinoIcons.bolt_fill,
+                            color: Colors.amber.shade700,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            'EV',
+                            style: TextStyle(
+                              color: Colors.amber.shade700,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                         const Spacer(),
                         Text(
                           'Rs.$basePrice / hr',
@@ -599,7 +676,7 @@ class _FacilityCard extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 context.go(
-                  '/driver/home/facility/${facility['id']}',
+                  '/driver/home/facility/${facility['facilityId']}',
                   extra: facility,
                 );
               },

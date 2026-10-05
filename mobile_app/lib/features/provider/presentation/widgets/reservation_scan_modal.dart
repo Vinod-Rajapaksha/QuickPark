@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/widgets/app_button.dart';
+import 'package:intl/intl.dart';
 
 class ReservationScanModal extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -50,7 +51,7 @@ class ReservationScanModal extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        status.toUpperCase(),
+        status.replaceAll('_', ' ').toUpperCase(),
         style: TextStyle(
           color: textColor,
           fontWeight: FontWeight.bold,
@@ -108,7 +109,7 @@ class ReservationScanModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = data['status'] as String? ?? 'UNKNOWN';
-    final id = data['id'] as String;
+    final id = data['reservationId'] as String;
 
     return Container(
       decoration: const BoxDecoration(
@@ -165,12 +166,12 @@ class ReservationScanModal extends StatelessWidget {
                     _buildDetailItem(
                       Icons.person_outline,
                       'Driver',
-                      data['driver']?['fullName'] ?? 'N/A',
+                      '${data['driverName'] ?? 'N/A'}\n${data['driverPhone'] ?? 'No Phone'}',
                     ),
                     _buildDetailItem(
                       Icons.directions_car_outlined,
                       'Vehicle Type',
-                      data['vehicleType']?['name'] ?? 'N/A',
+                      data['vehicleTypeName'] ?? 'N/A',
                     ),
                     _buildDetailItem(
                       Icons.local_parking_outlined,
@@ -180,7 +181,12 @@ class ReservationScanModal extends StatelessWidget {
                     _buildDetailItem(
                       Icons.access_time,
                       'Duration',
-                      '${data['startTime'] ?? 'N/A'} - ${data['endTime'] ?? 'N/A'}',
+                      '${data['startTime'] != null ? DateFormat('MMM dd, hh:mm a').format(DateTime.parse(data['startTime']).toLocal()) : 'N/A'} to ${data['endTime'] != null ? DateFormat('MMM dd, hh:mm a').format(DateTime.parse(data['endTime']).toLocal()) : 'N/A'}',
+                    ),
+                    _buildDetailItem(
+                      Icons.payment,
+                      'Payment',
+                      'LKR ${data['totalAmount'] ?? '0.00'}',
                     ),
                   ],
                 ),
@@ -221,7 +227,7 @@ class ReservationScanModal extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'No actions available for status: $status',
+                        'No actions available for status: ${status.replaceAll('_', ' ')}',
                         style: TextStyle(
                           color: Colors.grey.shade700,
                           fontWeight: FontWeight.w500,

@@ -628,6 +628,11 @@ public class PaymentService : IPaymentService
             throw new InvalidOperationException(
                 $"This booking is {Describe(reservation.Status)}, so there is nothing to pay for it.");
         }
+
+        if (reservation.Status == ReservationStatus.PENDING && reservation.IsAgentBooking && !reservation.IsApprovedByProvider)
+        {
+            throw new InvalidOperationException("This AI booking has not yet been approved by the provider.");
+        }
     }
 
     private static PaymentStage StageFor(ReservationStatus status) =>
@@ -636,9 +641,6 @@ public class PaymentService : IPaymentService
     private static decimal AmountFor(Reservation reservation, PaymentStage stage) =>
         stage == PaymentStage.BOOKING_FEE ? BookingFee(reservation) : ParkingCharge(reservation);
 
-    // What the booking asked the property to hold the bay for, at this booking's own hourly rate. The
-    // parking charge's one-hour floor deliberately does not apply: lead time below an hour is charged
-    // as the fraction it is, and a booking made for the moment it is made holds nothing.
     private static decimal BookingFee(Reservation reservation)
     {
         var leadHours = (decimal)(AsUtc(reservation.StartTime) - AsUtc(reservation.CreatedAt)).TotalHours;

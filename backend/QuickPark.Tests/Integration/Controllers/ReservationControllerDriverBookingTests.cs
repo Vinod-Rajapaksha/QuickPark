@@ -20,6 +20,8 @@ public class ReservationControllerDriverBookingTests
         var expected = new[]
         {
             "POST api/reservations",
+            "GET api/reservations/price",
+            "GET api/reservations/availability",
             "GET api/reservations/me",
             "GET api/reservations/provider",
             "GET api/reservations/{id:guid}",
@@ -403,7 +405,7 @@ public class ReservationControllerDriverBookingTests
     public void ABookingRequestOffersThePropertyTheVehicleTypeAndTheWindowOnly()
     {
         Assert.Equal(
-            new[] { "EndTime", "FacilityId", "SlotId", "StartTime", "VehicleTypeId" },
+            new[] { "EndTime", "FacilityId", "IsAgentBooking", "SlotId", "StartTime", "VehicleTypeId" },
             typeof(CreateReservationRequest).GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray());
     }
 

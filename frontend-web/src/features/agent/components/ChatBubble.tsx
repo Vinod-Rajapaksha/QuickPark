@@ -73,6 +73,25 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onAction }) => 
           </div>
         )}
 
+        {message.action_type === 'payment_required' && message.action_payload && (
+          <div className="mt-3 border rounded-xl p-3 text-sm bg-slate-50 border-slate-200 shadow-inner">
+            <div className="flex flex-col items-center gap-2 mb-3">
+              <span className="text-xl">💳</span>
+              <span className="font-semibold text-slate-800">Payment Pending</span>
+              <span className="text-xl font-bold text-primary-600">{message.action_payload.estimated_price} LKR</span>
+            </div>
+            <button 
+              className="w-full rounded-lg py-2 transition-all shadow-sm font-medium bg-green-600 text-white hover:bg-green-700 hover:shadow-md flex items-center justify-center gap-2"
+              onClick={() => onAction && onAction('pay_reservation', message.action_payload!)}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Pay Now
+            </button>
+          </div>
+        )}
+
         <span className={`text-[0.7rem] opacity-70 block text-right mt-1 ${isUser ? 'text-white' : 'text-slate-400'}`}>
           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>

@@ -192,9 +192,21 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
   Future<Map<String, dynamic>?> _fetchReservationDetails(String code) async {
     try {
       final dio = ref.read(dioProvider);
-      final response = await dio.get('/reservations/scan/$code');
-      if (response.statusCode == 200 && response.data != null) {
-        return response.data as Map<String, dynamic>;
+      final tokenResponse = await dio.post(
+        '/Tokens/scan',
+        data: {'token': code},
+      );
+
+      if (tokenResponse.statusCode == 200 && tokenResponse.data != null) {
+        final resId = tokenResponse.data['reservationId'];
+        if (resId == null) return null;
+
+        final reservationId = resId.toString();
+
+        final response = await dio.get('/reservations/$reservationId');
+        if (response.statusCode == 200 && response.data != null) {
+          return response.data as Map<String, dynamic>;
+        }
       }
     } catch (_) {}
     return null;
@@ -205,24 +217,80 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
     String action,
     Map<String, dynamic> currentData,
   ) async {
+    final actionName = action == 'check-in' ? 'Check-In' : 'Check-Out';
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm $actionName', textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Are you sure you want to $actionName this driver?',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: action == 'check-in'
+                        ? Colors.blue.shade600
+                        : Colors.orange.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('Confirm', style: TextStyle(fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
     try {
       final dio = ref.read(dioProvider);
-      final response = await dio.put(
-        '/reservations/$id/status',
-        data: {'action': action},
-      );
+      final endpoint = action == 'check-in'
+          ? '/reservations/$id/check-in'
+          : '/reservations/$id/check-out';
+      final response = await dio.post(endpoint);
 
       if (mounted) {
         if (response.statusCode == 200) {
+          Navigator.of(context, rootNavigator: true).pop();
+
           AppErrorHandler.showSnackBar(
             context,
-            'Reservation action ($action) processed successfully!',
+            'Driver successfully ${action == 'check-in' ? 'checked in' : 'checked out'}!',
             isError: false,
           );
         } else {
           AppErrorHandler.showSnackBar(
             context,
-            'Failed to update status. Please try again.',
+            'Failed to $actionName. Please try again.',
             isError: true,
           );
         }

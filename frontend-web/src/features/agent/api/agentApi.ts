@@ -32,4 +32,21 @@ export const chatApi = {
 
     return response.json();
   },
+
+  async createReservation(payload: Record<string, unknown>): Promise<unknown> {
+    const response = await fetch(`${BASE_URL}/reservation/create`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ payload }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create reservation via agent");
+    }
+
+    return response.json();
+  },
 };

@@ -14,7 +14,8 @@ public partial class ParkingService
             .Include(f => f.Documents)
             .Include(f => f.Slots).ThenInclude(s => s.VehicleType)
             .Include(f => f.VehicleAllocations).ThenInclude(a => a.VehicleType)
-            .Include(f => f.SectionReviews);
+            .Include(f => f.SectionReviews)
+            .AsSplitQuery();
 
     private IQueryable<Reservation> ReservationsForResponse() =>
         _context.Set<Reservation>()

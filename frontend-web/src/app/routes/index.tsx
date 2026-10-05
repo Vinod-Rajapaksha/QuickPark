@@ -24,6 +24,7 @@ import ParkingDetailsPage from "../../pages/provider/ParkingDetailsPage";
 import ParkingEditPage from "../../pages/provider/ParkingEditPage";
 import ProviderReservationApprovalPage from "../../pages/provider/ProviderReservationApprovalPage";
 import ProviderApprovalsPage from "../../pages/provider/ProviderApprovalsPage";
+import ProviderReviewsPage from "../../pages/provider/ProviderReviewsPage";
 import ProviderStaffManagementPage from "../../pages/provider/StaffManagementPage";
 
 // Staff pages
@@ -185,6 +186,10 @@ export const router = createBrowserRouter([
               {
                 path: ROUTES.PROVIDER_APPROVALS,
                 element: <ProviderApprovalsPage />,
+              },
+              {
+                path: ROUTES.PROVIDER_REVIEWS,
+                element: <ProviderReviewsPage />,
               },
               {
                 path: ROUTES.PROVIDER_RESERVATION_APPROVAL,

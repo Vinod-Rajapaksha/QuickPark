@@ -160,78 +160,81 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     itemBuilder: (context, index) {
                       return Padding(
                         padding: const EdgeInsets.all(40.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AnimatedBuilder(
-                              animation: _iconAnimationController,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(
-                                    0,
-                                    10 * _iconAnimationController.value - 5,
-                                  ),
-                                  child: Container(
-                                    height: 200,
-                                    width: 200,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          _onboardingData[index]["color1"]
-                                              .withOpacity(0.2),
-                                          _onboardingData[index]["color2"]
-                                              .withOpacity(0.2),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedBuilder(
+                                animation: _iconAnimationController,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(
+                                      0,
+                                      10 * _iconAnimationController.value - 5,
+                                    ),
+                                    child: Container(
+                                      height: 200,
+                                      width: 200,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            _onboardingData[index]["color1"]
+                                                .withOpacity(0.2),
+                                            _onboardingData[index]["color2"]
+                                                .withOpacity(0.2),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                _onboardingData[index]["color1"]
+                                                    .withOpacity(0.3),
+                                            blurRadius: 40,
+                                            spreadRadius: 10,
+                                          ),
                                         ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
+                                        border: Border.all(
                                           color:
                                               _onboardingData[index]["color1"]
-                                                  .withOpacity(0.3),
-                                          blurRadius: 40,
-                                          spreadRadius: 10,
+                                                  .withOpacity(0.5),
+                                          width: 2,
                                         ),
-                                      ],
-                                      border: Border.all(
-                                        color: _onboardingData[index]["color1"]
-                                            .withOpacity(0.5),
-                                        width: 2,
+                                      ),
+                                      child: Icon(
+                                        _onboardingData[index]["icon"],
+                                        size: 80,
+                                        color: Colors.white,
                                       ),
                                     ),
-                                    child: Icon(
-                                      _onboardingData[index]["icon"],
-                                      size: 80,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 60),
-                            Text(
-                              _onboardingData[index]["title"]!,
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
+                                  );
+                                },
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              _onboardingData[index]["description"]!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white70,
-                                height: 1.5,
+                              const SizedBox(height: 60),
+                              Text(
+                                _onboardingData[index]["title"]!,
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 1.2,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 20),
+                              Text(
+                                _onboardingData[index]["description"]!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white70,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },

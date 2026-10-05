@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class DriverProfileScreen extends ConsumerWidget {
@@ -297,6 +298,16 @@ class DriverProfileScreen extends ConsumerWidget {
                       title: 'Payment Methods',
                       subtitle: 'Manage cards and wallets',
                       onTap: () {},
+                    ),
+                    Divider(height: 1, indent: 80, color: Colors.grey.shade100),
+                    _buildProfileOption(
+                      context: context,
+                      icon: CupertinoIcons.star_circle_fill,
+                      title: 'My Feedback',
+                      subtitle: 'View your submitted feedback',
+                      onTap: () {
+                        context.go('/driver/profile/feedback');
+                      },
                     ),
                     Divider(height: 1, indent: 80, color: Colors.grey.shade100),
                     _buildProfileOption(

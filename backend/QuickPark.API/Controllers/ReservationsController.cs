@@ -40,6 +40,46 @@ public class ReservationsController : ControllerBase
         }
     }
 
+    [HttpGet("price")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPrice(
+        [FromQuery] Guid facilityId, [FromQuery] string vehicleType, [FromQuery] DateTime startTime, [FromQuery] DateTime endTime, CancellationToken ct)
+    {
+        try
+        {
+            var vehicleTypes = await _parkingService.GetVehicleTypesAsync(ct);
+            var vt = vehicleTypes.FirstOrDefault(v => v.Name.Equals(vehicleType, StringComparison.OrdinalIgnoreCase));
+            if (vt == null) return BadRequest(new { message = "Invalid vehicle type" });
+
+            var price = await _parkingService.CalculatePriceAsync(facilityId, vt.Id, startTime, endTime, ct);
+            return Ok(price);
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
+    [HttpGet("availability")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAvailability(
+        [FromQuery] Guid facilityId, [FromQuery] string vehicleType, [FromQuery] DateTime startTime, [FromQuery] DateTime endTime, CancellationToken ct)
+    {
+        try
+        {
+            var vehicleTypes = await _parkingService.GetVehicleTypesAsync(ct);
+            var vt = vehicleTypes.FirstOrDefault(v => v.Name.Equals(vehicleType, StringComparison.OrdinalIgnoreCase));
+            if (vt == null) return BadRequest(new { message = "Invalid vehicle type" });
+
+            var availability = await _parkingService.CheckAvailabilityAsync(facilityId, vt.Id, startTime, endTime, ct);
+            return Ok(availability);
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
     [HttpGet("me")]
     [Authorize(Roles = DriverRole)]
     public async Task<IActionResult> GetMyReservations(

@@ -3,6 +3,7 @@ from app.models.agent_workflow import AgentWorkflow
 from app.models.chat import ChatMessage
 from app.config.settings import settings
 import logging
+import datetime
 from typing import List, Optional, Dict, Any
 
 from google import genai
@@ -20,7 +21,10 @@ SYSTEM_INSTRUCTION = (
     "3. Never make up prices, distances, or parking facility names. If you don't know, inform the user.\n"
     "4. Do not offer services outside the scope of parking, such as driving directions or general knowledge.\n"
     "5. Keep responses short and directly address the user's request.\n"
-    "6. Format lists properly. Always use new lines to separate numbered or bulleted items for readability."
+    "6. Format lists properly. Always use new lines to separate numbered or bulleted items for readability.\n"
+    "7. CRITICAL: If the user wants to book a parking spot but you DO NOT know the exact UUID of the parking facility, YOU MUST NOT call the request_reservation_approval tool. Instead, ask the user to clarify or search for the specific parking facility first.\n"
+    "8. If a search for a specific location or city yields no results, do not just stop. You should immediately perform another broader search (e.g., without the city filter) to find other available parking facilities and suggest them as nearby alternatives.\n"
+    "9. When the user agrees to book a specific parking spot, call the `request_reservation_approval` tool. In your text response, instruct the user to confirm the reservation on their screen and proceed to checkout/payment to finalize the booking."
 )
 
 ALLOWED_AGENTS = {
@@ -63,6 +67,24 @@ reservation_tool = genai_types.Tool(
     ]
 )
 
+search_parking_tool = genai_types.Tool(
+    function_declarations=[
+        genai_types.FunctionDeclaration(
+            name="search_parking",
+            description="Search for parking facilities based on location or city.",
+            parameters=genai_types.Schema(
+                type="OBJECT",
+                properties={
+                    "city": genai_types.Schema(type="STRING", description="City name to search in (e.g. Gampaha)"),
+                    "latitude": genai_types.Schema(type="NUMBER", description="Latitude"),
+                    "longitude": genai_types.Schema(type="NUMBER", description="Longitude"),
+                    "radius_km": genai_types.Schema(type="NUMBER", description="Search radius in KM")
+                }
+            )
+        )
+    ]
+)
+
 class PlanningAgent:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or settings.GOOGLE_API_KEY
@@ -85,48 +107,104 @@ class PlanningAgent:
         for msg in recent_history:
             role = "user" if msg.role == "user" else "model"
             contents.append(
-                genai_types.Content(role=role, parts=[genai_types.Part.from_text(msg.content)])
+                genai_types.Content(role=role, parts=[genai_types.Part.from_text(text=msg.content)])
             )
             
-        context_str = ""
+        context_str = f"[System Context: Current Time: {datetime.datetime.now(datetime.timezone.utc).isoformat()}] "
         if context:
-            context_str = f"[System Context: User Location ({context.get('location_lat', 'Unknown')}, {context.get('location_lng', 'Unknown')})] "
+            context_str += f"[System Context: User Location ({context.get('location_lat', 'Unknown')}, {context.get('location_lng', 'Unknown')})] "
             
         final_message = f"{context_str}{user_message}"
 
         contents.append(
-            genai_types.Content(role="user", parts=[genai_types.Part.from_text(final_message)])
+            genai_types.Content(role="user", parts=[genai_types.Part.from_text(text=final_message)])
         )
 
         try:
-            def api_call(client):
+            def api_call(client, additional_contents=None):
+                req_contents = contents + (additional_contents or [])
                 return client.models.generate_content(
                     model=self.model_name,
-                    contents=contents,
+                    contents=req_contents,
                     config=genai_types.GenerateContentConfig(
                         system_instruction=SYSTEM_INSTRUCTION,
                         temperature=0.3,
                         max_output_tokens=300,
-                        tools=[reservation_tool]
+                        tools=[reservation_tool, search_parking_tool]
                     ),
                 )
             
             from app.utils.api_executor import execute_with_api_key_rotation
-            response = execute_with_api_key_rotation(api_call)
             
-            # Check for function calls
-            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-                for part in response.candidates[0].content.parts:
-                    if part.function_call:
-                        call = part.function_call
-                        if call.name == "request_reservation_approval":
-                            return {
-                                "text": "I can help with that! Please review and confirm your reservation details below.",
-                                "action_type": "reservation_approval",
-                                "action_payload": call.args
-                            }
+            additional_contents = []
+            
+            for _ in range(3):
+                response = execute_with_api_key_rotation(lambda c: api_call(c, additional_contents))
+                
+                # Check for function calls
+                if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+                    has_function_call = False
+                    for part in response.candidates[0].content.parts:
+                        if part.function_call:
+                            has_function_call = True
+                            call = part.function_call
+                            if call.name == "search_parking":
+                                args_dict = dict(call.args)
+                                try:
+                                    from app.tools.search_parking import search_parking
+                                    search_results = search_parking(**args_dict)
+                                    
+                                    import json
+                                    results_str = json.dumps(search_results, default=str)
+                                    
+                                    additional_contents.extend([
+                                        response.candidates[0].content,
+                                        genai_types.Content(
+                                            role="user", 
+                                            parts=[
+                                                genai_types.Part.from_function_response(
+                                                    name="search_parking",
+                                                    response={"result": results_str}
+                                                )
+                                            ]
+                                        )
+                                    ])
+                                except Exception as e:
+                                    logger.error(f"Failed to search parking: {e}")
+                                    return {"text": "I encountered an error while searching for parking. Please try again.", "action_type": None, "action_payload": None}
+
+                            elif call.name == "request_reservation_approval":
+                                args_dict = dict(call.args)
+                                
+                                try:
+                                    from app.tools.calculate_price import calculate_price
+                                    price_info = calculate_price(
+                                        facility_id=args_dict.get('facility_id'),
+                                        start_time=args_dict.get('start_time'),
+                                        end_time=args_dict.get('end_time'),
+                                        vehicle_type=args_dict.get('vehicle_type')
+                                    )
+                                    if price_info and 'totalAmount' in price_info:
+                                        args_dict['estimated_price'] = price_info['totalAmount']
+                                except Exception as e:
+                                    logger.error(f"Failed to calculate real price: {e}")
+                                    return {
+                                        "text": "I apologize, but I couldn't verify the parking facility or times you provided. Could you please clarify the specific parking facility you want to book?",
+                                        "action_type": None,
+                                        "action_payload": None
+                                    }
+
+                                return {
+                                    "text": "I can help with that! Please review and confirm your reservation details below.",
+                                    "action_type": "reservation_approval",
+                                    "action_payload": args_dict
+                                }
                     
-            return {"text": response.text, "action_type": None, "action_payload": None}
+                    if not has_function_call:
+                        break
+
+            fallback_msg = "I searched but couldn't find a parking spot matching your criteria. Would you like to try a different location?"
+            return {"text": response.text or fallback_msg, "action_type": None, "action_payload": None}
         except Exception as e:
             logger.error(f"Error in PlanningAgent processing chat: {e}")
             return {"text": "Sorry, I encountered an error while processing your request. Please try again.", "action_type": None, "action_payload": None}
@@ -175,21 +253,31 @@ class PlanningAgent:
                 AgentStep(
                     step_id="step_3",
                     order=3,
-                    agent="validation_agent",
-                    action="validate_reservation_details",
-                    description="Validate reservation details.",
-                    required_tools=["validate_reservation"],
+                    agent="reservation_agent",
+                    action="calculate_price",
+                    description="Calculate price for the recommended parking.",
+                    required_tools=["calculate_price"],
                     dependencies=["step_2"],
-                    expected_output="Validated reservation context."
+                    expected_output="Price calculation."
                 ),
                 AgentStep(
                     step_id="step_4",
                     order=4,
+                    agent="validation_agent",
+                    action="validate_reservation_details",
+                    description="Validate reservation details.",
+                    required_tools=["validate_reservation"],
+                    dependencies=["step_3"],
+                    expected_output="Validated reservation context."
+                ),
+                AgentStep(
+                    step_id="step_5",
+                    order=5,
                     agent="reservation_agent",
                     action="create_reservation",
                     description="Create the reservation for the user.",
                     required_tools=["create_reservation"],
-                    dependencies=["step_3"],
+                    dependencies=["step_4"],
                     approval_required=True,
                     expected_output="Reservation confirmation and token."
                 )

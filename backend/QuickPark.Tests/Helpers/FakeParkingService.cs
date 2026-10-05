@@ -143,6 +143,11 @@ public sealed class FakeParkingService : IParkingService
     public Task DeleteVehiclePricingAsync(Guid vehicleTypeId, CancellationToken ct = default) =>
         Record(nameof(DeleteVehiclePricingAsync), vehicleTypeId, ct);
 
-    // The call as the controller made it: which service method, and the arguments in declaration order.
+    public Task<object> CalculatePriceAsync(Guid facilityId, Guid vehicleTypeId, DateTime start, DateTime end, CancellationToken ct = default) =>
+        Record<object>(nameof(CalculatePriceAsync), facilityId, vehicleTypeId, start, end, ct);
+
+    public Task<object> CheckAvailabilityAsync(Guid facilityId, Guid vehicleTypeId, DateTime start, DateTime end, CancellationToken ct = default) =>
+        Record<object>(nameof(CheckAvailabilityAsync), facilityId, vehicleTypeId, start, end, ct);
+
     public sealed record Recorded(string Method, object?[] Args);
 }

@@ -57,10 +57,12 @@ public class FeedbackService : IFeedbackService
                     "Parking does not match the reservation.");
             }
 
-            if (reservation.Status != ReservationStatus.CHECKED_OUT)
+            if (reservation.Status != ReservationStatus.CHECKED_OUT && 
+                reservation.Status != ReservationStatus.COMPLETED &&
+                reservation.Status != ReservationStatus.CONFIRMED)
             {
                 throw new Exception(
-                    "Parking feedback can only be submitted after checkout.");
+                    "Parking feedback can only be submitted for completed or checked-out reservations.");
             }
 
             var alreadyExists =
@@ -77,8 +79,6 @@ public class FeedbackService : IFeedbackService
 
         if (request.Type == FeedbackType.SYSTEM)
         {
-            // System feedback is not connected to
-            // a parking facility or reservation.
             request.ParkingId = null;
             request.ReservationId = null;
 

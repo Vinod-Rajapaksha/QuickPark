@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using QuickPark.API.DTOs.Parking;
 using QuickPark.API.DTOs.Reservations;
 using QuickPark.API.DTOs.Slots;
@@ -18,6 +17,10 @@ public interface IParkingService
 
     Task<ReservationResponse> CreateReservationAsync(
         Guid driverId, CreateReservationRequest request, CancellationToken ct = default);
+    Task<object> CalculatePriceAsync(
+        Guid facilityId, Guid vehicleTypeId, DateTime start, DateTime end, CancellationToken ct = default);
+    Task<object> CheckAvailabilityAsync(
+        Guid facilityId, Guid vehicleTypeId, DateTime start, DateTime end, CancellationToken ct = default);
     Task<ReservationResponse?> GetReservationAsync(
         Guid userId, Guid reservationId, CancellationToken ct = default);
     Task<IReadOnlyList<ReservationResponse>> GetDriverReservationsAsync(
@@ -28,7 +31,7 @@ public interface IParkingService
         CancellationToken ct = default);
     Task<ReservationResponse> CancelReservationAsync(
         Guid userId, Guid reservationId, string? reason, CancellationToken ct = default);
-        
+
     Task<ReservationResponse> ApproveReservationAsync(
         Guid providerUserId, Guid reservationId, CancellationToken ct = default);
     Task SendProviderMessageAsync(

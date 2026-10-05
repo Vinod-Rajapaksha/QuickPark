@@ -47,6 +47,6 @@ class ParkingService:
         if min_hourly_rate: params["minHourlyRate"] = min_hourly_rate
 
         try:
-            return self._client.get("/ParkingFacilities/search", params=params)
+            return self._client.get("/ParkingFacilities", params=params)
         except Exception as e:
             return []

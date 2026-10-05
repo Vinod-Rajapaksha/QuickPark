@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using QuickPark.API.Data;
 using QuickPark.API.DTOs.Parking;
@@ -264,6 +263,7 @@ public partial class ParkingService : IParkingService
             : await AssignFreeSlotAsync(facility, allocation.VehicleTypeId, start, end, ct);
 
         var reservation = BuildReservation(driverId, facility, slot, allocation, start, end);
+        reservation.IsAgentBooking = request.IsAgentBooking;
 
         _context.Set<Reservation>().Add(reservation);
         await _context.SaveChangesAsync(ct);
@@ -271,6 +271,65 @@ public partial class ParkingService : IParkingService
 
         return await LoadReservationAsync(reservation.Id, ct)
             ?? throw new KeyNotFoundException("Reservation not found.");
+    }
+
+    public async Task<object> CalculatePriceAsync(
+        Guid facilityId, Guid vehicleTypeId, DateTime start, DateTime end, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        start = start.AsUtc();
+        end = end.AsUtc();
+
+        EnsureBookingWindow(start, end, now);
+
+        var facility = await _context.Set<ParkingFacility>()
+            .Include(f => f.VehicleAllocations)
+            .FirstOrDefaultAsync(f => f.Id == facilityId, ct)
+            ?? throw new KeyNotFoundException("Parking property not found.");
+
+        if (facility.Status != ParkingStatus.APPROVED)
+        {
+            throw new InvalidOperationException("This property is not open for reservations.");
+        }
+
+        var allocation = facility.VehicleAllocations.FirstOrDefault(a => a.VehicleTypeId == vehicleTypeId)
+            ?? throw new InvalidOperationException("This property has no slots for that vehicle type.");
+
+        var hours = BookingHours(start, end);
+        var totalAmount = allocation.HourlyRate * hours;
+
+        return new { totalAmount = totalAmount, hourlyRate = allocation.HourlyRate, hours = hours };
+    }
+
+    public async Task<object> CheckAvailabilityAsync(
+        Guid facilityId, Guid vehicleTypeId, DateTime start, DateTime end, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        start = start.AsUtc();
+        end = end.AsUtc();
+
+        EnsureBookingWindow(start, end, now);
+
+        var facility = await _context.Set<ParkingFacility>()
+            .FirstOrDefaultAsync(f => f.Id == facilityId, ct)
+            ?? throw new KeyNotFoundException("Parking property not found.");
+
+        if (facility.Status != ParkingStatus.APPROVED)
+        {
+            throw new InvalidOperationException("This property is not open for reservations.");
+        }
+
+        var candidates = await _context.Set<ParkingSlot>()
+            .Where(s => s.FacilityId == facility.Id &&
+                        s.VehicleTypeId == vehicleTypeId &&
+                        s.Status == SlotStatus.AVAILABLE)
+            .ToListAsync(ct);
+
+        var busy = await GetBusySlotsAsync(candidates.Select(s => s.Id).ToList(), start, end, ct);
+
+        var availableSlots = candidates.Where(s => !busy.ContainsKey(s.Id)).ToList();
+
+        return new { available = availableSlots.Count > 0, availableCount = availableSlots.Count, facilityId = facilityId, vehicleTypeId = vehicleTypeId };
     }
 
     public async Task<ReservationResponse?> GetReservationAsync(

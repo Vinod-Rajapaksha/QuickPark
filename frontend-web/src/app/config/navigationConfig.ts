@@ -79,6 +79,12 @@ export const navigationConfig: NavigationItem[] = [
     icon: "CheckSquare",
   },
   {
+    label: "Reviews",
+    path: ROUTES.PROVIDER_REVIEWS,
+    roles: [Role.PARKING_OWNER],
+    icon: "Star",
+  },
+  {
     label: "Reservations",
     path: ROUTES.PROVIDER_RESERVATIONS,
     roles: [Role.PARKING_OWNER],
