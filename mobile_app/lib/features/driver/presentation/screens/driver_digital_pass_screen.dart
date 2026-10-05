@@ -348,8 +348,50 @@ class _DriverDigitalPassScreenState
   }
 
   Widget _buildQuickActions(BuildContext context, bool isExpired) {
+    final isPending = widget.booking['status'] == 'PENDING';
+    final isAgentBooking = widget.booking['isAgentBooking'] == true;
+    final isApproved = widget.booking['isApprovedByProvider'] == true;
+    final canPay = isPending && (!isAgentBooking || isApproved);
+
     return Row(
       children: [
+        if (canPay)
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                context.push(
+                  '/driver/checkout',
+                  extra: {
+                    'reservationRequest': {
+                      'facilityId': widget.booking['facilityId'],
+                      'vehicleTypeId': widget.booking['vehicleTypeId'],
+                      'startTime': widget.booking['startTime'],
+                      'endTime': widget.booking['endTime'],
+                    },
+                    'facilityData': {'name': widget.booking['facilityName']},
+                    'totalCost':
+                        double.tryParse(
+                          widget.booking['totalAmount'].toString(),
+                        ) ??
+                        0.0,
+                    'existingReservationId':
+                        widget.booking['reservationId'] ?? widget.booking['id'],
+                  },
+                );
+              },
+              icon: const Icon(CupertinoIcons.creditcard),
+              label: const Text('Pay Now'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ),
+        if (canPay) const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () async {
