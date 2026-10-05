@@ -15,6 +15,7 @@ import '../features/driver/presentation/screens/driver_profile_screen.dart';
 import '../features/driver/presentation/screens/driver_facility_details_screen.dart';
 import '../features/driver/presentation/screens/driver_checkout_screen.dart';
 import '../features/driver/presentation/screens/driver_digital_pass_screen.dart';
+import '../features/feedback/presentation/screens/feedback_screen.dart';
 
 // Provider Screens
 import '../features/provider/presentation/screens/provider_layout.dart';
@@ -172,7 +173,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/driver/bookings',
-                builder: (context, state) => const DriverBookingsScreen(),
+                builder: (context, state) {
+                  final tab =
+                      int.tryParse(state.uri.queryParameters['tab'] ?? '0') ??
+                      0;
+                  return DriverBookingsScreen(initialIndex: tab);
+                },
                 routes: [
                   GoRoute(
                     path: 'pass',
@@ -190,6 +196,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/driver/profile',
                 builder: (context, state) => const DriverProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'feedback',
+                    builder: (context, state) => const FeedbackScreen(),
+                  ),
+                ],
               ),
             ],
           ),
