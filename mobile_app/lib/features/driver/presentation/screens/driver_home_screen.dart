@@ -252,9 +252,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                         final lng = f['longitude'] as double?;
                         if (lat == null || lng == null) return null;
 
-                        final isSelected = _selectedFacility?['facilityId'] == f['facilityId'];
+                        final isSelected =
+                            _selectedFacility?['facilityId'] == f['facilityId'];
 
-                        final allocations = f['allocations'] as List<dynamic>? ?? [];
+                        final allocations =
+                            f['allocations'] as List<dynamic>? ?? [];
                         double basePrice = 0.0;
                         if (allocations.isNotEmpty) {
                           basePrice = allocations
@@ -379,7 +381,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                         Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: IconButton(
-                            icon: const Icon(CupertinoIcons.slider_horizontal_3),
+                            icon: const Icon(
+                              CupertinoIcons.slider_horizontal_3,
+                            ),
                             onPressed: _showFilterSheet,
                           ),
                         ),
@@ -530,7 +534,7 @@ class _FacilityCard extends StatelessWidget {
 
     final name = facility['name'] ?? 'Parking Facility';
     final address = facility['address'] ?? 'Unknown location';
-    
+
     final allocations = facility['allocations'] as List<dynamic>? ?? [];
     double basePrice = 0.0;
     if (allocations.isNotEmpty) {
@@ -538,7 +542,7 @@ class _FacilityCard extends StatelessWidget {
           .map((a) => (a['hourlyRate'] as num).toDouble())
           .reduce((a, b) => a < b ? a : b);
     }
-    
+
     final slotGroups = facility['slotGroups'] as List<dynamic>? ?? [];
     int availableSlots = 0;
     if (slotGroups.isNotEmpty) {
@@ -546,7 +550,7 @@ class _FacilityCard extends StatelessWidget {
           .map((g) => (g['available'] as num?)?.toInt() ?? 0)
           .fold(0, (a, b) => a + b);
     }
-    
+
     final isAvailable = availableSlots > 0;
     final hasEvCharging = facility['hasEvCharging'] == true;
 

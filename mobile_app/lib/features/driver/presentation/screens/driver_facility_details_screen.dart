@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_app/core/network/api_client.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -33,7 +32,7 @@ class _DriverFacilityDetailsScreenState
     final duration = _endTime.difference(_startTime);
     final hours = duration.inMinutes / 60.0;
     final vehicleTypes = <String, Map<String, dynamic>>{};
-    
+
     final name = widget.facilityData?['name'] ?? 'Parking Facility';
     final address = widget.facilityData?['address'] ?? 'Unknown location';
     final imageUrl =
@@ -41,8 +40,9 @@ class _DriverFacilityDetailsScreenState
             (widget.facilityData!['images'] as List).isNotEmpty
         ? (widget.facilityData!['images'] as List).first['url']
         : null;
-    
-    final allocations = widget.facilityData?['allocations'] as List<dynamic>? ?? [];
+
+    final allocations =
+        widget.facilityData?['allocations'] as List<dynamic>? ?? [];
     for (var a in allocations) {
       final vId = a['vehicleTypeId'];
       if (vId != null) {
@@ -65,7 +65,8 @@ class _DriverFacilityDetailsScreenState
     }
 
     double hourlyRate = 0.0;
-    if (_selectedVehicleTypeId != null && vehicleTypes.containsKey(_selectedVehicleTypeId)) {
+    if (_selectedVehicleTypeId != null &&
+        vehicleTypes.containsKey(_selectedVehicleTypeId)) {
       hourlyRate = vehicleTypes[_selectedVehicleTypeId]!['rate'];
     }
 
@@ -144,9 +145,7 @@ class _DriverFacilityDetailsScreenState
                           selected: isSelected,
                           onSelected: (selected) {
                             if (selected) {
-                              setState(
-                                () => _selectedVehicleTypeId = v['id'],
-                              );
+                              setState(() => _selectedVehicleTypeId = v['id']);
                             }
                           },
                           showCheckmark: false,
@@ -160,7 +159,9 @@ class _DriverFacilityDetailsScreenState
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                             side: BorderSide(
-                              color: isSelected ? primaryColor : Colors.grey.shade300,
+                              color: isSelected
+                                  ? primaryColor
+                                  : Colors.grey.shade300,
                             ),
                           ),
                         );
