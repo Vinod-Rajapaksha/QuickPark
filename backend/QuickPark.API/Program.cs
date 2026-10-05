@@ -102,13 +102,6 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Run DbSeeder on startup
-using (var scope = app.Services.CreateScope())
-{
-    var seeder = scope.ServiceProvider.GetRequiredService<DbSeeder>();
-    await seeder.SeedAsync();
-}
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -127,6 +120,21 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");
+
+_ = Task.Run(async () =>
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<DbSeeder>();
+        await seeder.SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while running database migrations/seeding.");
+    }
+});
 
 app.Run();
 
