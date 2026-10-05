@@ -10,6 +10,9 @@ using QuickPark.Tests.Helpers;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
+// "Monitor reservations" and the owner's answer to a booking. The owner's queue, the four actions they
+// can take on it, and the verbs the driver owns are all attribute rules on ReservationsController, so
+// they are read here rather than served over HTTP; a live host would need a database.
 public class ReservationControllerTests
 {
     private const string Owner = "PARKING_OWNER";
@@ -89,7 +92,9 @@ public class ReservationControllerTests
     [Fact]
     public void OnlyTheDetailReadAndTheCancelAreSharedBecauseBothSidesNeedThem()
     {
-        
+        // A booking is read by whoever made it and by whoever owns the bay, and either side may end it.
+        // Neither can be role-gated, so the service is the only thing standing between one account and
+        // another person's booking — the route promises nothing on its own.
         var shared = Actions(Controller)
             .Where(action => RequiresRoles(action).Count == 0)
             .Select(action => action.Name)
@@ -109,6 +114,8 @@ public class ReservationControllerTests
         Assert.Equal(new[] { "facilityId", "status", "from", "to", "ct" },
             monitor.GetParameters().Select(p => p.Name).ToArray());
 
+        // The owner is taken from the cookie, never from the query, so one owner cannot read
+        // another's bookings by swapping a facility id into a different account's queue.
         Assert.DoesNotContain(monitor.GetParameters(), p =>
             p.Name is "providerUserId" or "ownerId" or "providerId" or "driverId");
     }
@@ -131,7 +138,11 @@ public class ReservationControllerTests
     [Fact]
     public async Task ACommaSeparatedPairOfStatesIsNotRefusedAndLosesTheFirstOne()
     {
-        
+        // COVERAGE NOTE: the guard is Enum.TryParse with an Enum.IsDefined check, and that parser still
+        // splits on commas and ORs the numbers together even though ReservationStatus is not a [Flags]
+        // enum. PENDING is zero, so "PENDING,CONFIRMED" collapses to CONFIRMED — a defined value, so the
+        // IsDefined check passes it. An owner asking for open and approved bookings is shown only the
+        // approved ones, with no error to tell them the first half was dropped. This pins what runs today.
         var fake = new FakeParkingService();
         var reservations = new ReservationsController(fake) { ControllerContext = OwnerContext() };
 
@@ -163,7 +174,9 @@ public class ReservationControllerTests
     [InlineData("   ")]
     public void AnAbsentStateFilterMeansTheWholeQueueNotARefusal(string? status)
     {
-        
+        // Leaving the filter out is the owner's default view, so it must not be turned into a 400.
+        // With no service behind the controller the empty filter falls through to a 500, which is the
+        // only proof available offline that the gate let it pass.
         var result = Invoke(status, nameof(ReservationsController.GetProviderReservations));
 
         Assert.IsNotType<BadRequestObjectResult>(result);
@@ -172,7 +185,8 @@ public class ReservationControllerTests
     [Fact]
     public async Task RejectingABookingIsCancellingItNotADifferentOutcome()
     {
-        
+        // The owner's "reject" has no rejection path of its own: it lands on the same service call as
+        // the driver's cancel, so a rejected booking is stored as CANCELLED and its bay is freed.
         var fake = new FakeParkingService();
         var reservations = new ReservationsController(fake) { ControllerContext = OwnerContext() };
 
@@ -238,7 +252,9 @@ public class ReservationControllerTests
     [Fact]
     public void NoOwnerActionCanSubstituteForTheBookingItIsActingOn()
     {
-        
+        // Approving, checking in and checking out are transitions the service decides. The owner gets
+        // to name which booking and, for a refusal, why — nothing else, so no verb on this controller
+        // can rewrite a price, a state or a bay number.
         Assert.All(OwnerWriteActions(), action => Assert.Equal(
             new[] { typeof(Guid), typeof(CancellationToken) },
             action.GetParameters().Select(p => p.ParameterType).Where(t => t != typeof(CancelReservationRequest) && t != typeof(SendProviderMessageRequest)).Distinct()));
@@ -279,7 +295,8 @@ public class ReservationControllerTests
     [Fact]
     public async Task ACancelledBookingThatDoesNotExistIsNotASilentSuccess()
     {
-        
+        // The detail read answers 404 with its own message rather than an empty 200, so a driver
+        // polling a booking that was never made is told so.
         var reservations = new ReservationsController(new FakeParkingService())
         {
             ControllerContext = OwnerContext()
@@ -291,7 +308,8 @@ public class ReservationControllerTests
     [Fact]
     public void TheServiceRefusalBecomesTheStatusCodeTheOwnerSees()
     {
-        
+        // Every owner action wraps the service in the same four-arm mapping, so a rules refusal is a
+        // 400 and never a 500 the owner reads as a fault in their own account.
         Assert.Equal(404, StatusOf(new KeyNotFoundException("no such booking")));
         Assert.Equal(401, StatusOf(new UnauthorizedAccessException("not your booking")));
         Assert.Equal(400, StatusOf(new InvalidOperationException("that booking has already ended")));
@@ -305,6 +323,8 @@ public class ReservationControllerTests
             ControllerContext = OwnerContext()
         };
 
+        // Every refusal the service raises arrives as an ObjectResult carrying its own status code,
+        // including the three typed helpers, which all derive from it.
         return ((ObjectResult)reservations.Approve(Guid.NewGuid(), default).Result).StatusCode ?? 0;
     }
 
