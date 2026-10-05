@@ -9,7 +9,7 @@ using QuickPark.API.Services.Implementations;
 
 namespace QuickPark.Tests.Unit.Services;
 
-public class ParkingServiceTests
+public partial class ParkingServiceTests
 {
     private static readonly Guid BookedSlotId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
