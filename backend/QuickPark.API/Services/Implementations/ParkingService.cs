@@ -263,6 +263,7 @@ public partial class ParkingService : IParkingService
             : await AssignFreeSlotAsync(facility, allocation.VehicleTypeId, start, end, ct);
 
         var reservation = BuildReservation(driverId, facility, slot, allocation, start, end);
+        reservation.IsAgentBooking = request.IsAgentBooking;
 
         _context.Set<Reservation>().Add(reservation);
         await _context.SaveChangesAsync(ct);
