@@ -51,10 +51,10 @@ class _FeedbackPromptManagerState extends ConsumerState<FeedbackPromptManager> {
             await showDialog(
               context: context,
               barrierDismissible: false,
-              builder: (ctx) => WillPopScope(
-                onWillPop: () async {
+              builder: (ctx) => PopScope(
+                canPop: true,
+                onPopInvokedWithResult: (didPop, result) {
                   prefs.setBool(skipKey, true);
-                  return true;
                 },
                 child: _InterceptCancelDialog(
                   onCancel: () => prefs.setBool(skipKey, true),
@@ -70,7 +70,9 @@ class _FeedbackPromptManagerState extends ConsumerState<FeedbackPromptManager> {
           break;
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Failed to check feedback: $e');
+    }
   }
 
   @override
