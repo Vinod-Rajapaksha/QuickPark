@@ -33,4 +33,22 @@ def calculate_price(req: PriceRequest):
 
 @router.post("/create", summary="Create reservation")
 def create_reservation(req: CreateReservationRequest):
+    from app.agents.validation_agent import ValidationAgent
+    from app.models.validation import ValidationStatus
+    
+    validator = ValidationAgent()
+    validation_payload = {
+        "parking_id": req.payload.get("facilityId"),
+        "start_time": req.payload.get("startTime"),
+        "end_time": req.payload.get("endTime"),
+    }
+    validation_result = validator.validate(
+        agent="reservation_agent",
+        action="create_reservation",
+        output=validation_payload
+    )
+    
+    if validation_result.status == ValidationStatus.REJECTED:
+        raise HTTPException(status_code=400, detail=str(validation_result.issues))
+        
     return agent.create_reservation(req.payload, req.token)
