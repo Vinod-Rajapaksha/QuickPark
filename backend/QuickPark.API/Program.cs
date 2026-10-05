@@ -30,13 +30,15 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IProviderVerificationService, ProviderVerificationService>();
 builder.Services.AddScoped<IParkingService, ParkingService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
 
-//feedback services
+// Services
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IParkingUsageValidator, ParkingUsageValidator>();
 builder.Services.AddScoped<IFeedbackReplyService, FeedbackReplyService>();
 builder.Services.AddScoped<IFeedbackReportService, FeedbackReportService>();
 builder.Services.AddScoped<IParkingAccessValidator, ParkingAccessValidator>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
@@ -83,7 +85,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -112,3 +118,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

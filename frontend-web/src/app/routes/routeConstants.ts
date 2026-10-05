@@ -16,9 +16,13 @@ export const ROUTES = {
   PROFILE: "/profile",
 
   // Driver routes
-  SEARCH_PARKING: "/search",
+  DRIVER_DASHBOARD: "/driver/dashboard",
+  PARKING_DISCOVERY: "/parking-discovery",
   DRIVER_RESERVATIONS: "/reservations",
   BOOKING_HISTORY: "/history",
+  RESERVATION_CREATE: (facilityId: string) =>
+    `/reservations/create/${facilityId}`,
+  RESERVATION_CREATE_PATTERN: "/reservations/create/:facilityId",
   DRIVER_FEEDBACK: "/feedback",
 
   // Provider routes
@@ -39,12 +43,15 @@ export const ROUTES = {
   REVENUE: "/revenue",
   PROVIDER_ANALYTICS: "/analytics",
   PROVIDER_REPORTS: "/reports",
-  PROVIDER_RESERVATIONS: "/reservations",
+  PROVIDER_RESERVATIONS: "/provider/reservations",
+  PROVIDER_APPROVALS: "/provider/approvals",
   PROVIDER_RESERVATION_APPROVAL: "/provider/reservations/approval/:id",
+  PROVIDER_STAFF: "/provider/staff",
 
   // Staff routes
   STAFF_DASHBOARD: "/staff/dashboard",
   ACTIVE_SESSIONS: "/sessions",
+  QR_SCANNER: "/staff/scanner",
   SUPPORT: "/support",
 
   // Admin routes
@@ -70,7 +77,8 @@ export const ROUTES = {
   facilityEditPath: (facilityId: string) => `/facilities/${facilityId}/edit`,
   facilitySetupPath: (facilityId: string) => `/facilities/${facilityId}/setup`,
   facilitySlotsPath: (facilityId: string) => `/facilities/${facilityId}/slots`,
-  facilityRevenuePath: (facilityId: string) => `/facilities/${facilityId}/revenue`,
+  facilityRevenuePath: (facilityId: string) =>
+    `/facilities/${facilityId}/revenue`,
   adminPropertyPath: (facilityId: string) => `/admin/properties/${facilityId}`,
 } as const;
 

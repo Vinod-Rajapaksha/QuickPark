@@ -36,7 +36,7 @@ export const navigationConfig: NavigationItem[] = [
   // Driver
   {
     label: "Search Parking",
-    path: ROUTES.SEARCH_PARKING,
+    path: ROUTES.PARKING_DISCOVERY,
     roles: [Role.DRIVER],
     icon: "Search",
   },
@@ -74,9 +74,15 @@ export const navigationConfig: NavigationItem[] = [
   },
   {
     label: "Approvals",
-    path: ROUTES.PROVIDER_RESERVATION_APPROVAL,
+    path: ROUTES.PROVIDER_APPROVALS,
     roles: [Role.PARKING_OWNER],
     icon: "CheckSquare",
+  },
+  {
+    label: "Reservations",
+    path: ROUTES.PROVIDER_RESERVATIONS,
+    roles: [Role.PARKING_OWNER],
+    icon: "Calendar",
   },
   {
     label: "Revenue",
@@ -90,6 +96,12 @@ export const navigationConfig: NavigationItem[] = [
     roles: [Role.PARKING_OWNER],
     icon: "BarChart",
   },
+  {
+    label: "Staff",
+    path: ROUTES.PROVIDER_STAFF,
+    roles: [Role.PARKING_OWNER],
+    icon: "Users",
+  },
 
   // Parking_Staff
   {
@@ -99,10 +111,10 @@ export const navigationConfig: NavigationItem[] = [
     icon: "Clock",
   },
   {
-    label: "Support",
-    path: ROUTES.SUPPORT,
-    roles: [Role.PARKING_STAFF],
-    icon: "LifeBuoy",
+    label: "QR Scanner",
+    path: ROUTES.QR_SCANNER,
+    roles: [Role.PARKING_STAFF, Role.PARKING_OWNER],
+    icon: "ScanLine",
   },
 
   // Platform_Admin
@@ -120,7 +132,7 @@ export const navigationConfig: NavigationItem[] = [
   },
   {
     label: "Providers",
-    path: ROUTES.ADMIN_PROVIDERS,
+    path: ROUTES.ADMIN_PROVIDER_APPROVALS,
     roles: [Role.PLATFORM_ADMIN],
     icon: "Shield",
   },

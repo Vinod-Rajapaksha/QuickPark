@@ -1,13 +1,25 @@
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Card from "../../../components/common/Card/Card";
 import Button from "../../../components/common/Button/Button";
 import Input from "../../../components/common/Input/Input";
-import { Lock, KeyRound, ShieldAlert, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import {
+  Lock,
+  KeyRound,
+  ShieldAlert,
+  CheckCircle2,
+  XCircle,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
-import { passwordSchema, type PasswordFormValues } from "../schemas/profileSchemas";
-
+import {
+  passwordSchema,
+  type PasswordFormValues,
+} from "../schemas/profileSchemas";
+import { axiosClient as api } from "../../../services/api/axiosClient";
 export const ProfileSecurityTab: React.FC = () => {
   const { showToast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -18,7 +30,7 @@ export const ProfileSecurityTab: React.FC = () => {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     reset,
     formState: { errors },
   } = useForm<PasswordFormValues>({
@@ -30,25 +42,42 @@ export const ProfileSecurityTab: React.FC = () => {
     },
   });
 
-  const newPasswordVal = watch("newPassword", "");
+  const newPasswordVal = useWatch({
+    control,
+    name: "newPassword",
+    defaultValue: "",
+  });
 
   const requirements = [
     { label: "At least 8 characters long", met: newPasswordVal.length >= 8 },
-    { label: "At least one uppercase letter (A-Z)", met: /[A-Z]/.test(newPasswordVal) },
-    { label: "At least one lowercase letter (a-z)", met: /[a-z]/.test(newPasswordVal) },
+    {
+      label: "At least one uppercase letter (A-Z)",
+      met: /[A-Z]/.test(newPasswordVal),
+    },
+    {
+      label: "At least one lowercase letter (a-z)",
+      met: /[a-z]/.test(newPasswordVal),
+    },
     { label: "At least one number (0-9)", met: /[0-9]/.test(newPasswordVal) },
-    { label: "At least one special character (!@#$%...)", met: /[^A-Za-z0-9]/.test(newPasswordVal) },
+    {
+      label: "At least one special character (!@#$%...)",
+      met: /[^A-Za-z0-9]/.test(newPasswordVal),
+    },
   ];
 
   const onSubmit = async (data: PasswordFormValues) => {
     setIsUpdating(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      console.log("Password updated", data);
+      await api.patch("/users/change-password", {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
       showToast("Password updated successfully", "success");
       reset();
-    } catch {
-      showToast("Failed to change password", "error");
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      const msg = err.response?.data?.message || "Failed to change password";
+      showToast(msg, "error");
     } finally {
       setIsUpdating(false);
     }
@@ -143,11 +172,23 @@ export const ProfileSecurityTab: React.FC = () => {
                 {requirements.map((req, index) => (
                   <li key={index} className="flex items-center gap-2">
                     {req.met ? (
-                      <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0" />
+                      <CheckCircle2
+                        size={14}
+                        className="text-emerald-500 flex-shrink-0"
+                      />
                     ) : (
-                      <XCircle size={14} className="text-slate-300 flex-shrink-0" />
+                      <XCircle
+                        size={14}
+                        className="text-slate-300 flex-shrink-0"
+                      />
                     )}
-                    <span className={req.met ? "text-emerald-700 font-medium" : "text-slate-500"}>
+                    <span
+                      className={
+                        req.met
+                          ? "text-emerald-700 font-medium"
+                          : "text-slate-500"
+                      }
+                    >
                       {req.label}
                     </span>
                   </li>
@@ -162,7 +203,9 @@ export const ProfileSecurityTab: React.FC = () => {
                 Security Recommendations
               </h4>
               <p className="text-xs text-blue-700 leading-relaxed">
-                Never share your QuickPark credentials with anyone. We recommend changing your password periodically to maintain maximum protection.
+                Never share your QuickPark credentials with anyone. We recommend
+                changing your password periodically to maintain maximum
+                protection.
               </p>
             </div>
           </div>
