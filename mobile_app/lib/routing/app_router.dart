@@ -162,6 +162,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                         reservationRequest: extra['reservationRequest'],
                         facilityData: extra['facilityData'],
                         totalCost: extra['totalCost'],
+                        existingReservationId: extra['existingReservationId'],
                       );
                     },
                   ),
