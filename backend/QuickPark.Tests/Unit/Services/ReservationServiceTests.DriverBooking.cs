@@ -10,8 +10,6 @@ using QuickPark.Tests.Helpers;
 
 namespace QuickPark.Tests.Unit.Services;
 
-// A driver booking their own bay: the rules that gate a booking, and the read, list and cancel
-// paths that only ever reach that driver's own rows.
 public partial class ReservationServiceTests
 {
     private static ParkingService Bookings(DatabaseFixture fixture) =>
@@ -28,8 +26,6 @@ public partial class ReservationServiceTests
         VehicleType VehicleType,
         ParkingProvider Provider,
         ParkingFacilityVehicleType Allocation);
-
-    /// <summary>A published property with two bays for one vehicle type, ready to be booked.</summary>
     private static async Task<Yard> PrepareAsync(
         DatabaseFixture fixture,
         ParkingStatus status = ParkingStatus.APPROVED,
@@ -76,8 +72,6 @@ public partial class ReservationServiceTests
         await fixture.Context.SaveChangesAsync();
         return reservation;
     }
-
-    // ---- The booking window a driver must fit inside ----
 
     [Theory]
     [InlineData(10, 10)]
@@ -135,8 +129,6 @@ public partial class ReservationServiceTests
 
         BookingWindow(now.AddDays(120), now.AddDays(121), now);
     }
-
-    // ---- What the driver must get right before anything is written ----
 
     [Theory]
     [InlineData(true, false)]
@@ -311,8 +303,6 @@ public partial class ReservationServiceTests
             $"CreateReservationRequest lets a driver post {string.Join(", ", moneyFields)}.");
     }
 
-    // ---- Reading one booking back ----
-
     [Fact]
     public async Task ADriverOpensTheirOwnBooking()
     {
@@ -368,8 +358,6 @@ public partial class ReservationServiceTests
 
         Assert.Null(await Bookings(fixture).GetReservationAsync(NewDriver(), Guid.NewGuid()));
     }
-
-    // ---- The driver's own list ----
 
     [Fact]
     public async Task MyBookingsShowOnlyThatDriversRows()
@@ -450,8 +438,6 @@ public partial class ReservationServiceTests
 
         Assert.Empty(await Bookings(fixture).GetDriverReservationsAsync(NewDriver(), null, null, null));
     }
-
-    // ---- Cancelling ----
 
     [Fact]
     public async Task ADriverCancelsTheirOwnUpcomingBooking()
@@ -647,9 +633,6 @@ public partial class ReservationServiceTests
         Assert.Null(cancelled.CancelReason);
     }
 
-    // ---- Helpers ----
-
-    /// <summary>Entities for the pure build path, which touches no database.</summary>
     private static Yard LooseYard()
     {
         var vehicleType = TestDataBuilder.CreateVehicleType();

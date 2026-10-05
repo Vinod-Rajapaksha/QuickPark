@@ -10,13 +10,9 @@ using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
-// The driver's booking surface: the URLs a driver may use, the role each owner-side route names,
-// how a claim becomes a user id, and which HTTP status each service refusal turns into.
 public class ReservationControllerTests
 {
     private static readonly Type Bookings = typeof(ReservationsController);
-
-    // ---- The route table ----
 
     [Fact]
     public void ReservationsController_ExposesExactlyTheAgreedRoutes()
@@ -69,8 +65,6 @@ public class ReservationControllerTests
             RoutesOf(Bookings).ToHashSet(StringComparer.OrdinalIgnoreCase));
     }
 
-    // ---- Who may reach what ----
-
     [Theory]
     [InlineData(nameof(ReservationsController.Create), "DRIVER")]
     [InlineData(nameof(ReservationsController.GetMyReservations), "DRIVER")]
@@ -98,7 +92,7 @@ public class ReservationControllerTests
     [InlineData(nameof(ReservationsController.Cancel))]
     public void OpeningAndCancellingOneBooking_AreGuardedByTheServiceNotByARole(string actionName)
     {
-        // Both routes answer any signed-in role; which booking may be touched is decided per row.
+        
         Assert.Empty(RequiresRoles(ActionOf(actionName), Bookings));
         Assert.True(ClassRequiresAuthentication(Bookings));
     }
@@ -139,8 +133,6 @@ public class ReservationControllerTests
         Assert.IsType<UnauthorizedResult>(await reservations.CheckIn(id, default));
         Assert.IsType<UnauthorizedResult>(await reservations.CheckOut(id, default));
     }
-
-    // ---- The cookie claim becomes the driver id ----
 
     [Fact]
     public async Task TheDriverWhoSignsIn_IsTheDriverTheServiceIsToldAbout()
@@ -198,8 +190,6 @@ public class ReservationControllerTests
         Assert.Same(made, result.Value);
         service.Verify(s => s.CreateReservationAsync(driverId, request, It.IsAny<CancellationToken>()), Times.Once);
     }
-
-    // ---- A status in the query string ----
 
     [Theory]
     [InlineData("settled")]
@@ -413,8 +403,6 @@ public class ReservationControllerTests
         Assert.Equal("An unexpected error occurred.", MessageOf(result.Value));
     }
 
-    // ---- Payload shape ----
-
     [Fact]
     public void ABookingRequestOffersThePropertyTheVehicleTypeAndTheWindowOnly()
     {
@@ -446,8 +434,6 @@ public class ReservationControllerTests
             new[] { "Reason" },
             typeof(CancelReservationRequest).GetProperties().Select(p => p.Name).ToArray());
     }
-
-    // ---- Helpers ----
 
     private static string MessageOf(object? body) =>
         body?.GetType().GetProperty("message")?.GetValue(body) as string ?? string.Empty;
