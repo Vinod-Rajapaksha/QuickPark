@@ -274,26 +274,26 @@ public class ReservationControllerTests
     [InlineData("CheckIn")]
     [InlineData("CheckOut")]
     [InlineData("GetProviderReservations")]
-    public void AnOwnerDeskActionCalledWithNoAccountInTheCookieIsTurnedAway(string actionName)
+    public async Task AnOwnerDeskActionCalledWithNoAccountInTheCookieIsTurnedAway(string actionName)
     {
         var reservations = new ReservationsController(null!) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
 
         var result = actionName switch
         {
             nameof(ReservationsController.GetProviderReservations) =>
-                reservations.GetProviderReservations(null, null, null, null, default).Result,
+                await reservations.GetProviderReservations(null, null, null, null, default),
             nameof(ReservationsController.SendMessage) =>
-                reservations.SendMessage(Guid.NewGuid(), new SendProviderMessageRequest(), default).Result,
+                await reservations.SendMessage(Guid.NewGuid(), new SendProviderMessageRequest(), default),
             nameof(ReservationsController.Reject) =>
-                reservations.Reject(Guid.NewGuid(), new CancelReservationRequest(), default).Result,
-            _ => InvokeNoBody(actionName, reservations)
+                await reservations.Reject(Guid.NewGuid(), new CancelReservationRequest(), default),
+            _ => await InvokeNoBody(actionName, reservations)
         };
 
         Assert.IsType<UnauthorizedResult>(result);
     }
 
     [Fact]
-    public void ACancelledBookingThatDoesNotExistIsNotASilentSuccess()
+    public async Task ACancelledBookingThatDoesNotExistIsNotASilentSuccess()
     {
         // The detail read answers 404 with its own message rather than an empty 200, so a driver
         // polling a booking that was never made is told so.
@@ -302,7 +302,7 @@ public class ReservationControllerTests
             ControllerContext = OwnerContext()
         };
 
-        Assert.IsType<NotFoundObjectResult>(reservations.GetById(Guid.NewGuid(), default).Result);
+        Assert.IsType<NotFoundObjectResult>(await reservations.GetById(Guid.NewGuid(), default));
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class ReservationControllerTests
         return ((ObjectResult)reservations.Approve(Guid.NewGuid(), default).Result).StatusCode ?? 0;
     }
 
-    private static IActionResult InvokeNoBody(string actionName, ReservationsController controller)
+    private static Task<IActionResult> InvokeNoBody(string actionName, ReservationsController controller)
     {
         var method = Action(actionName);
         var arguments = method.GetParameters()
@@ -339,7 +339,7 @@ public class ReservationControllerTests
                     : null)
             .ToArray();
 
-        return ((Task<IActionResult>)method.Invoke(controller, arguments)!).Result;
+        return (Task<IActionResult>)method.Invoke(controller, arguments)!;
     }
 
     private static IActionResult Invoke(string? status, string actionName)

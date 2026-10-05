@@ -53,7 +53,7 @@ public class DatabaseIntegrationTests : IClassFixture<CustomWebApplicationFactor
         
         // Assert
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
-        exception.InnerException.Message.Should().Contain("duplicate key value violates unique constraint");
+        exception.InnerException!.Message.Should().Contain("duplicate key value violates unique constraint");
     }
 
     [Fact]
