@@ -10,7 +10,8 @@ class FeedbackPromptManager extends ConsumerStatefulWidget {
   const FeedbackPromptManager({super.key, required this.child});
 
   @override
-  ConsumerState<FeedbackPromptManager> createState() => _FeedbackPromptManagerState();
+  ConsumerState<FeedbackPromptManager> createState() =>
+      _FeedbackPromptManagerState();
 }
 
 class _FeedbackPromptManagerState extends ConsumerState<FeedbackPromptManager> {
@@ -32,14 +33,16 @@ class _FeedbackPromptManagerState extends ConsumerState<FeedbackPromptManager> {
       final bookings = await ref.read(myReservationsProvider.future);
       final feedbacks = await ref.read(myParkingFeedbackProvider.future);
 
-      final checkedOutBookings = bookings.where((b) => b['status'] == 'CHECKED_OUT').toList();
-      
+      final checkedOutBookings = bookings
+          .where((b) => b['status'] == 'CHECKED_OUT')
+          .toList();
+
       final prefs = await SharedPreferences.getInstance();
-      
+
       for (var booking in checkedOutBookings) {
         final resId = booking['id'] ?? booking['reservationId'];
         final hasFeedback = feedbacks.any((f) => f.reservationId == resId);
-        
+
         final skipKey = 'skip_feedback_$resId';
         final hasSkipped = prefs.getBool(skipKey) ?? false;
 
@@ -56,7 +59,8 @@ class _FeedbackPromptManagerState extends ConsumerState<FeedbackPromptManager> {
                 child: _InterceptCancelDialog(
                   onCancel: () => prefs.setBool(skipKey, true),
                   child: ParkingFeedbackDialog(
-                    parkingId: booking['parkingId'] ?? booking['facilityId'] ?? '',
+                    parkingId:
+                        booking['parkingId'] ?? booking['facilityId'] ?? '',
                     reservationId: resId,
                   ),
                 ),
@@ -66,8 +70,7 @@ class _FeedbackPromptManagerState extends ConsumerState<FeedbackPromptManager> {
           break;
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   @override
