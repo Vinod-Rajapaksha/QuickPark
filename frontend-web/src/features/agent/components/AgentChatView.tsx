@@ -2,10 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import { useAgentChat } from '../hooks/useAgentChat';
 import { ChatBubble } from './ChatBubble';
 import { ChatInput } from './ChatInput';
-import type { ChatMessage } from '../types/chat.types';
+import { useAuth } from '../../../hooks/useAuth';
+import { startPayherePayment } from '../../payments/utils/payhere';
+import { paymentApi } from '../../payments/api/paymentApi';
+import md5 from 'md5';
+import { chatApi } from '../api/agentApi';
 
 export const AgentChatView: React.FC = () => {
-  const { messages, isLoading, error, sendMessage } = useAgentChat();
+  const { messages, isLoading, error, sendMessage, addMessage } = useAgentChat();
+  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -16,11 +21,76 @@ export const AgentChatView: React.FC = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const handleAction = async (actionType: string, payload: NonNullable<ChatMessage['action_payload']>) => {
+  const handleAction = async (actionType: string, payload: Record<string, unknown>) => {
     if (actionType === 'confirm_reservation') {
-      sendMessage(`I confirm the booking for ${payload.facility_name}.`);
+      try {
+        await chatApi.createReservation({
+          facilityId: payload.facility_id as string,
+          startTime: payload.start_time as string,
+          endTime: payload.end_time as string,
+          vehicleType: payload.vehicle_type as string,
+        });
+        
+        addMessage({
+          role: 'agent',
+          content: 'Your reservation has been created! It is now waiting for the provider to approve it. You will be notified once it is approved.',
+          timestamp: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('Reservation creation failed:', err);
+        sendMessage(`Sorry, I encountered an error creating your booking.`);
+      }
     } else if (actionType === 'cancel_reservation') {
       sendMessage(`I want to cancel the booking.`);
+    } else if (actionType === 'pay_reservation') {
+      if (!user) return;
+      const merchantId = import.meta.env.VITE_PAYHERE_MERCHANT_ID;
+      const merchantSecret = import.meta.env.VITE_PAYHERE_MERCHANT_SECRET;
+      const orderId = payload.reservation_id as string;
+      const amount = String(payload.estimated_price ?? "");
+      const currency = "LKR";
+
+      let hash = "";
+      if (merchantSecret) {
+        const hashedSecret = md5(merchantSecret).toUpperCase();
+        const amountFormatted = parseFloat(amount).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          useGrouping: false,
+        });
+        hash = md5(merchantId + orderId + amountFormatted + currency + hashedSecret).toString().toUpperCase();
+      }
+
+      startPayherePayment({
+        order_id: orderId,
+        items: `Parking Reservation at ${payload.facility_name as string ?? "Facility"}`,
+        amount: amount,
+        currency: currency,
+        hash: hash,
+        first_name: user.fullName?.split(" ")[0] || "Driver",
+        last_name: user.fullName?.split(" ").slice(1).join(" ") || "Name",
+        email: user.email,
+        phone: user.phone || "0771234567",
+        address: "Sri Lanka",
+        city: (payload.city as string) || "Colombo",
+        country: "Sri Lanka",
+      }, async (_orderId) => {
+        try {
+          await paymentApi.confirmExternal(orderId, _orderId);
+          addMessage({
+            role: 'agent',
+            content: 'Payment successful! Your reservation is fully confirmed.',
+            timestamp: new Date().toISOString()
+          });
+        } catch (e) {
+          console.error('Payment verification error:', e);
+          sendMessage(`Payment verification failed.`);
+        }
+      }, () => {
+        sendMessage(`Payment was cancelled.`);
+      }, (errorMsg) => {
+        sendMessage(`Payment error: ${errorMsg}`);
+      });
     }
   };
 
