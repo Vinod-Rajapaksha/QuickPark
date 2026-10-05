@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: Optional[str] = None
     CORS_ORIGINS: str
     GEMINI_MODEL: str
+    
+    # Testing & Performance Configuration
+    PERFORMANCE_TEST_MODE: bool = False
+    AGENT_TEST_MODE: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",
