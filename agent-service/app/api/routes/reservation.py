@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Optional
 
 from app.agents.reservation_agent import ReservationAgent
 
@@ -21,7 +21,7 @@ class PriceRequest(BaseModel):
 
 class CreateReservationRequest(BaseModel):
     payload: dict
-    token: str
+    token: Optional[str] = None
 
 @router.post("/check-availability", summary="Check reservation availability")
 def check_availability(req: AvailabilityRequest):
@@ -32,7 +32,11 @@ def calculate_price(req: PriceRequest):
     return agent.calculate_price(req.facility_id, req.start_time, req.end_time, req.vehicle_type)
 
 @router.post("/create", summary="Create reservation")
-def create_reservation(req: CreateReservationRequest):
+def create_reservation(req: CreateReservationRequest, request: Request):
+    token = req.token or request.cookies.get("quickpark_auth")
+    if not token:
+        raise HTTPException(status_code=401, detail="No authentication token provided")
+        
     from app.agents.validation_agent import ValidationAgent
     from app.models.validation import ValidationStatus
     
@@ -51,4 +55,4 @@ def create_reservation(req: CreateReservationRequest):
     if validation_result.status == ValidationStatus.REJECTED:
         raise HTTPException(status_code=400, detail=str(validation_result.issues))
         
-    return agent.create_reservation(req.payload, req.token)
+    return agent.create_reservation(req.payload, token)
