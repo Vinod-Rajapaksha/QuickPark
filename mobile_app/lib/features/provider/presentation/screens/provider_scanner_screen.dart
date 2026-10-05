@@ -192,9 +192,10 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
   Future<Map<String, dynamic>?> _fetchReservationDetails(String code) async {
     try {
       final dio = ref.read(dioProvider);
-      final tokenResponse = await dio.post('/Tokens/scan', data: {
-        'token': code,
-      });
+      final tokenResponse = await dio.post(
+        '/Tokens/scan',
+        data: {'token': code},
+      );
 
       if (tokenResponse.statusCode == 200 && tokenResponse.data != null) {
         final resId = tokenResponse.data['reservationId'];
@@ -217,7 +218,7 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
     Map<String, dynamic> currentData,
   ) async {
     final actionName = action == 'check-in' ? 'Check-In' : 'Check-Out';
-    
+
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -226,14 +227,19 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Are you sure you want to $actionName this driver?', textAlign: TextAlign.center),
+              Text(
+                'Are you sure you want to $actionName this driver?',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: action == 'check-in' ? Colors.blue.shade600 : Colors.orange.shade600,
+                    backgroundColor: action == 'check-in'
+                        ? Colors.blue.shade600
+                        : Colors.orange.shade600,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -245,13 +251,20 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
                 ),
               ),
             ],
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         );
       },
     );
@@ -260,15 +273,15 @@ class _ProviderScannerScreenState extends ConsumerState<ProviderScannerScreen> {
 
     try {
       final dio = ref.read(dioProvider);
-      final endpoint = action == 'check-in' 
-          ? '/reservations/$id/check-in' 
+      final endpoint = action == 'check-in'
+          ? '/reservations/$id/check-in'
           : '/reservations/$id/check-out';
       final response = await dio.post(endpoint);
 
       if (mounted) {
         if (response.statusCode == 200) {
           Navigator.of(context, rootNavigator: true).pop();
-          
+
           AppErrorHandler.showSnackBar(
             context,
             'Driver successfully ${action == 'check-in' ? 'checked in' : 'checked out'}!',
