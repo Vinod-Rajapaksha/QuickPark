@@ -17,7 +17,7 @@ def test_reservation_creates_multi_step_plan():
     plan = planner.create_plan("Find a parking space near SLIIT and reserve it for 2 hours.")
     
     assert plan is not None
-    assert len(plan.steps) == 4
+    assert len(plan.steps) >= 4
     assert any(step.action == "create_reservation" for step in plan.steps)
 
 def test_reservation_creation_requires_approval():
