@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// The tab shell floats this bar over the body (`extendBody: true`), so any
-/// scrollable page has to reserve this much bottom padding or its last row
-/// lands under the bar. Screens read it from here instead of each inventing a
-/// number that drifts whenever the bar changes.
-class NavBarMetrics {
-  static const double outerMargin = 16.0;
-  static const double innerVerticalPadding = 8.0;
-  static const double contentHeight = 44.0;
-
-  static double reservedHeight(BuildContext context) =>
-      outerMargin * 2 +
-      innerVerticalPadding * 2 +
-      contentHeight +
-      MediaQuery.viewPaddingOf(context).bottom;
-}
-
 class NavBarItem {
   final IconData icon;
   final IconData activeIcon;
@@ -43,7 +27,7 @@ class NavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(NavBarMetrics.outerMargin),
+      margin: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),

@@ -34,23 +34,4 @@ class ReservationRepositoryImpl implements ReservationRepository {
   Future<void> sendMessage(String id, String message) {
     return _api.sendMessage(id, message);
   }
-
-  @override
-  Future<Reservation> checkIn(String id) {
-    return _api.checkIn(id);
-  }
-
-  @override
-  Future<Reservation> checkOut(String id) {
-    return _api.checkOut(id);
-  }
-
-  @override
-  Future<Map<String, dynamic>> updateSlotStatus(
-    String slotId, {
-    required String status,
-    String? reason,
-  }) {
-    return _api.updateSlotStatus(slotId, status: status, reason: reason);
-  }
 }

@@ -17,11 +17,7 @@ class ApiInterceptor extends Interceptor {
     }
 
     options.headers['Accept'] = 'application/json';
-    // FormData carries its own multipart boundary; forcing a JSON content type
-    // here would strip it and the upload would never parse server-side.
-    if (options.data is! FormData) {
-      options.headers['Content-Type'] = 'application/json';
-    }
+    options.headers['Content-Type'] = 'application/json';
 
     super.onRequest(options, handler);
   }

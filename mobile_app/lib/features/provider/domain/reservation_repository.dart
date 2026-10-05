@@ -12,11 +12,4 @@ abstract class ReservationRepository {
   Future<Reservation> approveReservation(String id);
   Future<Reservation> rejectReservation(String id, {String? reason});
   Future<void> sendMessage(String id, String message);
-  Future<Reservation> checkIn(String id);
-  Future<Reservation> checkOut(String id);
-  Future<Map<String, dynamic>> updateSlotStatus(
-    String slotId, {
-    required String status,
-    String? reason,
-  });
 }
