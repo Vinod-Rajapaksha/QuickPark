@@ -64,8 +64,8 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({
         </div>
       </dl>
 
-      <div className="mt-4 flex items-end justify-between gap-3 border-t border-slate-100 pt-3">
-        <div>
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-4 border-t border-slate-100 pt-3">
+        <div className="min-w-fit">
           <p className="text-xs uppercase tracking-wide text-slate-400">Amount</p>
           <p className="text-lg font-semibold text-slate-900">
             {formatMoney(reservation.totalAmount)}
@@ -75,8 +75,8 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({
             {formatMoney(reservation.hourlyRate)}
           </p>
         </div>
-        <div className="flex shrink-0 gap-2">
-          {reservation.status === "CONFIRMED" && onViewQr && (
+        <div className="flex flex-wrap shrink-0 gap-2">
+          {(reservation.status === "CONFIRMED" || reservation.status === "CHECKED_IN") && onViewQr && (
             <Button
               type="button"
               variant="outline"
