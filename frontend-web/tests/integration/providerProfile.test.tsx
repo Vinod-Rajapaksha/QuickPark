@@ -156,7 +156,8 @@ describe("parking owner identity panel", () => {
     const { container } = render(<ProviderProfilePage />);
 
     expect(container.querySelector('[class*="animate-spin"]')).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Parking Owner Profile" })).toBeNull();
+    // The heading is page furniture and stays up; what the owner must not see early is their own data.
+    expect(screen.queryByRole("heading", { name: "Owner Information" })).toBeNull();
 
     // The read is queued a frame after mount, so the test releases it only once it is actually open.
     await waitFor(() => expect(http.get).toHaveBeenCalledWith(ME));

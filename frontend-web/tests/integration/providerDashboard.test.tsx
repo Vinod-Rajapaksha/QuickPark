@@ -1,193 +1,297 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProviderDashboardPage, {
   ProviderDashboardPage as NamedProviderDashboardPage,
 } from "../../src/pages/provider/ProviderDashboardPage";
 import { ROUTES } from "../../src/app/routes/routeConstants";
+import type { ProviderProfile } from "../../src/features/providers/types/providerTypes";
+import type { ParkingFacility } from "../../src/features/parking/types/parkingTypes";
+import type { Reservation } from "../../src/features/reservations/types/reservationTypes";
 
-// The overview could have read its tiles from any of these, so every method on every one of them
-// is trapped: a call lands in `reads` and fails the test instead of reaching the network.
-const harness = vi.hoisted(() => {
-  const reads: string[] = [];
-  const record = (name: string) =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_target, prop) => {
-        if (typeof prop !== "string" || prop === "then") return undefined;
-        return (...args: unknown[]) => {
-          reads.push(`${name}.${prop}(${JSON.stringify(args)})`);
-          return Promise.reject(
-            new Error(`The provider overview tried to call ${name}.${prop}().`),
-          );
-        };
-      },
-    });
-  return { reads, record };
-});
-
-vi.mock("../../src/features/parking/api/parkingApi", () => ({
-  parkingApi: harness.record("parkingApi"),
+const api = vi.hoisted(() => ({
+  provider: {
+    getMyProfile: vi.fn(),
+    uploadNicDocument: vi.fn(),
+    getMyNicDocumentUrl: vi.fn(),
+  },
+  parking: { getMyFacilities: vi.fn() },
+  reservations: { getProvider: vi.fn() },
 }));
+
 vi.mock("../../src/features/providers/api/providerApi", () => ({
-  providerApi: harness.record("providerApi"),
+  providerApi: api.provider,
 }));
-vi.mock("../../src/features/reports/api/reportApi", () => ({
-  reportApi: harness.record("reportApi"),
+vi.mock("../../src/features/parking/api/parkingApi", () => ({
+  parkingApi: api.parking,
 }));
 vi.mock("../../src/features/reservations/api/reservationApi", () => ({
-  reservationApi: harness.record("reservationApi"),
-}));
-vi.mock("../../src/features/parking-slots/api/parkingSlotApi", () => ({
-  parkingSlotApi: harness.record("parkingSlotApi"),
-}));
-vi.mock("../../src/services/api/axiosClient", () => ({
-  axiosClient: harness.record("axiosClient"),
-  default: harness.record("axiosClient"),
+  reservationApi: api.reservations,
 }));
 
-const HEADING = "Provider Dashboard";
-const PLACEHOLDER = "The provider overview is being built out by the provider team.";
+const owner = (over: Partial<ProviderProfile> = {}): ProviderProfile => ({
+  providerId: "bbbbbbbb-0000-0000-0000-000000000001",
+  userId: "aaaaaaaa-0000-0000-0000-000000000001",
+  fullName: "Kamala Perera",
+  email: "kamala@example.com",
+  phone: "0771234567",
+  nicNumber: "903456789V",
+  businessName: "Galle Road Parking",
+  address: "142 Galle Road, Colombo 03",
+  verificationStatus: "PENDING",
+  verificationRemarks: null,
+  hasNicDocument: true,
+  nicDocumentUrl: null,
+  nicDocumentContentType: "image/jpeg",
+  nicDocumentSize: 20480,
+  nicSubmittedAt: "2026-09-24T05:00:00Z",
+  verifiedAt: null,
+  createdAt: "2026-09-24T05:00:00Z",
+  updatedAt: "2026-09-24T05:00:00Z",
+  ...over,
+});
+
+// Only the length of each list reaches this screen, so the tiles are counted, not rendered from.
+const just = <T,>(count: number): T[] =>
+  Array.from({ length: count }) as unknown as T[];
+
+const refused = (message: string): Error =>
+  Object.assign(new Error(message), { response: { status: 400, data: { message } } });
 
 const renderAt = (path: string): HTMLElement => {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, refetchOnWindowFocus: false },
+      mutations: { retry: false },
+    },
+  });
   const { container } = render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path={ROUTES.PROVIDER_DASHBOARD} element={<ProviderDashboardPage />} />
-        <Route path={ROUTES.FACILITIES} element={<p>properties list</p>} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path={ROUTES.PROVIDER_DASHBOARD} element={<ProviderDashboardPage />} />
+          <Route path={ROUTES.FACILITIES} element={<p>properties list</p>} />
+          <Route
+            path={ROUTES.PROVIDER_RESERVATIONS}
+            element={<p>request queue</p>}
+          />
+          <Route path={ROUTES.PROVIDER_STAFF} element={<p>staff page</p>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
   return container;
 };
 
-// A read queued like the profile hook's (Promise.resolve().then(...)) still lands on a later frame.
-const flushFrames = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 30);
-  });
+const openDashboard = async (
+  profile: ProviderProfile = owner(),
+  counts: { facilities?: number; reservations?: number } = {},
+): Promise<HTMLElement> => {
+  api.provider.getMyProfile.mockResolvedValue(profile);
+  api.parking.getMyFacilities.mockResolvedValue(
+    just<ParkingFacility>(counts.facilities ?? 0),
+  );
+  api.reservations.getProvider.mockResolvedValue(
+    just<Reservation>(counts.reservations ?? 0),
+  );
 
-let fetchSpy: ReturnType<typeof vi.fn>;
-let openSpy: ReturnType<typeof vi.spyOn>;
-let sendSpy: ReturnType<typeof vi.spyOn>;
+  const container = renderAt(ROUTES.PROVIDER_DASHBOARD);
+  await screen.findByText("Properties");
+  return container;
+};
+
+// The label and its number are sibling paragraphs, so the reading under test is the one beside it.
+const tileValue = (label: string): string => {
+  const value = screen.getByText(label).nextElementSibling?.textContent;
+  if (value === undefined || value === null) throw new Error(`No counter beside "${label}".`);
+  return value.trim();
+};
+
+const tileOf = (label: string): HTMLElement => {
+  const card = screen.getByText(label).closest("div.rounded-2xl");
+  if (!(card instanceof HTMLElement)) throw new Error(`"${label}" is not on a tile.`);
+  return card;
+};
 
 beforeEach(() => {
-  fetchSpy = vi.fn();
-  vi.stubGlobal("fetch", fetchSpy);
-  openSpy = vi.spyOn(XMLHttpRequest.prototype, "open");
-  sendSpy = vi.spyOn(XMLHttpRequest.prototype, "send");
+  api.provider.getMyProfile.mockResolvedValue(owner());
+  api.parking.getMyFacilities.mockResolvedValue([]);
+  api.reservations.getProvider.mockResolvedValue([]);
 });
 
 afterEach(() => {
   cleanup();
-  vi.unstubAllGlobals();
   vi.clearAllMocks();
-  harness.reads.length = 0;
 });
 
-describe("parking owner overview screen", () => {
-  it("shows the owner a heading and one standing note, and nothing else at all", () => {
-    const container = renderAt(ROUTES.PROVIDER_DASHBOARD);
+describe("parking owner dashboard", () => {
+  it("counts the properties and requests the platform holds beside the account status", async () => {
+    await openDashboard(owner({ verificationStatus: "PENDING" }), {
+      facilities: 2,
+      reservations: 3,
+    });
 
     expect(
-      screen.getByRole("heading", { level: 1, name: HEADING }),
+      screen.getByRole("heading", { level: 1, name: "Dashboard" }),
     ).toBeTruthy();
-    expect(screen.getByText(PLACEHOLDER)).toBeTruthy();
-    // The whole page is these two readings: no card, tile or counter hides any extra text.
-    expect(container.textContent).toBe(`${HEADING}${PLACEHOLDER}`);
-    expect(container.querySelectorAll("*")).toHaveLength(3);
+    expect(tileValue("Properties")).toBe("2");
+    expect(tileValue("Reservations")).toBe("3");
+    expect(tileValue("Account Status")).toBe("PENDING");
   });
 
-  it("is mounted at the address the app redirects a parking owner to", () => {
+  it("is mounted at the address the app redirects a parking owner to", async () => {
     expect(ROUTES.PROVIDER_DASHBOARD).toBe("/provider/dashboard");
 
-    renderAt(ROUTES.PROVIDER_DASHBOARD);
+    await openDashboard();
 
-    expect(screen.getByRole("heading", { name: HEADING })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Dashboard" }),
+    ).toBeTruthy();
     expect(screen.queryByText("properties list")).toBeNull();
+    expect(screen.queryByText("request queue")).toBeNull();
+    expect(screen.queryByText("staff page")).toBeNull();
   });
 
-  it("reads no tile, counter or list from any api on mount", async () => {
-    renderAt(ROUTES.PROVIDER_DASHBOARD);
-    await flushFrames();
+  it("reads the profile, the owner's properties and the owner's request queue once on mount", async () => {
+    await openDashboard();
 
-    expect(harness.reads).toEqual([]);
+    expect(api.provider.getMyProfile).toHaveBeenCalledTimes(1);
+    expect(api.parking.getMyFacilities).toHaveBeenCalledTimes(1);
+    expect(api.reservations.getProvider).toHaveBeenCalledTimes(1);
+    expect(api.reservations.getProvider.mock.calls[0][0]).toBeUndefined();
   });
 
-  it("opens no request of any kind, so the screen is the same whatever the server holds", async () => {
-    renderAt(ROUTES.PROVIDER_DASHBOARD);
-    await flushFrames();
+  it("counts an empty portfolio and an empty queue as zero rather than hiding the tiles", async () => {
+    await openDashboard(owner(), { facilities: 0, reservations: 0 });
 
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(openSpy).not.toHaveBeenCalled();
-    expect(sendSpy).not.toHaveBeenCalled();
-  });
-
-  it("has no zero, empty or data state of its own: one static note covers every case", () => {
-    const container = renderAt(ROUTES.PROVIDER_DASHBOARD);
-
-    expect(screen.queryAllByRole("heading")).toHaveLength(1);
-    expect(screen.queryAllByRole("status")).toHaveLength(0);
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(tileValue("Properties")).toBe("0");
+    expect(tileValue("Reservations")).toBe("0");
     expect(screen.queryByText(/no \w+ (yet|found)/i)).toBeNull();
-    expect(container.textContent).not.toMatch("0");
   });
 
-  it("never enters a loading state the owner would have to wait out", async () => {
+  it("holds up one spinner until the profile arrives, and shows no tile before it", async () => {
+    let release: ((value: ProviderProfile) => void) | undefined;
+    api.provider.getMyProfile.mockImplementation(
+      () =>
+        new Promise<ProviderProfile>((resolve) => {
+          release = resolve;
+        }),
+    );
     const container = renderAt(ROUTES.PROVIDER_DASHBOARD);
-    const before = container.textContent;
-    await flushFrames();
 
-    expect(container.textContent).toBe(before);
-    expect(screen.queryByText(/loading/i)).toBeNull();
+    expect(container.querySelector('[class*="animate-spin"]')).toBeTruthy();
+    expect(screen.queryByText("Properties")).toBeNull();
+    expect(screen.queryByText("Account Status")).toBeNull();
+
+    await waitFor(() => expect(api.provider.getMyProfile).toHaveBeenCalled());
+    release?.(owner());
+
+    expect(await screen.findByText("Properties")).toBeTruthy();
     expect(container.querySelector('[class*="animate-spin"]')).toBeNull();
-    expect(screen.queryByRole("progressbar")).toBeNull();
   });
 
-  it("carries no error card or retry path, because it has nothing that can fail", () => {
+  it("shows its own failure card and reads the profile again when the owner retries", async () => {
+    api.provider.getMyProfile
+      .mockRejectedValueOnce(refused("Your account is not a parking provider."))
+      .mockResolvedValue(owner());
+
     renderAt(ROUTES.PROVIDER_DASHBOARD);
 
-    expect(screen.queryByText(/error/i)).toBeNull();
-    expect(screen.queryByText("Unable to load your provider profile")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
-    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(
+      await screen.findByRole("heading", { name: "Unable to load your dashboard" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Your account is not a parking provider.")).toBeTruthy();
+    expect(screen.queryByText("Properties")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    await waitFor(() => expect(api.provider.getMyProfile).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("Properties")).toBeTruthy();
   });
 
-  it("offers the owner no action to click, so nothing on it can navigate anywhere", () => {
-    const container = renderAt(ROUTES.PROVIDER_DASHBOARD);
+  it("falls back to its own wording when the platform refuses with nothing to say", async () => {
+    api.provider.getMyProfile.mockRejectedValue({});
 
-    expect(screen.queryAllByRole("link")).toHaveLength(0);
-    expect(screen.queryAllByRole("button")).toHaveLength(0);
-    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
-    expect(container.querySelector("[href], [onclick], button, a")).toBeNull();
-    // The sibling screen in the tree stays unreachable from here.
+    renderAt(ROUTES.PROVIDER_DASHBOARD);
+
+    expect(
+      await screen.findByRole("heading", { name: "Unable to load your dashboard" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Failed to load your provider profile.")).toBeTruthy();
+  });
+
+  it("takes the owner to properties, requests and staff from the three actions", async () => {
+    for (const [button, landing] of [
+      ["Manage Properties", "properties list"],
+      ["View Reservations", "request queue"],
+      ["Manage Staff", "staff page"],
+    ] as const) {
+      await openDashboard();
+
+      fireEvent.click(screen.getByRole("button", { name: button }));
+
+      expect(await screen.findByText(landing)).toBeTruthy();
+      cleanup();
+    }
+  });
+
+  it("makes the two counted tiles the same two journeys as the buttons", async () => {
+    await openDashboard(owner(), { facilities: 1, reservations: 1 });
+    fireEvent.click(tileOf("Properties"));
+    expect(await screen.findByText("properties list")).toBeTruthy();
+    cleanup();
+
+    await openDashboard(owner(), { facilities: 1, reservations: 1 });
+    fireEvent.click(tileOf("Reservations"));
+    expect(await screen.findByText("request queue")).toBeTruthy();
+    cleanup();
+
+    // The status tile reports the account, it is not a way off this screen.
+    await openDashboard();
+    fireEvent.click(tileOf("Account Status"));
+    await waitFor(() => expect(screen.getByText("Properties")).toBeTruthy());
     expect(screen.queryByText("properties list")).toBeNull();
   });
 
-  it("renders bare, with no query client, toast provider or auth store wrapped around it", () => {
-    expect(() => renderAt(ROUTES.PROVIDER_DASHBOARD)).not.toThrow();
-    expect(screen.getByText(PLACEHOLDER)).toBeTruthy();
+  it("carries the owner's identity and NIC state down the same screen as the tiles", async () => {
+    const container = await openDashboard(owner());
+
+    expect(
+      screen.getByRole("heading", { name: "Profile & Verification" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Owner Information" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "NIC Verification" })).toBeTruthy();
+    expect(screen.getByText("Kamala Perera")).toBeTruthy();
+    expect(screen.getByText("Galle Road Parking")).toBeTruthy();
+    expect(container.querySelectorAll("h1")).toHaveLength(1);
   });
 
-  it("is the provider's own placeholder, not another team's unwired screen", () => {
-    renderAt(ROUTES.PROVIDER_DASHBOARD);
+  it("marks an approved account apart from one the platform has not decided yet", async () => {
+    await openDashboard(owner({ verificationStatus: "APPROVED" }));
+    expect(tileValue("Account Status")).toBe("APPROVED");
+    expect(
+      screen.getByText("Account Status").nextElementSibling?.className,
+    ).toContain("text-emerald-700");
+    cleanup();
 
-    expect(screen.getByText(PLACEHOLDER)).toBeTruthy();
-    expect(screen.queryByText(/reporting team/)).toBeNull();
-    expect(screen.queryByText(/reservation team/)).toBeNull();
-    expect(screen.queryByText(/coming soon/i)).toBeNull();
+    await openDashboard(owner({ verificationStatus: "PENDING" }));
+    expect(tileValue("Account Status")).toBe("PENDING");
+    expect(
+      screen.getByText("Account Status").nextElementSibling?.className,
+    ).toContain("text-amber-700");
   });
 
-  it("paints the identical page on every mount and its exports name one component", async () => {
+  it("exports one component and paints the same page twice for the same holdings", async () => {
     expect(typeof ProviderDashboardPage).toBe("function");
     expect(NamedProviderDashboardPage).toBe(ProviderDashboardPage);
 
-    const first = renderAt(ROUTES.PROVIDER_DASHBOARD).innerHTML;
+    const first = (await openDashboard()).textContent;
     cleanup();
-    const second = renderAt(ROUTES.PROVIDER_DASHBOARD).innerHTML;
-    await flushFrames();
+    const second = (await openDashboard()).textContent;
+    await waitFor(() => expect(api.provider.getMyProfile).toHaveBeenCalledTimes(2));
 
     expect(second).toBe(first);
-    expect(harness.reads).toEqual([]);
   });
 });

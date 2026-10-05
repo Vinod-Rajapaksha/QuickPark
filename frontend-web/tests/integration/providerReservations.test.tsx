@@ -100,6 +100,11 @@ const openApproval = async (current: Reservation): Promise<void> => {
   api.getById.mockResolvedValue(current);
   renderAt(approvalPath(current.reservationId));
   await screen.findByText("Reservation Approval");
+  // The heading is page shell and lands before the read does, so the request is only ready to be
+  // examined once the screen has left its loading state.
+  await waitFor(() =>
+    expect(document.querySelector('[class*="animate-spin"]')).toBeNull(),
+  );
 };
 
 const refuse = (message: string): Error =>
@@ -161,7 +166,7 @@ describe("provider reservation requests list", () => {
   it("says there are none when the owner holds no request", async () => {
     renderAt(LIST_PATH);
 
-    expect(await screen.findByText("No reservations found.")).toBeTruthy();
+    expect(await screen.findByText("No reservations found for these filters.")).toBeTruthy();
   });
 
   it("shows its own failure card when the server will not answer", async () => {
