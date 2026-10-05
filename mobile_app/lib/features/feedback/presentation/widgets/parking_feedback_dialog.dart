@@ -168,30 +168,52 @@ class _ParkingFeedbackDialogState extends ConsumerState<ParkingFeedbackDialog> {
                 onPressed: isLoading ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 child: isLoading
                     ? const SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : const Text('Submit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text(
+                        'Submit',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: TextButton(
-                onPressed: isLoading ? null : () {
-                  if (widget.onSkip != null) {
-                    widget.onSkip!();
-                  } else {
-                    Navigator.of(context).pop();
-                  }
-                },
-                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)),
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        if (widget.onSkip != null) {
+                          widget.onSkip!();
+                        } else {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
