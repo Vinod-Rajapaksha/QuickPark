@@ -36,7 +36,7 @@ class ApiClient:
             raise ApiError(f"{path}: request to the QuickPark backend failed") from exc
 
         if response.status_code >= 400:
-            raise ApiError(f"{path}: backend returned {response.status_code}")
+            raise ApiError(f"{path}: backend returned {response.status_code}. Details: {response.text}")
 
         return response.json()
 
