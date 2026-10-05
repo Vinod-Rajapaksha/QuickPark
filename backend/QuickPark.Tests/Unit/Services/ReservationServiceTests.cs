@@ -4,7 +4,7 @@ using QuickPark.API.Services.Implementations;
 
 namespace QuickPark.Tests.Unit.Services;
 
-public class ReservationServiceTests
+public partial class ReservationServiceTests
 {
     [Theory]
     [InlineData(ReservationStatus.CONFIRMED, ReservationStatus.CHECKED_IN)]
