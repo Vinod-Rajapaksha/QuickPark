@@ -6,467 +6,380 @@ using Microsoft.AspNetCore.Mvc;
 using QuickPark.API.Controllers;
 using QuickPark.API.DTOs.Reservations;
 using QuickPark.API.Enums;
-using QuickPark.API.Services.Interfaces;
+using QuickPark.Tests.Helpers;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
 public class ReservationControllerTests
 {
-    private static readonly Type Bookings = typeof(ReservationsController);
+    private const string Owner = "PARKING_OWNER";
+    private const string Driver = "DRIVER";
+    private const string Admin = "PLATFORM_ADMIN";
+    private const string Staff = "PARKING_STAFF";
+
+    private static readonly Type Controller = typeof(ReservationsController);
 
     [Fact]
-    public void ReservationsController_ExposesExactlyTheAgreedRoutes()
+    public void TheReservationSurfaceIsExactlyTheDriversBookingAndTheOwnersDesk()
     {
         var expected = new[]
         {
-            "POST api/reservations",
-            "GET api/reservations/me",
-            "GET api/reservations/provider",
-            "GET api/reservations/{id:guid}",
-            "POST api/reservations/{id:guid}/cancel",
-            "POST api/reservations/{id:guid}/approve",
-            "POST api/reservations/{id:guid}/reject",
-            "POST api/reservations/{id:guid}/message",
-            "POST api/reservations/{id:guid}/check-in",
-            "POST api/reservations/{id:guid}/check-out"
+            "POST api/Reservations",
+            "GET api/Reservations/me",
+            "GET api/Reservations/provider",
+            "GET api/Reservations/{id:guid}",
+            "POST api/Reservations/{id:guid}/cancel",
+            "POST api/Reservations/{id:guid}/approve",
+            "POST api/Reservations/{id:guid}/reject",
+            "POST api/Reservations/{id:guid}/message",
+            "POST api/Reservations/{id:guid}/check-in",
+            "POST api/Reservations/{id:guid}/check-out"
         };
 
-        var routes = RoutesOf(Bookings).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var routes = RoutesOf(Controller).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Equal(expected.Length, routes.Count);
 
         foreach (var route in expected) Assert.Contains(route, routes);
     }
 
-    [Fact]
-    public void TheDriverReadsTheirOwnBookings_NotEveryones()
+    [Theory]
+    [InlineData("Approve", "POST api/Reservations/{id:guid}/approve")]
+    [InlineData("Reject", "POST api/Reservations/{id:guid}/reject")]
+    [InlineData("SendMessage", "POST api/Reservations/{id:guid}/message")]
+    public void EveryAnswerOnABookingBelongsToTheParkingOwnerAlone(string actionName, string route)
     {
-        var routes = RoutesOf(Bookings).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        Assert.Contains("GET api/reservations/me", routes);
-        Assert.Contains("GET api/reservations/provider", routes);
-        Assert.DoesNotContain("GET api/reservations", routes);
-    }
-
-    [Fact]
-    public void ABookingADriverHasMadeCannotBeEditedOrDeletedThroughThisApi()
-    {
-        var writable = RoutesOf(Bookings)
-            .Where(route => route.StartsWith("PUT", StringComparison.OrdinalIgnoreCase) ||
-                            route.StartsWith("PATCH", StringComparison.OrdinalIgnoreCase) ||
-                            route.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-
-        // Cancelling is the only change a driver may make to a booking that already exists.
-        Assert.True(writable.Length == 0,
-            $"ReservationsController also offers {string.Join(", ", writable)}.");
-
-        Assert.Contains("POST api/reservations/{id:guid}/cancel",
-            RoutesOf(Bookings).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        Assert.Contains(route, RoutesOf(Controller));
+        Assert.Equal(new[] { Owner }, RequiresRoles(Action(actionName)));
     }
 
     [Theory]
-    [InlineData(nameof(ReservationsController.Create), "DRIVER")]
-    [InlineData(nameof(ReservationsController.GetMyReservations), "DRIVER")]
-    [InlineData(nameof(ReservationsController.GetProviderReservations), "PARKING_OWNER,PARKING_STAFF")]
-    [InlineData(nameof(ReservationsController.Approve), "PARKING_OWNER")]
-    [InlineData(nameof(ReservationsController.Reject), "PARKING_OWNER")]
-    [InlineData(nameof(ReservationsController.SendMessage), "PARKING_OWNER")]
-    [InlineData(nameof(ReservationsController.CheckIn), "PARKING_OWNER,PARKING_STAFF")]
-    [InlineData(nameof(ReservationsController.CheckOut), "PARKING_OWNER,PARKING_STAFF")]
-    public void EveryRouteThatIsNotTheDriversOwn_NamesTheRoleThatMayUseIt(
-        string actionName, string expectedRoles)
+    [InlineData("GetProviderReservations", "GET api/Reservations/provider")]
+    [InlineData("CheckIn", "POST api/Reservations/{id:guid}/check-in")]
+    [InlineData("CheckOut", "POST api/Reservations/{id:guid}/check-out")]
+    public void TheQueueAndTheBayOperationsAreSharedWithTheOwnersFloorStaff(string actionName, string route)
     {
-        var action = ActionOf(actionName);
-
-        Assert.Equal(
-            expectedRoles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-            RequiresRoles(action, Bookings));
-
-        Assert.True(ClassRequiresAuthentication(Bookings));
-        Assert.Null(action.GetCustomAttribute<AllowAnonymousAttribute>());
+        // Staff work the bay physically, so they read the queue and record arrival and departure.
+        // Accepting, refusing or answering a booking stays the owner's, pinned by the test above.
+        Assert.Contains(route, RoutesOf(Controller));
+        Assert.Equal(new[] { Owner, Staff }, RequiresRoles(Action(actionName)));
     }
 
     [Theory]
-    [InlineData(nameof(ReservationsController.GetById))]
-    [InlineData(nameof(ReservationsController.Cancel))]
-    public void OpeningAndCancellingOneBooking_AreGuardedByTheServiceNotByARole(string actionName)
+    [InlineData("Create", "POST api/Reservations")]
+    [InlineData("GetMyReservations", "GET api/Reservations/me")]
+    public void BookingAndTheDriversOwnHistoryBelongToTheDriver(string actionName, string route)
+    {
+        Assert.Contains(route, RoutesOf(Controller));
+        Assert.Equal(new[] { Driver }, RequiresRoles(Action(actionName)));
+    }
+
+    [Fact]
+    public void AnAdminHasNoWayIntoTheBookingDesk()
+    {
+        // Approving a driver's booking is the owner's business, not the platform's: no reservation
+        // action is ever gated to PLATFORM_ADMIN, and none is left open to every signed-in role.
+        var everyRole = EnumerateRoles();
+
+        Assert.DoesNotContain(Admin, everyRole);
+        Assert.Equal(new[] { Owner, Driver, Staff }.OrderBy(n => n, StringComparer.Ordinal),
+            everyRole.OrderBy(n => n, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void OnlyTheDetailReadAndTheCancelAreSharedBecauseBothSidesNeedThem()
     {
         
-        Assert.Empty(RequiresRoles(ActionOf(actionName), Bookings));
-        Assert.True(ClassRequiresAuthentication(Bookings));
+        var shared = Actions(Controller)
+            .Where(action => RequiresRoles(action).Count == 0)
+            .Select(action => action.Name)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(new[] { "Cancel", "GetById" }, shared);
+
+        Assert.True(ClassRequiresAuthentication(Controller));
     }
 
     [Fact]
-    public void OnlyTheDriverRoleMayMakeABooking()
+    public void TheOwnerQueueCanBeNarrowedToAPropertyAStateAndADateWindow()
     {
-        var create = ActionOf(nameof(ReservationsController.Create));
+        var monitor = Action(nameof(ReservationsController.GetProviderReservations));
 
-        Assert.Equal(new[] { "DRIVER" }, RequiresRoles(create, Bookings));
+        Assert.Equal(new[] { "facilityId", "status", "from", "to", "ct" },
+            monitor.GetParameters().Select(p => p.Name).ToArray());
 
-        // A provider booking a bay on their own property is a different route and a different member's work.
-        Assert.DoesNotContain(RoutesOf(Bookings), route =>
-            route.StartsWith("POST", StringComparison.OrdinalIgnoreCase) &&
-            route.Contains("provider", StringComparison.OrdinalIgnoreCase));
-    }
-
-    [Fact]
-    public async Task EveryBookingRouteTurnsAwayAnAnonymousCaller()
-    {
-        var reservations = new ReservationsController(Mock.Of<IParkingService>())
-        {
-            ControllerContext = AnonymousContext()
-        };
-
-        var id = Guid.NewGuid();
-
-        Assert.IsType<UnauthorizedResult>(await reservations.Create(new CreateReservationRequest(), default));
-        Assert.IsType<UnauthorizedResult>(await reservations.GetMyReservations(null, null, null, default));
-        Assert.IsType<UnauthorizedResult>(
-            await reservations.GetProviderReservations(null, null, null, null, default));
-        Assert.IsType<UnauthorizedResult>(await reservations.GetById(id, default));
-        Assert.IsType<UnauthorizedResult>(await reservations.Cancel(id, null, default));
-        Assert.IsType<UnauthorizedResult>(await reservations.Approve(id, default));
-        Assert.IsType<UnauthorizedResult>(await reservations.Reject(id, null, default));
-        Assert.IsType<UnauthorizedResult>(
-            await reservations.SendMessage(id, new SendProviderMessageRequest(), default));
-        Assert.IsType<UnauthorizedResult>(await reservations.CheckIn(id, default));
-        Assert.IsType<UnauthorizedResult>(await reservations.CheckOut(id, default));
-    }
-
-    [Fact]
-    public async Task TheDriverWhoSignsIn_IsTheDriverTheServiceIsToldAbout()
-    {
-        var driverId = Guid.NewGuid();
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetDriverReservationsAsync(driverId, null, null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<ReservationResponse>());
-
-        var reservations = new ReservationsController(service.Object) { ControllerContext = SignedInAs(driverId) };
-
-        Assert.IsType<OkObjectResult>(await reservations.GetMyReservations(null, null, null, default));
-
-        service.Verify(s =>
-            s.GetDriverReservationsAsync(driverId, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task AnAccountNamedSomethingThatIsNotAReference_IsTurnedAway()
-    {
-        var reservations = new ReservationsController(Mock.Of<IParkingService>())
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, "driver-42")
-                    }, "test"))
-                }
-            }
-        };
-
-        Assert.IsType<UnauthorizedResult>(await reservations.GetMyReservations(null, null, null, default));
-        Assert.IsType<UnauthorizedResult>(await reservations.GetById(Guid.NewGuid(), default));
-    }
-
-    [Fact]
-    public async Task ABookingIsMadeInTheNameOfTheSignedInDriverNeverOfOneTheBodyNames()
-    {
-        var driverId = Guid.NewGuid();
-        var request = new CreateReservationRequest { FacilityId = Guid.NewGuid(), VehicleTypeId = Guid.NewGuid() };
-        var made = new ReservationResponse { ReservationId = Guid.NewGuid(), DriverId = driverId };
-
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.CreateReservationAsync(driverId, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(made);
-
-        var reservations = new ReservationsController(service.Object) { ControllerContext = SignedInAs(driverId) };
-
-        var result = Assert.IsType<ObjectResult>(await reservations.Create(request, default));
-
-        Assert.Equal(StatusCodes.Status201Created, result.StatusCode);
-        Assert.Same(made, result.Value);
-        service.Verify(s => s.CreateReservationAsync(driverId, request, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.DoesNotContain(monitor.GetParameters(), p =>
+            p.Name is "providerUserId" or "ownerId" or "providerId" or "driverId");
     }
 
     [Theory]
-    [InlineData("settled")]
-    [InlineData("IN_PROGRESS")]
-    [InlineData("all")]
-    public async Task AStatusTheBookingListDoesNotOffer_IsRefusedBeforeAnythingIsRead(string status)
+    [InlineData("SOLD")]
+    [InlineData("checked in")]
+    [InlineData("PENDING AND CONFIRMED")]
+    public void AStateTheQueueDoesNotHaveIsRefusedBeforeItReachesTheDatabase(string status)
     {
-        var service = new Mock<IParkingService>();
-        var reservations = new ReservationsController(service.Object)
+        foreach (var actionName in new[] { nameof(ReservationsController.GetProviderReservations), nameof(ReservationsController.GetMyReservations) })
         {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
+            var result = Invoke(status, actionName);
 
-        var result = Assert.IsType<BadRequestObjectResult>(
-            await reservations.GetMyReservations(status, null, null, default));
-
-        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
-        Assert.Equal(
-            "status must be one of PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, COMPLETED, CANCELLED, NOSHOW.",
-            MessageOf(result.Value));
-
-        service.Verify(s => s.GetDriverReservationsAsync(It.IsAny<Guid>(), It.IsAny<ReservationStatus?>(),
-            It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task AStatusSpelledAnyWayStillMeansTheSameBookingList()
-    {
-        var driverId = Guid.NewGuid();
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetDriverReservationsAsync(
-                driverId, ReservationStatus.CONFIRMED, null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<ReservationResponse>());
-
-        var reservations = new ReservationsController(service.Object) { ControllerContext = SignedInAs(driverId) };
-
-        Assert.IsType<OkObjectResult>(await reservations.GetMyReservations("confirmed", null, null, default));
-
-        service.Verify(s => s.GetDriverReservationsAsync(
-            driverId, ReservationStatus.CONFIRMED, null, null, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task NoStatusAtAllMeansEveryBookingTheDriverHas()
-    {
-        var driverId = Guid.NewGuid();
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetDriverReservationsAsync(
-                driverId, null, It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<ReservationResponse>());
-
-        var reservations = new ReservationsController(service.Object) { ControllerContext = SignedInAs(driverId) };
-
-        await reservations.GetMyReservations("   ", null, null, default);
-
-        service.Verify(s =>
-            s.GetDriverReservationsAsync(driverId, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    // ---- What each refusal looks like to the driver ----
-
-    [Fact]
-    public async Task ABookingRefusedByTheRulesComesBackAsABadRequestThatSaysWhy()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.CreateReservationAsync(It.IsAny<Guid>(), It.IsAny<CreateReservationRequest>(),
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("This property is not open for reservations."));
-
-        var reservations = new ReservationsController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<BadRequestObjectResult>(
-            await reservations.Create(new CreateReservationRequest(), default));
-
-        Assert.Equal(StatusCodes.Status400BadRequest, result.StatusCode);
-        Assert.Equal("This property is not open for reservations.", MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task BookingAPropertyNobodyRegisteredIsAMissingResourceNotACrash()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.CreateReservationAsync(It.IsAny<Guid>(), It.IsAny<CreateReservationRequest>(),
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new KeyNotFoundException("Parking property not found."));
-
-        var reservations = new ReservationsController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<NotFoundObjectResult>(
-            await reservations.Create(new CreateReservationRequest(), default));
-
-        Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
-        Assert.Equal("Parking property not found.", MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task ABookingThatOpensNothingSaysSoAsANotFound()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetReservationAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ReservationResponse?)null);
-
-        var reservations = new ReservationsController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<NotFoundObjectResult>(await reservations.GetById(Guid.NewGuid(), default));
-
-        Assert.Equal(StatusCodes.Status404NotFound, result.StatusCode);
-        Assert.Equal("Reservation not found.", MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task OpeningAnotherDriversBookingIsRefusedAsUnauthorisedNotAsForbidden()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetReservationAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new UnauthorizedAccessException("You can only view your own reservations."));
-
-        var reservations = new ReservationsController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<UnauthorizedObjectResult>(await reservations.GetById(Guid.NewGuid(), default));
-
-        Assert.Equal(StatusCodes.Status401Unauthorized, result.StatusCode);
-        Assert.Equal("You can only view your own reservations.", MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task CancellingIsRefusedInTheSameWordsTheRulesUse()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.CancelReservationAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException(
-                "This reservation has already started and can no longer be cancelled."));
-
-        var reservations = new ReservationsController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<BadRequestObjectResult>(await reservations.Cancel(
-            Guid.NewGuid(), new CancelReservationRequest { Reason = "Plans changed" }, default));
-
-        Assert.Equal(
-            "This reservation has already started and can no longer be cancelled.",
-            MessageOf(result.Value));
-    }
-
-    [Fact]
-    public async Task ACancellationCarriesTheDriversReasonAndNothingElse()
-    {
-        var driverId = Guid.NewGuid();
-        var bookingId = Guid.NewGuid();
-        var cancelled = new ReservationResponse { ReservationId = bookingId, Status = "CANCELLED" };
-
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.CancelReservationAsync(driverId, bookingId, "Plans changed", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(cancelled);
-
-        var reservations = new ReservationsController(service.Object) { ControllerContext = SignedInAs(driverId) };
-
-        var result = Assert.IsType<OkObjectResult>(
-            await reservations.Cancel(bookingId, new CancelReservationRequest { Reason = "Plans changed" }, default));
-
-        Assert.Same(cancelled, result.Value);
-        Assert.Equal(nameof(ReservationStatus.CANCELLED), ((ReservationResponse)result.Value!).Status);
-    }
-
-    [Fact]
-    public async Task ACancellationWithNoBodyAtAllStillCancels()
-    {
-        var driverId = Guid.NewGuid();
-        var bookingId = Guid.NewGuid();
-
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.CancelReservationAsync(driverId, bookingId, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ReservationResponse { ReservationId = bookingId });
-
-        var reservations = new ReservationsController(service.Object) { ControllerContext = SignedInAs(driverId) };
-
-        Assert.IsType<OkObjectResult>(await reservations.Cancel(bookingId, null, default));
-    }
-
-    [Fact]
-    public async Task AFailureInsideTheBookingRoute_NeverRepeatsItsOwnWordsToTheDriver()
-    {
-        var service = new Mock<IParkingService>();
-        service.Setup(s => s.GetDriverReservationsAsync(It.IsAny<Guid>(), It.IsAny<ReservationStatus?>(),
-                It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("pg_advisory_xact_lock failed: Password=hunter2"));
-
-        var reservations = new ReservationsController(service.Object)
-        {
-            ControllerContext = SignedInAs(Guid.NewGuid())
-        };
-
-        var result = Assert.IsType<ObjectResult>(await reservations.GetMyReservations(null, null, null, default));
-
-        Assert.Equal(StatusCodes.Status500InternalServerError, result.StatusCode);
-        Assert.Equal("An unexpected error occurred.", MessageOf(result.Value));
-    }
-
-    [Fact]
-    public void ABookingRequestOffersThePropertyTheVehicleTypeAndTheWindowOnly()
-    {
-        Assert.Equal(
-            new[] { "EndTime", "FacilityId", "SlotId", "StartTime", "VehicleTypeId" },
-            typeof(CreateReservationRequest).GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray());
-    }
-
-    [Fact]
-    public void ABookingRequestCarriesNoMoneyNoPaymentAndNoApprovalState()
-    {
-        var properties = typeof(CreateReservationRequest).GetProperties();
-
-        Assert.DoesNotContain(properties, p =>
-            p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?) ||
-            p.Name.Contains("Amount", StringComparison.OrdinalIgnoreCase) ||
-            p.Name.Contains("Rate", StringComparison.OrdinalIgnoreCase) ||
-            p.Name.Contains("Payment", StringComparison.OrdinalIgnoreCase));
-
-        Assert.DoesNotContain(properties, p =>
-            p.Name.Contains("Status", StringComparison.OrdinalIgnoreCase) ||
-            p.Name.StartsWith("Driver", StringComparison.OrdinalIgnoreCase));
-    }
-
-    [Fact]
-    public void ACancellationRequestOffersOneReasonAndNothingElse()
-    {
-        Assert.Equal(
-            new[] { "Reason" },
-            typeof(CancelReservationRequest).GetProperties().Select(p => p.Name).ToArray());
-    }
-
-    private static string MessageOf(object? body) =>
-        body?.GetType().GetProperty("message")?.GetValue(body) as string ?? string.Empty;
-
-    private static MethodInfo ActionOf(string actionName) => Bookings.GetMethod(actionName)!;
-
-    private static ControllerContext AnonymousContext() => new() { HttpContext = new DefaultHttpContext() };
-
-    private static ControllerContext SignedInAs(Guid userId) => new()
-    {
-        HttpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
-            }, "test"))
+            var refusal = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(StatusCodes.Status400BadRequest, refusal.StatusCode);
         }
-    };
+    }
+
+    [Fact]
+    public async Task ACommaSeparatedPairOfStatesIsNotRefusedAndLosesTheFirstOne()
+    {
+        
+        var fake = new FakeParkingService();
+        var reservations = new ReservationsController(fake) { ControllerContext = OwnerContext() };
+
+        await reservations.GetProviderReservations(null, "PENDING,CONFIRMED", null, null, default);
+
+        var call = Assert.Single(fake.Calls);
+
+        Assert.Equal("GetProviderReservationsAsync", call.Method);
+        Assert.Equal(ReservationStatus.CONFIRMED, Assert.IsType<ReservationStatus>(call.Args[2]));
+    }
+
+    [Fact]
+    public void TheRefusalNamesEveryStateTheQueueCanActuallyBeFilteredOn()
+    {
+        var refusal = Assert.IsType<BadRequestObjectResult>(
+            Invoke("SOLD", nameof(ReservationsController.GetProviderReservations)));
+
+        var message = Message(refusal);
+
+        foreach (var name in Enum.GetNames<ReservationStatus>()) Assert.Contains(name, message);
+
+        Assert.Equal(Enum.GetNames<ReservationStatus>().Length,
+            Enum.GetNames<ReservationStatus>().Count(message.Contains));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void AnAbsentStateFilterMeansTheWholeQueueNotARefusal(string? status)
+    {
+        
+        var result = Invoke(status, nameof(ReservationsController.GetProviderReservations));
+
+        Assert.IsNotType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task RejectingABookingIsCancellingItNotADifferentOutcome()
+    {
+        
+        var fake = new FakeParkingService();
+        var reservations = new ReservationsController(fake) { ControllerContext = OwnerContext() };
+
+        var before = fake.Calls.Count;
+        await reservations.Reject(Reservation, new CancelReservationRequest { Reason = "No bay free that day." }, default);
+        var reject = fake.Calls.Skip(before).Single();
+
+        before = fake.Calls.Count;
+        await reservations.Cancel(Reservation, new CancelReservationRequest { Reason = "Plans changed." }, default);
+        var cancel = fake.Calls.Skip(before).Single();
+
+        Assert.Equal("CancelReservationAsync", reject.Method);
+        Assert.Equal(reject.Method, cancel.Method);
+
+        Assert.Equal(Reservation, reject.Args[1]);
+        Assert.Equal("No bay free that day.", reject.Args[2]);
+    }
+
+    [Fact]
+    public async Task ApprovingAndTheGateBothTakeTheSignedInOwnerAndTheBookingAndNothingElse()
+    {
+        var fake = new FakeParkingService();
+        var reservations = new ReservationsController(fake) { ControllerContext = OwnerContext() };
+
+        var owner = UserId();
+
+        await reservations.Approve(Reservation, default);
+        await reservations.CheckIn(Reservation, default);
+        await reservations.CheckOut(Reservation, default);
+
+        Assert.Equal(new[] { "ApproveReservationAsync", "CheckInAsync", "CheckOutAsync" },
+            fake.Calls.Select(c => c.Method));
+
+        Assert.All(fake.Calls, call =>
+        {
+            Assert.Equal(owner, call.Args[0]);
+            Assert.Equal(Reservation, call.Args[1]);
+            Assert.Equal(3, call.Args.Length);
+        });
+    }
+
+    [Fact]
+    public async Task TheMessageToTheDriverCarriesItsTextAndNothingThatCouldRewriteTheBooking()
+    {
+        var fake = new FakeParkingService();
+        var reservations = new ReservationsController(fake) { ControllerContext = OwnerContext() };
+
+        var before = fake.Calls.Count;
+        await reservations.SendMessage(
+            Reservation, new SendProviderMessageRequest { Message = "Arrive after 6, we shift the van bay." }, default);
+
+        var call = fake.Calls.Skip(before).Single();
+
+        Assert.Equal("SendProviderMessageAsync", call.Method);
+        Assert.Equal(UserId(), call.Args[0]);
+        Assert.Equal(Reservation, call.Args[1]);
+        Assert.Equal("Arrive after 6, we shift the van bay.", call.Args[2]);
+
+        Assert.Equal(new[] { "Message" },
+            typeof(SendProviderMessageRequest).GetProperties().Select(p => p.Name));
+    }
+
+    [Fact]
+    public void NoOwnerActionCanSubstituteForTheBookingItIsActingOn()
+    {
+        
+        Assert.All(OwnerWriteActions(), action => Assert.Equal(
+            new[] { typeof(Guid), typeof(CancellationToken) },
+            action.GetParameters().Select(p => p.ParameterType).Where(t => t != typeof(CancelReservationRequest) && t != typeof(SendProviderMessageRequest)).Distinct()));
+
+        Assert.All(OwnerWriteActions(), action => Assert.DoesNotContain(action.Name, new[] { "Update", "Edit", "Set" }));
+
+        Assert.DoesNotContain(RoutesOf(Controller), route =>
+            route.StartsWith("PUT", StringComparison.OrdinalIgnoreCase) ||
+            route.StartsWith("PATCH", StringComparison.OrdinalIgnoreCase) ||
+            route.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("Approve")]
+    [InlineData("Reject")]
+    [InlineData("SendMessage")]
+    [InlineData("CheckIn")]
+    [InlineData("CheckOut")]
+    [InlineData("GetProviderReservations")]
+    public async Task AnOwnerDeskActionCalledWithNoAccountInTheCookieIsTurnedAway(string actionName)
+    {
+        var reservations = new ReservationsController(null!) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
+
+        var result = actionName switch
+        {
+            nameof(ReservationsController.GetProviderReservations) =>
+                await reservations.GetProviderReservations(null, null, null, null, default),
+            nameof(ReservationsController.SendMessage) =>
+                await reservations.SendMessage(Guid.NewGuid(), new SendProviderMessageRequest(), default),
+            nameof(ReservationsController.Reject) =>
+                await reservations.Reject(Guid.NewGuid(), new CancelReservationRequest(), default),
+            _ => await InvokeNoBody(actionName, reservations)
+        };
+
+        Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task ACancelledBookingThatDoesNotExistIsNotASilentSuccess()
+    {
+        
+        var reservations = new ReservationsController(new FakeParkingService())
+        {
+            ControllerContext = OwnerContext()
+        };
+
+        Assert.IsType<NotFoundObjectResult>(await reservations.GetById(Guid.NewGuid(), default));
+    }
+
+    [Fact]
+    public void TheServiceRefusalBecomesTheStatusCodeTheOwnerSees()
+    {
+        
+        Assert.Equal(404, StatusOf(new KeyNotFoundException("no such booking")));
+        Assert.Equal(401, StatusOf(new UnauthorizedAccessException("not your booking")));
+        Assert.Equal(400, StatusOf(new InvalidOperationException("that booking has already ended")));
+        Assert.Equal(500, StatusOf(new Exception("the database fell over")));
+    }
+
+    private static int StatusOf(Exception exception)
+    {
+        var reservations = new ReservationsController(new FakeParkingService(exception))
+        {
+            ControllerContext = OwnerContext()
+        };
+
+        return ((ObjectResult)reservations.Approve(Guid.NewGuid(), default).Result).StatusCode ?? 0;
+    }
+
+    private static Task<IActionResult> InvokeNoBody(string actionName, ReservationsController controller)
+    {
+        var method = Action(actionName);
+        var arguments = method.GetParameters()
+            .Select(p => p.ParameterType == typeof(Guid)
+                ? (object?)Guid.NewGuid()
+                : p.ParameterType == typeof(CancellationToken)
+                    ? (object?)default(CancellationToken)
+                    : null)
+            .ToArray();
+
+        return (Task<IActionResult>)method.Invoke(controller, arguments)!;
+    }
+
+    private static IActionResult Invoke(string? status, string actionName)
+    {
+        var reservations = new ReservationsController(null!) { ControllerContext = OwnerContext() };
+        var method = Action(actionName);
+
+        var arguments = method.GetParameters()
+            .Select(p => (object?)(p.Name switch
+            {
+                "status" => status,
+                "ct" => default(CancellationToken),
+                _ => null
+            }))
+            .ToArray();
+
+        return ((Task<IActionResult>)method.Invoke(reservations, arguments)!).Result;
+    }
+
+    private static IEnumerable<MethodInfo> OwnerActions() =>
+        Actions(Controller).Where(action => RequiresRoles(action).Contains(Owner));
+
+    private static IEnumerable<MethodInfo> OwnerWriteActions() =>
+        OwnerActions().Where(action => action.Name != nameof(ReservationsController.GetProviderReservations));
+
+    private static IEnumerable<string> EnumerateRoles() =>
+        Actions(Controller).SelectMany(RequiresRoles).Distinct().ToArray();
+
+    private static MethodInfo Action(string name) =>
+        Controller.GetMethod(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+        ?? throw new InvalidOperationException($"{Controller.Name} has no action '{name}'.");
+
+    private static string Message(BadRequestObjectResult refusal) =>
+        (string)refusal.Value!.GetType().GetProperty("message")!.GetValue(refusal.Value)!;
+
+    private static Guid UserId() => Guid.Parse(User);
+
+    private const string User = "99999999-9999-9999-9999-999999999999";
+    private static readonly Guid Reservation = Guid.Parse("88888888-8888-8888-8888-888888888888");
+
+    private static ControllerContext OwnerContext()
+    {
+        var identity = new ClaimsIdentity(authenticationType: Owner);
+        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, User));
+
+        return new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) } };
+    }
+
+    private static readonly string[] VerbNames = { "Get", "Post", "Put", "Patch", "Delete" };
 
     private static IEnumerable<string> RoutesOf(Type controller) =>
-        RoutedActions(controller).Select(action =>
-        {
-            var verb = action.GetCustomAttributes()
-                .Select(a => VerbOf(a.GetType().Name))
-                .First(v => v is not null)!;
-
-            return $"{verb} {Join(TemplateOf(controller), TemplateOf(action), controller)}";
-        }).OrderBy(t => t).ToArray();
-
-    private static readonly string[] Verbs = { "Get", "Post", "Put", "Patch", "Delete" };
+        Actions(controller).Select(action => $"{VerbOf(action)} {Join(TemplateOf(controller), TemplateOf(action), controller)}")
+            .OrderBy(t => t, StringComparer.Ordinal)
+            .ToArray();
 
     private static string? VerbOf(string attributeTypeName) =>
-        Verbs.FirstOrDefault(v => attributeTypeName == $"Http{v}Attribute")?.ToUpperInvariant();
+        VerbNames.FirstOrDefault(v => attributeTypeName == $"Http{v}Attribute")?.ToUpperInvariant();
+
+    private static string? VerbOf(MethodInfo action) =>
+        action.GetCustomAttributes().Select(a => VerbOf(a.GetType().Name)).FirstOrDefault(v => v is not null);
 
     private static string? TemplateOf(MemberInfo member) =>
         member.GetCustomAttributes()
@@ -498,13 +411,13 @@ public class ReservationControllerTests
         return template.Replace("[controller]", token);
     }
 
-    private static IEnumerable<MethodInfo> RoutedActions(Type controller) =>
+    private static IEnumerable<MethodInfo> Actions(Type controller) =>
         controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Where(m => m.GetCustomAttributes().Any(a => VerbOf(a.GetType().Name) is not null));
+            .Where(m => VerbOf(m) is not null);
 
-    private static IReadOnlyList<string> RequiresRoles(MethodInfo action, Type controller) =>
+    private static IReadOnlyList<string> RequiresRoles(MethodInfo action) =>
         action.GetCustomAttributes<AuthorizeAttribute>(inherit: false)
-            .Concat(controller.GetCustomAttributes<AuthorizeAttribute>(inherit: false))
+            .Concat(Controller.GetCustomAttributes<AuthorizeAttribute>(inherit: false))
             .Where(a => !string.IsNullOrWhiteSpace(a.Roles))
             .SelectMany(a => a.Roles!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Distinct()
