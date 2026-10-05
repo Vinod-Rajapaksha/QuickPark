@@ -34,7 +34,6 @@ public static class TestDataBuilder
         };
     }
 
-    // A driver account row for ownership tests; the password is never verified on that path.
     public static User CreateDriverAccount(string fullName = "Test Driver")
     {
         return new User
@@ -58,8 +57,6 @@ public static class TestDataBuilder
             Password = "Password123"
         };
     }
-
-    // ---- Driver flow: parking discovery + reservation entities ----
 
     public static VehicleType CreateVehicleType(
         string name = "Car", string slotCode = "C", int sortOrder = 1)

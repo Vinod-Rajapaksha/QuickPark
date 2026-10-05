@@ -10,13 +10,9 @@ using QuickPark.API.Services.Interfaces;
 
 namespace QuickPark.Tests.Integration.Controllers;
 
-// The driver's way into the public catalogue: which URLs exist, who may reach each one, and what
-// the API answers when the service underneath refuses.
 public class ParkingControllerTests
 {
     private static readonly Type Catalogue = typeof(ParkingFacilitiesController);
-
-    // ---- The route table ----
 
     [Fact]
     public void ParkingFacilitiesController_ExposesExactlyTheAgreedRoutes()
@@ -61,8 +57,6 @@ public class ParkingControllerTests
         Assert.Contains("GET api/parkingfacilities/{id:guid}", routes);
         Assert.Contains("GET api/parkingfacilities/{id:guid}/slots", routes);
     }
-
-    // ---- Who may reach what ----
 
     [Theory]
     [InlineData(nameof(ParkingFacilitiesController.Search))]
@@ -150,8 +144,6 @@ public class ParkingControllerTests
         Assert.IsType<UnauthorizedResult>(
             await parking.ReviewFacilitySection(id, "DOCUMENTS", new ReviewFacilitySectionRequest(), default));
     }
-
-    // ---- What the driver's own calls do ----
 
     [Fact]
     public async Task TheCatalogueRoutes_AnswerWithExactlyWhatTheCatalogueFound()

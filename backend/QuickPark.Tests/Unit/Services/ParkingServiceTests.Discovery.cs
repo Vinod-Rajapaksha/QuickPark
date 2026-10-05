@@ -8,8 +8,6 @@ using QuickPark.Tests.Helpers;
 
 namespace QuickPark.Tests.Unit.Services;
 
-// The driver's side of discovery, driven through the real service against the shared InMemory
-// fixture. The availability arithmetic itself lives in the other half of this class.
 public partial class ParkingServiceTests
 {
     private const decimal ColomboRate = 500m;
@@ -23,7 +21,6 @@ public partial class ParkingServiceTests
 
     private sealed record Placed(ParkingFacility Facility, VehicleType VehicleType, ParkingProvider Provider);
 
-    /// <summary>One owner, one property, one vehicle type and its bays, all persisted.</summary>
     private static async Task<Placed> PlaceAsync(
         DatabaseFixture fixture,
         string name,
@@ -60,8 +57,6 @@ public partial class ParkingServiceTests
 
         return new Placed(facility, vehicleType, provider);
     }
-
-    // ---- Search behaviour ----
 
     [Fact]
     public async Task Search_FindsAPropertyByName()
@@ -171,8 +166,6 @@ public partial class ParkingServiceTests
         Assert.Equal("Colombo", found[0].City);
     }
 
-    // ---- Eligibility: only an approved property reaches a driver ----
-
     [Theory]
     [InlineData(ParkingStatus.DRAFT)]
     [InlineData(ParkingStatus.PENDING_APPROVAL)]
@@ -219,8 +212,6 @@ public partial class ParkingServiceTests
 
         Assert.Empty(await service.SearchApprovedAsync(new ParkingSearchRequest { Name = "After" }));
     }
-
-    // ---- Filters ----
 
     [Fact]
     public async Task Search_WithTheElectricFilterOnlyReturnsBaysWithCharging()
@@ -335,8 +326,6 @@ public partial class ParkingServiceTests
             new ParkingSearchRequest { District = "Kan" }));
     }
 
-    // ---- Ordering ----
-
     [Fact]
     public async Task Search_ListsMatchesInNameOrderForTheDriver()
     {
@@ -349,8 +338,6 @@ public partial class ParkingServiceTests
 
         Assert.Equal(new[] { "Apple Park", "Mango Park", "Zebra Park" }, found.Select(f => f.Name));
     }
-
-    // ---- Distance ----
 
     [Fact]
     public async Task Search_NearestPropertyComesFirstAndReportsHowFar()
@@ -471,8 +458,6 @@ public partial class ParkingServiceTests
         Assert.Contains("between -90 and 90", ex.Message);
     }
 
-    // ---- One property's detail page ----
-
     [Fact]
     public async Task Details_OpenPropertyOpensForAnyDriver()
     {
@@ -524,8 +509,6 @@ public partial class ParkingServiceTests
         Assert.Equal(PriceyRate, Assert.Single(facility!.Allocations).HourlyRate);
         Assert.Equal(placed.VehicleType.Name, Assert.Single(facility.SlotGroups).VehicleTypeName);
     }
-
-    // ---- Bays and availability on the driver's search screen ----
 
     [Fact]
     public async Task Bays_FreeBayReadsAvailableForTheWindowTheDriverAskedFor()
