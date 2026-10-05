@@ -14,8 +14,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
 
     public CustomWebApplicationFactory()
     {
-        _dbContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:15-alpine")
+        _dbContainer = new PostgreSqlBuilder("postgres:15-alpine")
             .WithDatabase("quickpark_test_db")
             .WithUsername("postgres")
             .WithPassword("postgres")
