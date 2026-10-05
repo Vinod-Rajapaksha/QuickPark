@@ -61,11 +61,16 @@ export const useAgentChat = () => {
     }
   }, []);
 
+  const addMessage = useCallback((message: ChatMessage) => {
+    setMessages((prev) => [...prev, message]);
+  }, []);
+
   return {
     messages,
     isLoading,
     error,
     sendMessage,
     loadHistory,
+    addMessage,
   };
 };
