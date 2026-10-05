@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import FacilitySetupPage from "../../src/pages/provider/FacilitySetupPage";
 import ParkingCreatePage from "../../src/pages/provider/ParkingCreatePage";
@@ -353,6 +353,9 @@ describe("registering a new property", () => {
       closingTime: "23:30:00",
       hasEvCharging: false,
     });
-    expect(await within(screen.getByTestId("path")).findByText(`/facilities/${FACILITY_ID}/setup`)).toBeTruthy();
+    // The page navigates only after the create call comes back, so the probe mounts a commit later
+    // than the recorded api call: waiting on it is the only way this does not depend on machine speed.
+    const path = await screen.findByTestId("path");
+    expect(path.textContent).toBe(`/facilities/${FACILITY_ID}/setup`);
   });
 });
