@@ -58,4 +58,5 @@ class ReservationService:
         return self._client.post("/Reservations/validate", payload=payload, token=token)
 
     def create_reservation(self, payload: dict, token: str) -> dict:
+        payload["isAgentBooking"] = True
         return self._client.post("/Reservations", payload=payload, token=token)
