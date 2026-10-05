@@ -17,6 +17,7 @@ public class ParkingControllerTests
 {
     private const string Owner = "PARKING_OWNER";
     private const string Admin = "PLATFORM_ADMIN";
+    private const string Staff = "PARKING_STAFF";
 
     private static readonly Type Facilities = typeof(ParkingFacilitiesController);
     private static readonly Type Slots = typeof(ParkingSlotsController);
@@ -345,31 +346,31 @@ public class ParkingControllerTests
     }
 
     [Fact]
-    public void TheBayBoardIsOpenedToParkingOwnersOnly()
+    public void TheBayBoardIsOpenedToTheOwnersFloorCrewAndNobodyElse()
     {
         Assert.True(ClassRequiresAuthentication(Slots));
 
-        Assert.Equal(new[] { Owner }, ClassRoles(Slots));
+        Assert.Equal(new[] { Owner, Staff }, ClassRoles(Slots));
 
         Assert.DoesNotContain(Actions(Slots), action =>
             action.GetCustomAttributes(inherit: false).OfType<AllowAnonymousAttribute>().Any());
 
-        // No action widens the class gate: an action-level [Authorize] names the owner role too.
+        // No action widens the class gate: an action-level [Authorize] names the crew roles too.
         Assert.All(Actions(Slots).Where(a => a.GetCustomAttributes<AuthorizeAttribute>(inherit: false).Any()),
-            action => Assert.Equal(new[] { Owner }, RequiresRoles(action, Slots)));
+            action => Assert.Equal(new[] { Owner, Staff }, RequiresRoles(action, Slots)));
     }
 
     [Fact]
     public void ADriverOrAdminTokenCannotReachTheBayBoardBecauseNoRouteOpensItUp()
     {
         // DRIVER and PLATFORM_ADMIN appear nowhere on this controller, so the policy has nothing to
-        // match them against; only PARKING_OWNER is ever admitted.
+        // match them against; only the owner and the staff working their bays are ever admitted.
         var everyRole = Actions(Slots).SelectMany(a => RequiresRoles(a, Slots))
             .Concat(ClassRoles(Slots))
             .Distinct()
             .ToArray();
 
-        Assert.Equal(new[] { Owner }, everyRole);
+        Assert.Equal(new[] { Owner, Staff }, everyRole);
     }
 
     [Fact]

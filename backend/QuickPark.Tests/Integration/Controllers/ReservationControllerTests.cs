@@ -18,6 +18,7 @@ public class ReservationControllerTests
     private const string Owner = "PARKING_OWNER";
     private const string Driver = "DRIVER";
     private const string Admin = "PLATFORM_ADMIN";
+    private const string Staff = "PARKING_STAFF";
 
     private static readonly Type Controller = typeof(ReservationsController);
 
@@ -46,16 +47,25 @@ public class ReservationControllerTests
     }
 
     [Theory]
-    [InlineData("GetProviderReservations", "GET api/Reservations/provider")]
     [InlineData("Approve", "POST api/Reservations/{id:guid}/approve")]
     [InlineData("Reject", "POST api/Reservations/{id:guid}/reject")]
     [InlineData("SendMessage", "POST api/Reservations/{id:guid}/message")]
-    [InlineData("CheckIn", "POST api/Reservations/{id:guid}/check-in")]
-    [InlineData("CheckOut", "POST api/Reservations/{id:guid}/check-out")]
-    public void MonitoringAndEveryAnswerOnABookingBelongToTheParkingOwner(string actionName, string route)
+    public void EveryAnswerOnABookingBelongsToTheParkingOwnerAlone(string actionName, string route)
     {
         Assert.Contains(route, RoutesOf(Controller));
         Assert.Equal(new[] { Owner }, RequiresRoles(Action(actionName)));
+    }
+
+    [Theory]
+    [InlineData("GetProviderReservations", "GET api/Reservations/provider")]
+    [InlineData("CheckIn", "POST api/Reservations/{id:guid}/check-in")]
+    [InlineData("CheckOut", "POST api/Reservations/{id:guid}/check-out")]
+    public void TheQueueAndTheBayOperationsAreSharedWithTheOwnersFloorStaff(string actionName, string route)
+    {
+        // Staff work the bay physically, so they read the queue and record arrival and departure.
+        // Accepting, refusing or answering a booking stays the owner's, pinned by the test above.
+        Assert.Contains(route, RoutesOf(Controller));
+        Assert.Equal(new[] { Owner, Staff }, RequiresRoles(Action(actionName)));
     }
 
     [Theory]
@@ -75,7 +85,7 @@ public class ReservationControllerTests
         var everyRole = EnumerateRoles();
 
         Assert.DoesNotContain(Admin, everyRole);
-        Assert.Equal(new[] { Owner, Driver }.OrderBy(n => n, StringComparer.Ordinal),
+        Assert.Equal(new[] { Owner, Driver, Staff }.OrderBy(n => n, StringComparer.Ordinal),
             everyRole.OrderBy(n => n, StringComparer.Ordinal));
     }
 
