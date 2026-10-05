@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_app/features/agent/data/models/chat_message_model.dart';
 import 'package:mobile_app/features/agent/presentation/widgets/chat_bubble.dart';
 import 'package:mobile_app/features/agent/presentation/widgets/chat_input_field.dart';
+import 'package:mobile_app/core/network/api_client.dart';
+import 'package:mobile_app/core/storage/secure_storage_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:mobile_app/features/driver/presentation/screens/driver_checkout_screen.dart';
 
-class AiAssistantModal extends StatefulWidget {
+class AiAssistantModal extends ConsumerStatefulWidget {
   const AiAssistantModal({super.key});
 
   @override
-  State<AiAssistantModal> createState() => _AiAssistantModalState();
+  ConsumerState<AiAssistantModal> createState() => _AiAssistantModalState();
 }
 
-class _AiAssistantModalState extends State<AiAssistantModal> {
+class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
   final List<ChatMessage> _messages = [
     ChatMessage(
       role: 'agent',
@@ -34,6 +39,8 @@ class _AiAssistantModalState extends State<AiAssistantModal> {
     });
   }
 
+  String? _sessionId;
+
   Future<void> _handleSendMessage(String text) async {
     setState(() {
       _messages.add(
@@ -43,29 +50,102 @@ class _AiAssistantModalState extends State<AiAssistantModal> {
     });
     _scrollToBottom();
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final dio = ref.read(dioProvider);
+      final agentUrl = dotenv.env['AGENT_API_URL'];
 
-    setState(() {
-      _isLoading = false;
-      _messages.add(
-        ChatMessage(
-          role: 'agent',
-          content:
-              'I have received your request regarding: "$text". I am currently connecting to the agent service to process this.',
-          timestamp: DateTime.now(),
-        ),
+      final response = await dio.post(
+        '$agentUrl/chat/message',
+        data: {'session_id': _sessionId, 'message': text},
       );
-    });
+
+      _sessionId = response.data['session_id'];
+
+      setState(() {
+        _isLoading = false;
+        _messages.add(
+          ChatMessage(
+            role: 'agent',
+            content: response.data['message']['content'] ?? 'No response',
+            timestamp: DateTime.now(),
+            actionType: response.data['message']['action_type'],
+            actionPayload: response.data['message']['action_payload'],
+          ),
+        );
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _messages.add(
+          ChatMessage(
+            role: 'agent',
+            content:
+                'Sorry, I encountered an error connecting to the agent service.',
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
+    }
     _scrollToBottom();
   }
 
-  void _handleAction(String actionType, Map<String, dynamic> payload) {
+  void _handleAction(String actionType, Map<String, dynamic> payload) async {
     if (actionType == 'confirm_reservation') {
-      _handleSendMessage(
-        'I confirm the booking for ${payload['facility_name']}',
-      );
+      try {
+        final dio = ref.read(dioProvider);
+        final baseUrl = dio.options.baseUrl
+            .replaceAll('5034', '8000')
+            .replaceAll('/api', '');
+
+        final secureStorage = ref.read(secureStorageProvider);
+        final token = await secureStorage.getToken() ?? '';
+
+        await dio.post(
+          '$baseUrl/api/reservation/create',
+          data: {
+            'payload': {
+              'facilityId': payload['facility_id'],
+              'startTime': payload['start_time'],
+              'endTime': payload['end_time'],
+              'vehicleType': payload['vehicle_type'],
+            },
+            'token': token,
+          },
+        );
+        setState(() {
+          _messages.add(
+            ChatMessage(
+              role: 'agent',
+              content:
+                  'Your reservation has been created! It is now waiting for the provider to approve it.',
+              timestamp: DateTime.now(),
+            ),
+          );
+        });
+        _scrollToBottom();
+      } catch (e) {
+        _handleSendMessage(
+          'Sorry, I encountered an error creating your booking.',
+        );
+      }
     } else if (actionType == 'cancel_reservation') {
       _handleSendMessage('I want to cancel the booking.');
+    } else if (actionType == 'pay_reservation') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => DriverCheckoutScreen(
+            reservationRequest: {
+              'facilityId': payload['facility_id'],
+              'vehicleTypeId': payload['vehicle_type'],
+              'startTime': payload['start_time'],
+              'endTime': payload['end_time'],
+            },
+            facilityData: {'name': payload['facility_name']},
+            totalCost:
+                double.tryParse(payload['estimated_price'].toString()) ?? 0.0,
+          ),
+        ),
+      );
     }
   }
 
