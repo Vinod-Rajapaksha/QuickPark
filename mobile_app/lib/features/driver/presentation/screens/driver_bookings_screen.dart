@@ -5,20 +5,15 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/core/network/api_client.dart';
 
-final myReservationsProvider = FutureProvider.family<List<dynamic>, String>((
-  ref,
-  status,
-) async {
+final myReservationsProvider = FutureProvider<List<dynamic>>((ref) async {
   final dio = ref.watch(dioProvider);
-  final res = await dio.get(
-    '/reservations/me',
-    queryParameters: {'status': status},
-  );
+  final res = await dio.get('/reservations/me');
   return res.data as List<dynamic>;
 });
 
 class DriverBookingsScreen extends StatefulWidget {
-  const DriverBookingsScreen({super.key});
+  final int initialIndex;
+  const DriverBookingsScreen({super.key, this.initialIndex = 0});
 
   @override
   State<DriverBookingsScreen> createState() => _DriverBookingsScreenState();
@@ -31,7 +26,11 @@ class _DriverBookingsScreenState extends State<DriverBookingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      initialIndex: widget.initialIndex,
+      length: 3,
+      vsync: this,
+    );
   }
 
   @override
@@ -59,6 +58,7 @@ class _DriverBookingsScreenState extends State<DriverBookingsScreen>
           unselectedLabelColor: Colors.grey,
           indicatorColor: theme.primaryColor,
           indicatorWeight: 3,
+          dividerColor: Colors.transparent,
           tabs: const [
             Tab(text: 'Active'),
             Tab(text: 'Upcoming'),
@@ -69,9 +69,21 @@ class _DriverBookingsScreenState extends State<DriverBookingsScreen>
       body: TabBarView(
         controller: _tabController,
         children: const [
-          _BookingsList(status: 'ACTIVE'),
-          _BookingsList(status: 'PENDING'),
-          _BookingsList(status: 'COMPLETED'),
+          _BookingsList(statuses: ['CHECKED_IN'], emptyTitle: 'Active'),
+          _BookingsList(
+            statuses: ['CONFIRMED', 'PENDING'],
+            emptyTitle: 'Upcoming',
+          ),
+          _BookingsList(
+            statuses: [
+              'CHECKED_OUT',
+              'COMPLETED',
+              'EXPIRED',
+              'CANCELLED',
+              'NOSHOW',
+            ],
+            emptyTitle: 'Past',
+          ),
         ],
       ),
     );
@@ -79,20 +91,36 @@ class _DriverBookingsScreenState extends State<DriverBookingsScreen>
 }
 
 class _BookingsList extends ConsumerWidget {
-  final String status;
-  const _BookingsList({required this.status});
+  final List<String> statuses;
+  final String emptyTitle;
+  const _BookingsList({required this.statuses, required this.emptyTitle});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncBookings = ref.watch(myReservationsProvider(status));
+    final asyncBookings = ref.watch(myReservationsProvider);
 
     return asyncBookings.when(
-      data: (bookings) {
+      data: (allBookings) {
+        final now = DateTime.now();
+        final bookings = allBookings.where((b) {
+          final status = b['status'];
+          final endTime = DateTime.parse(b['endTime']);
+          final isExpired = status == 'CONFIRMED' && endTime.isBefore(now);
+
+          if (emptyTitle == 'Past') {
+            return statuses.contains(status) || isExpired;
+          } else if (emptyTitle == 'Upcoming') {
+            return statuses.contains(status) && !isExpired;
+          } else {
+            return statuses.contains(status);
+          }
+        }).toList();
+
         if (bookings.isEmpty) {
           return _buildEmptyState(context);
         }
         return RefreshIndicator(
-          onRefresh: () => ref.refresh(myReservationsProvider(status).future),
+          onRefresh: () => ref.refresh(myReservationsProvider.future),
           child: ListView.separated(
             padding: const EdgeInsets.all(16).copyWith(bottom: 100),
             itemCount: bookings.length,
@@ -117,7 +145,7 @@ class _BookingsList extends ConsumerWidget {
           Icon(CupertinoIcons.ticket, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            'No $status Bookings',
+            'No $emptyTitle Bookings',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -139,14 +167,18 @@ class _BookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final startTime = DateTime.parse(booking['startTime']);
+    final isExpired =
+        booking['status'] == 'CONFIRMED' &&
+        DateTime.parse(booking['endTime']).isBefore(DateTime.now());
     final isPast =
-        booking['status'] == 'COMPLETED' || booking['status'] == 'CANCELLED';
+        booking['status'] == 'COMPLETED' ||
+        booking['status'] == 'CANCELLED' ||
+        booking['status'] == 'EXPIRED' ||
+        isExpired;
 
     return GestureDetector(
       onTap: () {
-        if (!isPast) {
-          context.push('/driver/bookings/pass', extra: booking);
-        }
+        context.push('/driver/bookings/pass', extra: booking);
       },
       child: Container(
         decoration: BoxDecoration(
