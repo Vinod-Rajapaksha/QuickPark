@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: quickpark-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-quickpark}
+      POSTGRES_USER: ${POSTGRES_USER:-quickpark_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_db_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quickpark_user} -d ${POSTGRES_DB:-quickpark}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: quickpark-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quickpark-backend-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-quickpark};Username=${POSTGRES_USER:-quickpark_user};Password=${POSTGRES_PASSWORD:-secure_db_password}
+      - Redis__ConnectionString=redis:6379
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  agent-service:
+    build:
+      context: ./agent-service
+      dockerfile: Dockerfile
+    container_name: quickpark-agent-service
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-quickpark_user}:${POSTGRES_PASSWORD:-secure_db_password}@postgres:5432/${POSTGRES_DB:-quickpark}
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend-web:
+    build:
+      context: ./frontend-web
+      dockerfile: Dockerfile
+    container_name: quickpark-frontend-web
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend-api
+
+volumes:
+  postgres_data:
+  redis_data:

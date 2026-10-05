@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  perf-db:
+    image: postgres:15-alpine
+    container_name: quickpark-perf-db
+    environment:
+      POSTGRES_USER: perf_user
+      POSTGRES_PASSWORD: perf_password
+      POSTGRES_DB: quickpark_perf
+    ports:
+      - "5433:5432"
+    volumes:
+      - perf_db_data:/var/lib/postgresql/data
+      - ./seed_data.sql:/docker-entrypoint-initdb.d/seed_data.sql
+
+volumes:
+  perf_db_data:
