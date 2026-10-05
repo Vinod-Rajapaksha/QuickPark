@@ -23,6 +23,7 @@ public class ParkingFacilitiesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> Search([FromQuery] ParkingSearchRequest request, CancellationToken ct)
     {
         try
@@ -38,6 +39,7 @@ public class ParkingFacilitiesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         try
@@ -56,6 +58,7 @@ public class ParkingFacilitiesController : ControllerBase
 
     // Slot availability for an approved property.
     [HttpGet("{id:guid}/slots")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetSlots(
         Guid id, [FromQuery] Guid? vehicleTypeId,
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct)
