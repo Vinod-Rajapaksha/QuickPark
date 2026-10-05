@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/nav_bar.dart';
 import '../../../agent/presentation/widgets/agent_bubble_fab.dart';
+import '../../../feedback/presentation/widgets/feedback_prompt_manager.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,30 +37,32 @@ class DriverLayout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hideAgent = ref.watch(hideAgentBubbleProvider);
 
-    return Scaffold(
-      extendBody: true,
-      body: navigationShell,
-      floatingActionButton: hideAgent ? null : const AgentBubbleFAB(),
-      bottomNavigationBar: NavBar(
-        currentIndex: navigationShell.currentIndex,
-        onTap: _goBranch,
-        items: [
-          NavBarItem(
-            icon: CupertinoIcons.home,
-            activeIcon: CupertinoIcons.house_fill,
-            label: 'Home',
-          ),
-          NavBarItem(
-            icon: CupertinoIcons.list_bullet,
-            activeIcon: CupertinoIcons.list_bullet,
-            label: 'Bookings',
-          ),
-          NavBarItem(
-            icon: CupertinoIcons.person,
-            activeIcon: CupertinoIcons.person_solid,
-            label: 'Profile',
-          ),
-        ],
+    return FeedbackPromptManager(
+      child: Scaffold(
+        extendBody: true,
+        body: navigationShell,
+        floatingActionButton: hideAgent ? null : const AgentBubbleFAB(),
+        bottomNavigationBar: NavBar(
+          currentIndex: navigationShell.currentIndex,
+          onTap: _goBranch,
+          items: [
+            NavBarItem(
+              icon: CupertinoIcons.home,
+              activeIcon: CupertinoIcons.house_fill,
+              label: 'Home',
+            ),
+            NavBarItem(
+              icon: CupertinoIcons.list_bullet,
+              activeIcon: CupertinoIcons.list_bullet,
+              label: 'Bookings',
+            ),
+            NavBarItem(
+              icon: CupertinoIcons.person,
+              activeIcon: CupertinoIcons.person_solid,
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
