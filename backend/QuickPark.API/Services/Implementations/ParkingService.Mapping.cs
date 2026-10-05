@@ -38,6 +38,8 @@ public partial class ParkingService
             City = facility?.City ?? string.Empty,
             Province = facility?.Province ?? string.Empty,
             District = facility?.District ?? string.Empty,
+            Latitude = facility?.Latitude ?? 0,
+            Longitude = facility?.Longitude ?? 0,
             ProviderId = reservation.ProviderId,
             SlotId = reservation.SlotId,
             SlotNumber = reservation.SlotNumber,
