@@ -22,7 +22,10 @@ builder.Services.Configure<AdminSeedOptions>(builder.Configuration.GetSection(Ad
 
 // Configure Database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.CommandTimeout(120)
+    ));
 
 // Configure DbSeeder
 builder.Services.AddScoped<DbSeeder>();
