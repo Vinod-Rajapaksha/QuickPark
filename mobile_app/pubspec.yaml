@@ -59,6 +59,7 @@ dependencies:
   geolocator: ^14.1.1
   flutter_hooks: ^0.21.3+1
   payhere_mobilesdk_flutter: ^3.2.3
+  url_launcher: ^6.3.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
