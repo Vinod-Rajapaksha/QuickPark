@@ -16,8 +16,18 @@ class FeedbackCard extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -83,7 +93,10 @@ class FeedbackCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    icon: Icon(Icons.more_horiz_rounded, color: Colors.grey.shade600),
+                    icon: Icon(
+                      Icons.more_horiz_rounded,
+                      color: Colors.grey.shade600,
+                    ),
                     itemBuilder: (context) => [
                       const PopupMenuItem(
                         value: 'edit',
@@ -99,7 +112,11 @@ class FeedbackCard extends StatelessWidget {
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                            Icon(
+                              Icons.delete_outline,
+                              size: 20,
+                              color: Colors.red,
+                            ),
                             SizedBox(width: 8),
                             Text('Delete', style: TextStyle(color: Colors.red)),
                           ],
@@ -170,7 +187,11 @@ class FeedbackCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.reply_rounded, size: 16, color: theme.primaryColor),
+                          Icon(
+                            Icons.reply_rounded,
+                            size: 16,
+                            color: theme.primaryColor,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Response from Admin',
