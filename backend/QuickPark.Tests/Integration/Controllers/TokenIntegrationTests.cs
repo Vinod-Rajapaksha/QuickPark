@@ -17,11 +17,12 @@ public class TokenIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 
     private async Task<string> GetAuthCookieAsync()
     {
-        var registerRequest = TestDataBuilder.CreateRegisterRequest("token_test@example.com");
+        var email = $"token_test_{Guid.NewGuid():N}@example.com";
+        var registerRequest = TestDataBuilder.CreateRegisterRequest(email);
 
         await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
 
-        var loginRequest = TestDataBuilder.CreateLoginRequest("token_test@example.com");
+        var loginRequest = TestDataBuilder.CreateLoginRequest(email);
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
         var setCookieHeader = loginResponse.Headers.GetValues("Set-Cookie").FirstOrDefault();

@@ -63,6 +63,24 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
+
+        using var scope = Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        for (int i = 0; i < 50; i++)
+        {
+            try
+            {
+                if (await context.Database.CanConnectAsync() && await context.Users.AnyAsync())
+                {
+                    break;
+                }
+            }
+            catch
+            {
+                await Task.Delay(100);
+            }
+        }
     }
 
     new public async Task DisposeAsync()

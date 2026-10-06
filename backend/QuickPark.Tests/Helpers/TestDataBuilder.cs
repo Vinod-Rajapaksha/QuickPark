@@ -23,13 +23,14 @@ public static class TestDataBuilder
 
     public static RegisterRequest CreateRegisterRequest(string email = "test@example.com")
     {
+        var num = Random.Shared.Next(100000, 999999);
         return new RegisterRequest
         {
             FullName = "Test User",
             Email = email,
             Password = "Password123",
-            Phone = "0712345678",
-            NIC = "123456789V",
+            Phone = $"071{num}",
+            NIC = $"{num}123V",
             Role = UserRole.DRIVER
         };
     }
