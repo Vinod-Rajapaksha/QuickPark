@@ -18,14 +18,15 @@ public class AuthIntegrationTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task RegisterAndLogin_Flow_Succeeds()
     {
+        var email = $"integration_{Guid.NewGuid():N}@example.com";
         // Register
-        var registerRequest = TestDataBuilder.CreateRegisterRequest("integration@example.com");
+        var registerRequest = TestDataBuilder.CreateRegisterRequest(email);
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
         registerResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Login
-        var loginRequest = TestDataBuilder.CreateLoginRequest("integration@example.com");
+        var loginRequest = TestDataBuilder.CreateLoginRequest(email);
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -46,7 +47,7 @@ public class AuthIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         var user = await meResponse.Content.ReadFromJsonAsync<UserResponse>(jsonOptions);
         user.Should().NotBeNull();
-        user!.Email.Should().Be("integration@example.com");
+        user!.Email.Should().Be(email);
 
         // Logout
         var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout");

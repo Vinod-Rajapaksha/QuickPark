@@ -26,8 +26,6 @@ public class DatabaseIntegrationTests : IClassFixture<CustomWebApplicationFactor
         // Act & Assert
         context.Should().NotBeNull();
         
-        await context.Database.MigrateAsync();
-        
         bool canConnect = await context.Database.CanConnectAsync();
         canConnect.Should().BeTrue();
     }
@@ -38,8 +36,6 @@ public class DatabaseIntegrationTests : IClassFixture<CustomWebApplicationFactor
         // Arrange
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        await context.Database.MigrateAsync();
 
         var email = $"test_{Guid.NewGuid()}@example.com";
         var user1 = new User { Email = email, PasswordHash = "hash1", FullName = "User1", Role = UserRole.DRIVER };
@@ -62,7 +58,7 @@ public class DatabaseIntegrationTests : IClassFixture<CustomWebApplicationFactor
         // Arrange
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();
+
         
         var email = $"tx_{Guid.NewGuid()}@example.com";
         var user = new User { Email = email, PasswordHash = "hash", FullName = "TxUser", Role = UserRole.DRIVER };
