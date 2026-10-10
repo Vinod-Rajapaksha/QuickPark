@@ -30,6 +30,7 @@ public class ReservationControllerTests
             "GET api/Reservations/me",
             "GET api/Reservations/provider",
             "GET api/Reservations/{id:guid}",
+            "GET api/Reservations/vehicle-types",
             "POST api/Reservations/{id:guid}/cancel",
             "POST api/Reservations/{id:guid}/approve",
             "POST api/Reservations/{id:guid}/reject",
@@ -93,7 +94,7 @@ public class ReservationControllerTests
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(new[] { "Cancel", "GetAvailability", "GetById", "GetPrice" }, shared);
+        Assert.Equal(new[] { "Cancel", "GetAvailability", "GetById", "GetPrice", "GetVehicleTypes" }, shared);
 
         Assert.True(ClassRequiresAuthentication(Controller));
     }

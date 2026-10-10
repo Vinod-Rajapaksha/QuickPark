@@ -440,6 +440,24 @@ public partial class ParkingService : IParkingService
         reservation.CancelledBy = $"{actor ?? "An account"} ({(isDriver ? "driver" : "property owner")})".ClampedTo(100);
         reservation.CancelledAt = now;
         reservation.UpdatedAt = now;
+        
+        var message = isDriver 
+            ? $"Reservation {reservation.Id} was cancelled by the driver. Reason: {trimmed ?? "None"}" 
+            : $"Your reservation for {reservation.Facility?.Name ?? "parking"} was rejected/cancelled. Reason: {trimmed ?? "None"}";
+            
+        var targetUserId = isDriver ? reservation.Facility?.ProviderId ?? Guid.Empty : reservation.DriverId;
+        
+        if (targetUserId != Guid.Empty)
+        {
+            _context.Notifications.Add(new Notification
+            {
+                UserId = targetUserId,
+                FacilityId = reservation.FacilityId,
+                Title = "Reservation Cancelled",
+                Body = message,
+                CreatedAt = now
+            });
+        }
 
         await _context.SaveChangesAsync(ct);
 
@@ -459,6 +477,15 @@ public partial class ParkingService : IParkingService
 
         reservation.IsApprovedByProvider = true;
         reservation.UpdatedAt = DateTime.UtcNow;
+
+        _context.Notifications.Add(new Notification
+        {
+            UserId = reservation.DriverId,
+            FacilityId = reservation.FacilityId,
+            Title = "Reservation Approved",
+            Body = $"Your reservation for {reservation.Facility?.Name ?? "parking"} has been approved!",
+            CreatedAt = DateTime.UtcNow
+        });
 
         await _context.SaveChangesAsync(ct);
 

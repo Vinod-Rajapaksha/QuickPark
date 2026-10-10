@@ -40,6 +40,21 @@ public class ReservationsController : ControllerBase
         }
     }
 
+    [HttpGet("vehicle-types")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetVehicleTypes(CancellationToken ct)
+    {
+        try
+        {
+            var vehicleTypes = await _parkingService.GetVehicleTypesAsync(ct);
+            return Ok(vehicleTypes);
+        }
+        catch (Exception ex)
+        {
+            return FromException(ex);
+        }
+    }
+
     [HttpGet("price")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPrice(

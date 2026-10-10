@@ -14,8 +14,10 @@ export function useApproveReservation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => reservationApi.approve(id),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: PROVIDER_RESERVATIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['reservation', variables] });
+      queryClient.invalidateQueries({ queryKey: ['reservation'] });
     },
   });
 }
@@ -24,8 +26,10 @@ export function useRejectReservation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) => reservationApi.reject(id, reason),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: PROVIDER_RESERVATIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['reservation', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['reservation'] });
     },
   });
 }

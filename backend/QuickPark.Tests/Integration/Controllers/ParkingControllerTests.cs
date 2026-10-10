@@ -116,15 +116,18 @@ public class ParkingControllerTests
     }
 
     [Fact]
-    public void TheWholeFacilityControllerIsSignedInOnlyAndNeverAnonymous()
+    public void TheMarketplaceIsAnonymousButFacilityRegistrationIsSignedInOnly()
     {
         Assert.True(ClassRequiresAuthentication(Facilities),
-            "Facility registration must not be readable by an anonymous caller.");
+            "Facility controller requires authentication by default.");
 
-        Assert.Empty(Facilities.GetCustomAttributes(inherit: false).OfType<AllowAnonymousAttribute>());
+        var anonymousActions = Actions(Facilities)
+            .Where(action => action.GetCustomAttributes(inherit: false).OfType<AllowAnonymousAttribute>().Any())
+            .Select(a => a.Name)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
 
-        Assert.DoesNotContain(Actions(Facilities), action =>
-            action.GetCustomAttributes(inherit: false).OfType<AllowAnonymousAttribute>().Any());
+        Assert.Equal(new[] { "GetById", "GetSlots", "Search" }, anonymousActions);
     }
 
     [Fact]
