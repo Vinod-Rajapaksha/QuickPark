@@ -158,15 +158,13 @@ class PlanningAgent:
                                     results_str = json.dumps(search_results, default=str)
                                     
                                     additional_contents.extend([
-                                        response.candidates[0].content,
+                                        genai_types.Content(
+                                            role="model",
+                                            parts=[genai_types.Part.from_text(text=f"I called the search_parking tool with arguments: {args_dict}")]
+                                        ),
                                         genai_types.Content(
                                             role="user", 
-                                            parts=[
-                                                genai_types.Part.from_function_response(
-                                                    name="search_parking",
-                                                    response={"result": results_str}
-                                                )
-                                            ]
+                                            parts=[genai_types.Part.from_text(text=f"Tool search_parking returned: {results_str}")]
                                         )
                                     ])
                                 except Exception as e:
