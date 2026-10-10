@@ -23,4 +23,18 @@ class SecureStorageService {
   Future<void> deleteToken() async {
     await _storage.delete(key: _tokenKey);
   }
+
+  static const String _chatSessionKey = 'quickpark_chat_session';
+
+  Future<void> saveChatSessionId(String sessionId) async {
+    await _storage.write(key: _chatSessionKey, value: sessionId);
+  }
+
+  Future<String?> getChatSessionId() async {
+    return await _storage.read(key: _chatSessionKey);
+  }
+
+  Future<void> deleteChatSessionId() async {
+    await _storage.delete(key: _chatSessionKey);
+  }
 }

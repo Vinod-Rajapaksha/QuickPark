@@ -41,6 +41,61 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
 
   String? _sessionId;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    try {
+      final secureStorage = ref.read(secureStorageProvider);
+      final savedSessionId = await secureStorage.getChatSessionId();
+      if (savedSessionId != null) {
+        setState(() {
+          _sessionId = savedSessionId;
+          _isLoading = true;
+        });
+
+        final dio = ref.read(dioProvider);
+        final agentUrl = dotenv.env['AGENT_API_URL'];
+        final response = await dio.get('$agentUrl/chat/history/$_sessionId');
+
+        if (response.statusCode == 200) {
+          final historyMessages = (response.data['messages'] as List)
+              .map((msg) => ChatMessage(
+                    role: msg['role'],
+                    content: msg['content'] ?? '',
+                    timestamp: DateTime.parse(msg['timestamp'] ?? DateTime.now().toIso8601String()),
+                    actionType: msg['action_type'],
+                    actionPayload: msg['action_payload'],
+                  ))
+              .toList();
+
+          if (historyMessages.isNotEmpty) {
+            setState(() {
+              _messages.clear();
+              _messages.addAll(historyMessages);
+            });
+          }
+        }
+      }
+    } catch (e) {
+      final secureStorage = ref.read(secureStorageProvider);
+      await secureStorage.deleteChatSessionId();
+      setState(() {
+        _sessionId = null;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _scrollToBottom();
+      }
+    }
+  }
+
   Future<void> _handleSendMessage(String text) async {
     setState(() {
       _messages.add(
@@ -60,6 +115,9 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
       );
 
       _sessionId = response.data['session_id'];
+      
+      final secureStorage = ref.read(secureStorageProvider);
+      await secureStorage.saveChatSessionId(_sessionId!);
 
       setState(() {
         _isLoading = false;
