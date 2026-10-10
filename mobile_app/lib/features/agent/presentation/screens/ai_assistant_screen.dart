@@ -161,7 +161,9 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
             }
           }
         }
-      } catch (e) {}
+      } catch (_) {
+        // Silently fail polling to avoid console errors
+      }
     });
   }
 
