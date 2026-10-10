@@ -25,6 +25,7 @@ public class ReservationControllerDriverBookingTests
             "GET api/reservations/me",
             "GET api/reservations/provider",
             "GET api/reservations/{id:guid}",
+            "GET api/reservations/vehicle-types",
             "POST api/reservations/{id:guid}/cancel",
             "POST api/reservations/{id:guid}/approve",
             "POST api/reservations/{id:guid}/reject",
