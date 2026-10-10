@@ -7,6 +7,8 @@ import { startPayherePayment } from '../../payments/utils/payhere';
 import { paymentApi } from '../../payments/api/paymentApi';
 import md5 from 'md5';
 import { chatApi } from '../api/agentApi';
+import { reservationApi } from '../../reservations/api/reservationApi';
+import type { Reservation } from '../../reservations/types/reservationTypes';
 
 export const AgentChatView: React.FC = () => {
   const { messages, isLoading, error, sendMessage, addMessage } = useAgentChat();
@@ -20,6 +22,81 @@ export const AgentChatView: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    if (!user) return;
+    let isSubscribed = true;
+
+    const pollReservations = async () => {
+      try {
+        const reservations = await reservationApi.getMyReservations();
+
+        if (!isSubscribed) return;
+
+        const pendingPayment = reservations.find((r: Reservation) => 
+          r.status?.toUpperCase() === 'PENDING' && 
+          r.isApprovedByProvider === true &&
+          r.isAgentBooking
+        );
+
+        if (pendingPayment) {
+          const alreadyShowed = messages.some(
+            m => m.action_type === 'payment_required' && 
+                 m.action_payload?.reservation_id === pendingPayment.reservationId
+          );
+
+          if (!alreadyShowed) {
+            addMessage({
+              role: 'agent',
+              content: `Great news! The provider has approved your reservation at ${pendingPayment.facilityName}. Please complete the payment to secure your spot.`,
+              timestamp: new Date().toISOString(),
+              action_type: 'payment_required',
+              action_payload: {
+                reservation_id: pendingPayment.reservationId,
+                facility_name: pendingPayment.facilityName,
+                estimated_price: pendingPayment.totalAmount,
+                vehicle_type: pendingPayment.vehicleTypeName,
+                start_time: pendingPayment.startTime,
+                end_time: pendingPayment.endTime,
+              }
+            });
+          }
+        }
+        
+        const cancelled = reservations.find((r: Reservation) => 
+          r.status?.toUpperCase() === 'CANCELLED' && 
+          r.isAgentBooking && 
+          new Date(r.updatedAt).getTime() > Date.now() - 60000
+        );
+
+        if (cancelled) {
+          const alreadyShowedCancel = messages.some(
+            m => m.action_type === 'reservation_cancelled' && 
+                 m.action_payload?.reservation_id === cancelled.reservationId
+          );
+
+          if (!alreadyShowedCancel) {
+            addMessage({
+              role: 'agent',
+              content: `I'm sorry, but the provider has declined or cancelled your reservation at ${cancelled.facilityName}. Would you like me to find another parking spot for you?`,
+              timestamp: new Date().toISOString(),
+              action_type: 'reservation_cancelled',
+              action_payload: { reservation_id: cancelled.reservationId }
+            });
+          }
+        }
+
+      } catch {
+        // Silently fail polling to prevent console spam
+      }
+    };
+
+    const interval = setInterval(pollReservations, 5000);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [user, messages, addMessage]);
 
   const handleAction = async (actionType: string, payload: Record<string, unknown>) => {
     if (actionType === 'confirm_reservation') {

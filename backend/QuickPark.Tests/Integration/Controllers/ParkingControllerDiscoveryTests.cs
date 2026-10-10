@@ -99,12 +99,17 @@ public class ParkingControllerDiscoveryTests
     }
 
     [Fact]
-    public void NothingOnTheCatalogue_IsOpenToTheWorld()
+    public void TheCatalogue_IsOpenToTheWorld()
     {
         Assert.Null(Catalogue.GetCustomAttribute<AllowAnonymousAttribute>());
 
-        Assert.Empty(RoutedActions(Catalogue)
-            .Where(action => action.GetCustomAttribute<AllowAnonymousAttribute>() is not null));
+        var anonymousActions = RoutedActions(Catalogue)
+            .Where(action => action.GetCustomAttribute<AllowAnonymousAttribute>() is not null)
+            .Select(a => a.Name)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(new[] { "GetById", "GetSlots", "Search" }, anonymousActions);
     }
 
     [Theory]

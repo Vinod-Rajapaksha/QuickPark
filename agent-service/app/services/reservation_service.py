@@ -58,5 +58,13 @@ class ReservationService:
         return self._client.post("/Reservations/validate", payload=payload, token=token)
 
     def create_reservation(self, payload: dict, token: str) -> dict:
+        vehicle_type_name = payload.pop("vehicleType", None)
+        if vehicle_type_name and "vehicleTypeId" not in payload:
+            vehicle_types = self._client.get("/Reservations/vehicle-types")
+            for vt in vehicle_types:
+                if vt.get("name", "").lower() == vehicle_type_name.lower():
+                    payload["vehicleTypeId"] = vt["id"]
+                    break
+                    
         payload["isAgentBooking"] = True
         return self._client.post("/Reservations", payload=payload, token=token)

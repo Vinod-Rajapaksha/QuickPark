@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { chatApi } from "../api/agentApi";
 import type { ChatMessage } from "../types/chat.types";
 
@@ -12,7 +12,9 @@ export const useAgentChat = () => {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [sessionId, setSessionId] = useState<string | undefined>(() => {
+    return localStorage.getItem("quickpark_chat_session") || undefined;
+  });
   const [error, setError] = useState<string | null>(null);
 
   const sendMessage = useCallback(
@@ -36,6 +38,7 @@ export const useAgentChat = () => {
         });
 
         setSessionId(response.session_id);
+        localStorage.setItem("quickpark_chat_session", response.session_id);
         setMessages((prev) => [...prev, response.message]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to send message");
@@ -56,10 +59,22 @@ export const useAgentChat = () => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load history");
+      // If session is not found or expired, clear it
+      localStorage.removeItem("quickpark_chat_session");
+      setSessionId(undefined);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (sessionId && messages.length <= 1) {
+        await loadHistory(sessionId);
+      }
+    };
+    void fetchHistory();
+  }, [sessionId, messages.length, loadHistory]);
 
   const addMessage = useCallback((message: ChatMessage) => {
     setMessages((prev) => [...prev, message]);
