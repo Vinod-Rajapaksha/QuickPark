@@ -79,7 +79,7 @@ class _DriverCheckoutScreenState extends ConsumerState<DriverCheckoutScreen>
                 '/reservations',
                 data: widget.reservationRequest,
               );
-              reservationId = res.data['id'];
+              reservationId = res.data['reservationId'];
             }
 
             await dio.post(
