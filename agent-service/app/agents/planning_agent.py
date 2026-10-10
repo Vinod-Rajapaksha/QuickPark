@@ -56,8 +56,8 @@ reservation_tool = genai_types.Tool(
                 properties={
                     "facility_id": genai_types.Schema(type="STRING", description="UUID of the facility to book"),
                     "facility_name": genai_types.Schema(type="STRING", description="Name of the facility"),
-                    "start_time": genai_types.Schema(type="STRING", description="ISO format start time"),
-                    "end_time": genai_types.Schema(type="STRING", description="ISO format end time"),
+                    "start_time": genai_types.Schema(type="STRING", description="ISO format start time in UTC"),
+                    "end_time": genai_types.Schema(type="STRING", description="ISO format end time in UTC"),
                     "vehicle_type": genai_types.Schema(type="STRING", description="Type of vehicle (e.g., CAR, MOTORCYCLE)"),
                     "estimated_price": genai_types.Schema(type="NUMBER", description="Estimated price in LKR"),
                 },
@@ -110,7 +110,7 @@ class PlanningAgent:
                 genai_types.Content(role=role, parts=[genai_types.Part.from_text(text=msg.content)])
             )
             
-        context_str = f"[System Context: Current Time: {datetime.datetime.now(datetime.timezone.utc).isoformat()}] "
+        context_str = f"[System Context: Current Time (UTC): {datetime.datetime.now(datetime.timezone.utc).isoformat()}, User Timezone: Asia/Colombo (+05:30)] "
         if context:
             context_str += f"[System Context: User Location ({context.get('location_lat', 'Unknown')}, {context.get('location_lng', 'Unknown')})] "
             
