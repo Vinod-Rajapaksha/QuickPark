@@ -63,90 +63,105 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
       if (!mounted) return;
       try {
         final dio = ref.read(dioProvider);
-        final baseUrl = dio.options.baseUrl.replaceAll('5034', '8000').replaceAll('/api', '');
+        final baseUrl = dio.options.baseUrl
+            .replaceAll('5034', '8000')
+            .replaceAll('/api', '');
         final secureStorage = ref.read(secureStorageProvider);
         final token = await secureStorage.getToken();
-        
+
         if (token == null) return;
-        
+
         final response = await dio.get(
           '$baseUrl/api/Reservations/me',
           options: Options(headers: {'Authorization': 'Bearer $token'}),
         );
-        
+
         if (response.statusCode == 200) {
           final reservations = response.data as List;
-          
-          final pendingPayment = reservations.cast<Map<String, dynamic>>().firstWhere(
-            (r) => r['status'] == 'PENDING' && r['isApprovedByProvider'] == true && r['isAgentBooking'] == true,
-            orElse: () => <String, dynamic>{},
-          );
-          
+
+          final pendingPayment = reservations
+              .cast<Map<String, dynamic>>()
+              .firstWhere(
+                (r) =>
+                    r['status'] == 'PENDING' &&
+                    r['isApprovedByProvider'] == true &&
+                    r['isAgentBooking'] == true,
+                orElse: () => <String, dynamic>{},
+              );
+
           if (pendingPayment.isNotEmpty) {
-            final hasShown = _messages.any((m) => 
-              m.actionType == 'payment_required' && 
-              m.actionPayload?['reservation_id'] == pendingPayment['reservationId']
+            final hasShown = _messages.any(
+              (m) =>
+                  m.actionType == 'payment_required' &&
+                  m.actionPayload?['reservation_id'] ==
+                      pendingPayment['reservationId'],
             );
-            
+
             if (!hasShown) {
               setState(() {
-                _messages.add(ChatMessage(
-                  role: 'agent',
-                  content: 'Great news! The provider has approved your reservation at ${pendingPayment['facilityName']}. Please complete the payment to secure your spot.',
-                  timestamp: DateTime.now(),
-                  actionType: 'payment_required',
-                  actionPayload: {
-                    'reservation_id': pendingPayment['reservationId'],
-                    'facility_name': pendingPayment['facilityName'],
-                    'estimated_price': pendingPayment['totalAmount'],
-                    'vehicle_type': pendingPayment['vehicleTypeName'],
-                    'start_time': pendingPayment['startTime'],
-                    'end_time': pendingPayment['endTime'],
-                  }
-                ));
+                _messages.add(
+                  ChatMessage(
+                    role: 'agent',
+                    content:
+                        'Great news! The provider has approved your reservation at ${pendingPayment['facilityName']}. Please complete the payment to secure your spot.',
+                    timestamp: DateTime.now(),
+                    actionType: 'payment_required',
+                    actionPayload: {
+                      'reservation_id': pendingPayment['reservationId'],
+                      'facility_name': pendingPayment['facilityName'],
+                      'estimated_price': pendingPayment['totalAmount'],
+                      'vehicle_type': pendingPayment['vehicleTypeName'],
+                      'start_time': pendingPayment['startTime'],
+                      'end_time': pendingPayment['endTime'],
+                    },
+                  ),
+                );
               });
               _scrollToBottom();
             }
           }
-          
-          final cancelled = reservations.cast<Map<String, dynamic>>().firstWhere(
-            (r) {
-              if (r['status'] == 'CANCELLED' && r['isAgentBooking'] == true) {
-                final updated = DateTime.tryParse(r['updatedAt'] ?? '');
-                if (updated != null && DateTime.now().difference(updated).inMinutes < 2) {
-                  return true;
+
+          final cancelled = reservations
+              .cast<Map<String, dynamic>>()
+              .firstWhere((r) {
+                if (r['status'] == 'CANCELLED' && r['isAgentBooking'] == true) {
+                  final updated = DateTime.tryParse(r['updatedAt'] ?? '');
+                  if (updated != null &&
+                      DateTime.now().difference(updated).inMinutes < 2) {
+                    return true;
+                  }
                 }
-              }
-              return false;
-            },
-            orElse: () => <String, dynamic>{},
-          );
-          
+                return false;
+              }, orElse: () => <String, dynamic>{});
+
           if (cancelled.isNotEmpty) {
-            final hasShownCancel = _messages.any((m) => 
-              m.actionType == 'reservation_cancelled' && 
-              m.actionPayload?['reservation_id'] == cancelled['reservationId']
+            final hasShownCancel = _messages.any(
+              (m) =>
+                  m.actionType == 'reservation_cancelled' &&
+                  m.actionPayload?['reservation_id'] ==
+                      cancelled['reservationId'],
             );
-            
+
             if (!hasShownCancel) {
               setState(() {
-                _messages.add(ChatMessage(
-                  role: 'agent',
-                  content: 'I\'m sorry, but the provider has declined or cancelled your reservation at ${cancelled['facilityName']}. Would you like me to find another parking spot for you?',
-                  timestamp: DateTime.now(),
-                  actionType: 'reservation_cancelled',
-                  actionPayload: {
-                    'reservation_id': cancelled['reservationId']
-                  }
-                ));
+                _messages.add(
+                  ChatMessage(
+                    role: 'agent',
+                    content:
+                        'I\'m sorry, but the provider has declined or cancelled your reservation at ${cancelled['facilityName']}. Would you like me to find another parking spot for you?',
+                    timestamp: DateTime.now(),
+                    actionType: 'reservation_cancelled',
+                    actionPayload: {
+                      'reservation_id': cancelled['reservationId'],
+                    },
+                  ),
+                );
               });
               _scrollToBottom();
             }
           }
         }
-      } catch (e) {
-
-      }
+      } catch (e) {}
     });
   }
 
@@ -166,13 +181,17 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
 
         if (response.statusCode == 200) {
           final historyMessages = (response.data['messages'] as List)
-              .map((msg) => ChatMessage(
-                    role: msg['role'],
-                    content: msg['content'] ?? '',
-                    timestamp: DateTime.parse(msg['timestamp'] ?? DateTime.now().toIso8601String()),
-                    actionType: msg['action_type'],
-                    actionPayload: msg['action_payload'],
-                  ))
+              .map(
+                (msg) => ChatMessage(
+                  role: msg['role'],
+                  content: msg['content'] ?? '',
+                  timestamp: DateTime.parse(
+                    msg['timestamp'] ?? DateTime.now().toIso8601String(),
+                  ),
+                  actionType: msg['action_type'],
+                  actionPayload: msg['action_payload'],
+                ),
+              )
               .toList();
 
           if (historyMessages.isNotEmpty) {
@@ -218,7 +237,7 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
       );
 
       _sessionId = response.data['session_id'];
-      
+
       final secureStorage = ref.read(secureStorageProvider);
       await secureStorage.saveChatSessionId(_sessionId!);
 

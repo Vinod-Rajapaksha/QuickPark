@@ -18,6 +18,20 @@ class FakeSecureStorageService implements SecureStorageService {
   Future<void> deleteToken() async {
     token = null;
   }
+
+  String? chatSessionId;
+  @override
+  Future<String?> getChatSessionId() async => chatSessionId;
+
+  @override
+  Future<void> saveChatSessionId(String id) async {
+    chatSessionId = id;
+  }
+
+  @override
+  Future<void> deleteChatSessionId() async {
+    chatSessionId = null;
+  }
 }
 
 class FakeAuthRepository implements AuthRepository {
