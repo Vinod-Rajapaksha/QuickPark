@@ -1,0 +1,17 @@
+{
+  "name": "quickpark-e2e",
+  "version": "1.0.0",
+  "description": "Playwright End-to-End Test Suite for QuickPark Integrated System",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.42.1",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
