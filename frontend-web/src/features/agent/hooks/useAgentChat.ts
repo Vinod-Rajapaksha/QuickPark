@@ -68,10 +68,13 @@ export const useAgentChat = () => {
   }, []);
 
   useEffect(() => {
-    if (sessionId && messages.length <= 1) {
-      loadHistory(sessionId);
-    }
-  }, [sessionId, loadHistory]);
+    const fetchHistory = async () => {
+      if (sessionId && messages.length <= 1) {
+        await loadHistory(sessionId);
+      }
+    };
+    void fetchHistory();
+  }, [sessionId, messages.length, loadHistory]);
 
   const addMessage = useCallback((message: ChatMessage) => {
     setMessages((prev) => [...prev, message]);
