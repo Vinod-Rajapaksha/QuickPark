@@ -292,12 +292,16 @@ public class StaffService : IStaffService
                 "Staff not found.");
         }
 
+        var todayUtcStart = DateTime.UtcNow.Date;
+        var tomorrowUtcStart = todayUtcStart.AddDays(1);
+
         var reservations =
             await _context.Reservations
             .CountAsync(
                 x =>
                 x.FacilityId == staff.FacilityId &&
-                x.StartTime.Date == DateTime.UtcNow.Date,
+                x.StartTime >= todayUtcStart &&
+                x.StartTime < tomorrowUtcStart,
                 ct);
 
         var slots =
