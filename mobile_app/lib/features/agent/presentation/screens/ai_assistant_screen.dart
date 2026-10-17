@@ -275,15 +275,13 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
     if (actionType == 'confirm_reservation') {
       try {
         final dio = ref.read(dioProvider);
-        final baseUrl = dio.options.baseUrl
-            .replaceAll('5034', '8000')
-            .replaceAll('/api', '');
+        final agentUrl = dotenv.env['AGENT_API_URL'];
 
         final secureStorage = ref.read(secureStorageProvider);
         final token = await secureStorage.getToken() ?? '';
 
         await dio.post(
-          '$baseUrl/api/reservation/create',
+          '$agentUrl/reservation/create',
           data: {
             'payload': {
               'facilityId': payload['facility_id'],
@@ -363,8 +361,8 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
               title: Row(
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                      width: 36,
+                      height: 36,
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
