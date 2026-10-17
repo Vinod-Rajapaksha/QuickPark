@@ -1,5 +1,4 @@
 import React from 'react';
-import { CarFront } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Footer: React.FC = () => {

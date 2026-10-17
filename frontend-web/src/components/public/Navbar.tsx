@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CarFront, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import Button from '../common/Button/Button';
 
 export const Navbar: React.FC = () => {
