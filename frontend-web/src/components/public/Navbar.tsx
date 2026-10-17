@@ -32,10 +32,12 @@ export const Navbar: React.FC = () => {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="bg-primary-600 text-white p-2 rounded-xl group-hover:bg-primary-700 transition-colors">
-              <CarFront className="w-6 h-6" />
-            </div>
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <img 
+              src="/app_logo.png" 
+              alt="QuickPark Logo" 
+              className="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-105 transition-transform" 
+            />
             <span className="text-xl font-bold tracking-tight text-slate-900">
               Quick<span className="text-primary-600">Park</span>
             </span>
