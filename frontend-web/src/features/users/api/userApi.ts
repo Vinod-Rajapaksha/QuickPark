@@ -38,3 +38,14 @@ export const deleteUser = async (id: string) => {
   const response = await axiosClient.delete(`/Users/${id}`);
   return response.data;
 };
+
+export const uploadProfilePicture = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await axiosClient.post<{ message: string; profilePictureUrl: string }>(
+    "/Users/profile-picture",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return response.data;
+};
