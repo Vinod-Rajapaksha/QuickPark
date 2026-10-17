@@ -102,7 +102,7 @@ export const EditStaffModal: React.FC<EditStaffModalProps> = ({
               name="facilityId"
               value={facilityId}
               onChange={(e) => setFacilityId(e.target.value)}
-              required
+              required={facilities && facilities.length > 0}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select a facility</option>
