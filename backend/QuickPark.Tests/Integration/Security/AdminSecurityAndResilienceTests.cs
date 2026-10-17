@@ -56,9 +56,15 @@ public class AdminResilienceTests
             {
                 builder.ConfigureAppConfiguration((context, config) =>
                 {
-                    var inMemorySettings = new Dictionary<string, string>
+                    var inMemorySettings = new Dictionary<string, string?>
                     {
-                        { "ConnectionStrings:DefaultConnection", "Host=localhost;Port=9999;Database=fake_db;Username=fake;Password=fake" }
+                        { "ConnectionStrings:DefaultConnection", "Host=localhost;Port=9999;Database=fake_db;Username=fake;Password=fake" },
+                        { "Jwt:Key", "a_very_long_secret_key_for_testing_purposes_only_123456789" },
+                        { "Jwt:Issuer", "QuickParkTest" },
+                        { "Jwt:Audience", "QuickParkTest" },
+                        { "Jwt:ExpirationMinutes", "60" },
+                        { "Cookie:Name", "quickpark_auth" },
+                        { "Cookie:ExpirationMinutes", "60" }
                     };
                     config.AddInMemoryCollection(inMemorySettings);
                 });
