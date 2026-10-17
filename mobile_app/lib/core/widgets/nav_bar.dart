@@ -79,18 +79,24 @@ class NavBar extends StatelessWidget {
                         color: color,
                         size: 24,
                       ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          item.label,
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        child: isSelected
+                            ? Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    color: color,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ),

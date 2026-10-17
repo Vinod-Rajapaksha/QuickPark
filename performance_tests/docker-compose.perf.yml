@@ -14,5 +14,43 @@ services:
       - perf_db_data:/var/lib/postgresql/data
       - ./seed_data.sql:/docker-entrypoint-initdb.d/seed_data.sql
 
+  perf-redis:
+    image: redis:7-alpine
+    container_name: quickpark-perf-redis
+    ports:
+      - "6380:6379"
+
+  perf-backend-api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: quickpark-perf-backend-api
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=perf-db;Port=5432;Database=quickpark_perf;Username=perf_user;Password=perf_password
+      - Redis__ConnectionString=perf-redis:6379
+      - ASPNETCORE_ENVIRONMENT=Development
+      - AdminSeed__Email=admin@quickpark.com
+      - AdminSeed__Password=password123
+    ports:
+      - "5034:8080"
+    depends_on:
+      - perf-db
+      - perf-redis
+
+  perf-agent-service:
+    build:
+      context: ../agent-service
+      dockerfile: Dockerfile
+    container_name: quickpark-perf-agent-service
+    environment:
+      - DATABASE_URL=postgresql://perf_user:perf_password@perf-db:5432/quickpark_perf
+      - REDIS_URL=redis://perf-redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-dummy_key_for_perf}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - perf-db
+      - perf-redis
+
 volumes:
   perf_db_data:

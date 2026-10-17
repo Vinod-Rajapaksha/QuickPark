@@ -519,7 +519,8 @@ public partial class ReservationServiceTests
         var yard = await PrepareAsync(fixture);
         var me = NewDriver();
         var reservation = await MineAsync(fixture, yard, me,
-            DateTime.UtcNow.AddMinutes(-30), DateTime.UtcNow.AddHours(1));
+            DateTime.UtcNow.AddMinutes(-30), DateTime.UtcNow.AddHours(1),
+            ReservationStatus.CONFIRMED);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             Bookings(fixture).CancelReservationAsync(me, reservation.Id, null, default));
