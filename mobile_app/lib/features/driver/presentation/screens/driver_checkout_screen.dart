@@ -46,26 +46,39 @@ class _DriverCheckoutScreenState extends ConsumerState<DriverCheckoutScreen>
           ? nameParts.sublist(1).join(' ')
           : 'User';
 
-      Map paymentObject = {
+      final orderId =
+          (widget.existingReservationId != null &&
+              widget.existingReservationId!.isNotEmpty)
+          ? widget.existingReservationId!
+          : (widget.reservationRequest['facilityId']?.toString().isNotEmpty ==
+                    true
+                ? widget.reservationRequest['facilityId'].toString()
+                : DateTime.now().millisecondsSinceEpoch.toString());
+
+      Map<String, dynamic> paymentObject = {
         "sandbox": true,
         "merchant_id": dotenv.env['PAYHERE_MERCHANT_ID'] ?? "1228806",
         "merchant_secret": dotenv.env['PAYHERE_MERCHANT_SECRET'] ?? "",
         "notify_url":
             dotenv.env['PAYHERE_NOTIFY_URL'] ??
             "http://0.0.0.0:5034/reservations/notify",
-        "order_id": widget.reservationRequest['facilityId'],
+        "order_id": orderId,
         "items":
             "QuickPark Reservation - ${widget.facilityData['name'] ?? 'Facility'}",
         "amount": widget.totalCost.toStringAsFixed(2),
         "currency": "LKR",
-        "first_name": firstName,
-        "last_name": lastName,
-        "email": user?.email ?? "driver@quickpark.com",
+        "first_name": firstName.isNotEmpty ? firstName : "Driver",
+        "last_name": lastName.isNotEmpty ? lastName : "User",
+        "email": (user?.email != null && user!.email.isNotEmpty)
+            ? user.email
+            : "driver@quickpark.com",
         "phone": "0771234567",
         "address": "Colombo",
         "city": "Colombo",
         "country": "Sri Lanka",
       };
+
+      paymentObject.removeWhere((key, value) => value == null);
 
       PayHere.startPayment(
         paymentObject,
@@ -143,8 +156,14 @@ class _DriverCheckoutScreenState extends ConsumerState<DriverCheckoutScreen>
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
 
-    final startTime = DateTime.parse(widget.reservationRequest['startTime']);
-    final endTime = DateTime.parse(widget.reservationRequest['endTime']);
+    final parsedStart =
+        DateTime.tryParse(widget.reservationRequest['startTime'] ?? '') ??
+        DateTime.now();
+    final parsedEnd =
+        DateTime.tryParse(widget.reservationRequest['endTime'] ?? '') ??
+        DateTime.now().add(const Duration(hours: 1));
+    final startTime = parsedStart.toLocal();
+    final endTime = parsedEnd.toLocal();
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
