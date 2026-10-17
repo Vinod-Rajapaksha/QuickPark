@@ -19,6 +19,11 @@ export const reservationApi = {
     return response.data;
   },
 
+  getVehicleTypes: async (): Promise<Array<{ id: string; name: string }>> => {
+    const response = await axiosClient.get(`${RESERVATION_ENDPOINT}/vehicle-types`);
+    return response.data;
+  },
+
   getMyReservations: async (
     filter: DriverReservationFilter = {},
   ): Promise<Reservation[]> => {

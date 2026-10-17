@@ -24,7 +24,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpe
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full flex flex-col'}`}>
-        <div className="flex items-center justify-center h-16 border-b border-gray-200 px-4 shrink-0">
+        <div className="flex items-center gap-2.5 justify-center h-16 border-b border-gray-200 px-4 shrink-0">
+          <img src="/app_logo.png" alt="QuickPark" className="w-8 h-8 rounded-lg object-contain shadow-sm" />
           <div className="text-2xl font-extrabold text-blue-600 tracking-tight">QuickPark</div>
         </div>
 

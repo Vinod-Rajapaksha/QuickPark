@@ -42,6 +42,7 @@ export interface CreateReservationInput {
   slotId?: string | null;
   startTime: string;
   endTime: string;
+  isAgentBooking?: boolean;
 }
 
 export interface DriverSlot {

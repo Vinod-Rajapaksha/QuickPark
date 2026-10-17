@@ -4,13 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/core/network/api_client.dart';
 
-final staffDashboardProvider = FutureProvider<Map<String, dynamic>>((
-  ref,
-) async {
-  final dio = ref.watch(dioProvider);
-  final res = await dio.get('/staff/dashboard');
-  return res.data;
-});
+final staffDashboardProvider = FutureProvider.autoDispose<Map<String, dynamic>>(
+  (ref) async {
+    final dio = ref.watch(dioProvider);
+    final res = await dio.get('/staff/dashboard');
+    if (res.data is Map<String, dynamic>) {
+      return res.data as Map<String, dynamic>;
+    }
+    return Map<String, dynamic>.from(res.data as Map);
+  },
+);
 
 class StaffHomeScreen extends ConsumerWidget {
   const StaffHomeScreen({super.key});
