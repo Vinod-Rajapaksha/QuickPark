@@ -101,13 +101,27 @@ export const AgentChatView: React.FC = () => {
   const handleAction = async (actionType: string, payload: Record<string, unknown>) => {
     if (actionType === 'confirm_reservation') {
       try {
-        await chatApi.createReservation({
-          facilityId: payload.facility_id as string,
-          startTime: payload.start_time as string,
-          endTime: payload.end_time as string,
-          vehicleType: payload.vehicle_type as string,
-        });
-        
+        try {
+          await chatApi.createReservation({
+            facilityId: payload.facility_id as string,
+            startTime: payload.start_time as string,
+            endTime: payload.end_time as string,
+            vehicleType: payload.vehicle_type as string,
+          });
+        } catch {
+          const vehicleTypes = await reservationApi.getVehicleTypes();
+          const targetTypeName = String(payload.vehicle_type || '').toLowerCase();
+          const matchedType = vehicleTypes.find((vt) => vt.name.toLowerCase() === targetTypeName) || vehicleTypes[0];
+
+          await reservationApi.create({
+            facilityId: payload.facility_id as string,
+            vehicleTypeId: matchedType ? matchedType.id : (payload.vehicle_type as string),
+            startTime: payload.start_time as string,
+            endTime: payload.end_time as string,
+            isAgentBooking: true,
+          });
+        }
+
         addMessage({
           role: 'agent',
           content: 'Your reservation has been created! It is now waiting for the provider to approve it. You will be notified once it is approved.',
