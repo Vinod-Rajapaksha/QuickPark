@@ -5,9 +5,10 @@ import type { ChatMessage } from '../types/chat.types';
 interface ChatBubbleProps {
   message: ChatMessage;
   onAction?: (actionType: string, payload: NonNullable<ChatMessage['action_payload']>) => void;
+  isActionLocked?: boolean;
 }
 
-export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onAction }) => {
+export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onAction, isActionLocked = false }) => {
   const isUser = message.role === 'user';
   
   return (
@@ -48,46 +49,71 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onAction }) => 
                 <span className={`font-bold ${isUser ? 'text-white' : 'text-primary-600'}`}>{message.action_payload.estimated_price} LKR</span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button 
-                className={`flex-1 rounded-lg py-1.5 transition-all shadow-sm font-medium ${
-                  isUser 
-                    ? 'bg-white text-primary-600 hover:bg-white/90' 
-                    : 'bg-primary-600 text-white hover:bg-primary-700 hover:shadow-md'
-                }`}
-                onClick={() => onAction && onAction('confirm_reservation', message.action_payload!)}
-              >
-                Confirm
-              </button>
-              <button 
-                className={`flex-1 rounded-lg py-1.5 transition-colors ${
-                  isUser 
-                    ? 'bg-black/20 hover:bg-black/30 text-white' 
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-                }`}
-                onClick={() => onAction && onAction('cancel_reservation', message.action_payload!)}
-              >
-                Cancel
-              </button>
-            </div>
+            {isActionLocked ? (
+              <div className="w-full py-2 bg-slate-100 rounded-lg text-center text-xs font-semibold text-slate-500 border border-slate-200 flex items-center justify-center gap-1.5">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                Reservation Submitted
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button 
+                  className={`flex-1 rounded-lg py-1.5 transition-all shadow-sm font-medium ${
+                    isUser 
+                      ? 'bg-white text-primary-600 hover:bg-white/90' 
+                      : 'bg-primary-600 text-white hover:bg-primary-700 hover:shadow-md'
+                  }`}
+                  onClick={() => onAction && onAction('confirm_reservation', message.action_payload!)}
+                >
+                  Confirm
+                </button>
+                <button 
+                  className={`flex-1 rounded-lg py-1.5 transition-colors ${
+                    isUser 
+                      ? 'bg-black/20 hover:bg-black/30 text-white' 
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+                  onClick={() => onAction && onAction('cancel_reservation', message.action_payload!)}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {message.action_type === 'payment_required' && message.action_payload && (
           <div className="mt-3 border rounded-xl p-3 text-sm bg-slate-50 border-slate-200 shadow-inner">
             <div className="flex flex-col items-center gap-2 mb-3">
-              <span className="text-xl">💳</span>
-              <span className="font-semibold text-slate-800">Payment Pending</span>
-              <span className="text-xl font-bold text-primary-600">{message.action_payload.estimated_price} LKR</span>
+              <span className="text-xl">{isActionLocked ? "✅" : "💳"}</span>
+              <span className="font-semibold text-slate-800">{isActionLocked ? "Payment Completed" : "Payment Pending"}</span>
+              <span className={`text-xl font-bold ${isActionLocked ? "text-slate-500" : "text-primary-600"}`}>{message.action_payload.estimated_price} LKR</span>
             </div>
             <button 
-              className="w-full rounded-lg py-2 transition-all shadow-sm font-medium bg-green-600 text-white hover:bg-green-700 hover:shadow-md flex items-center justify-center gap-2"
-              onClick={() => onAction && onAction('pay_reservation', message.action_payload!)}
+              disabled={isActionLocked}
+              className={`w-full rounded-lg py-2 transition-all shadow-sm font-medium flex items-center justify-center gap-2 ${
+                isActionLocked
+                  ? "bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300"
+                  : "bg-green-600 text-white hover:bg-green-700 hover:shadow-md cursor-pointer"
+              }`}
+              onClick={() => !isActionLocked && onAction && onAction('pay_reservation', message.action_payload!)}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              Pay Now
+              {isActionLocked ? (
+                <>
+                  <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Paid
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Pay Now
+                </>
+              )}
             </button>
           </div>
         )}
