@@ -419,7 +419,7 @@ public partial class ParkingService : IParkingService
                 "A vehicle is in the bay, so this booking can only be ended by checking the driver out.");
         }
 
-        if (isDriver && reservation.StartTime <= now)
+        if (isDriver && reservation.Status != ReservationStatus.PENDING && reservation.StartTime <= now)
         {
             throw new InvalidOperationException("This reservation has already started and can no longer be cancelled.");
         }

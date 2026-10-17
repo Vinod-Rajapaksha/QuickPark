@@ -9,7 +9,7 @@ using QuickPark.API.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5034";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Configuration
