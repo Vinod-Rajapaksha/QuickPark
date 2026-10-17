@@ -16,6 +16,7 @@ const StaffManagementPage: React.FC = () => {
     createStaff,
     updateStaff,
     updateStaffStatus,
+    updateStaffAssignment,
   } = useStaff();
   const { facilities } = useParkings();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -155,7 +156,9 @@ const StaffManagementPage: React.FC = () => {
         isOpen={editingStaff !== null}
         onClose={() => setEditingStaff(null)}
         onSubmit={updateStaff}
+        onUpdateAssignment={updateStaffAssignment}
         staff={editingStaff}
+        facilities={facilities}
       />
     </div>
   );
