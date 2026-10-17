@@ -181,7 +181,7 @@ namespace QuickPark.API.Controllers
 
         [HttpPost("profile-picture")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadProfilePicture([FromForm] IFormFile file, CancellationToken ct)
+        public async Task<IActionResult> UploadProfilePicture(IFormFile file, CancellationToken ct)
         {
             var currentUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(currentUserIdStr) || !Guid.TryParse(currentUserIdStr, out Guid currentUserId))
