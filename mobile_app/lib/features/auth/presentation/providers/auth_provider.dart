@@ -109,6 +109,50 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<void> updateProfile({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String nic,
+  }) async {
+    final currentUser = state.user;
+    if (currentUser == null) return;
+
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      await _authRepository.updateProfile(
+        userId: currentUser.id,
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        nic: nic,
+      );
+      final refreshedUser = await _authRepository.getCurrentUser();
+      state = AuthState(status: AuthStatus.authenticated, user: refreshedUser);
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> uploadProfilePicture(String filePath) async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      await _authRepository.uploadProfilePicture(filePath);
+      final refreshedUser = await _authRepository.getCurrentUser();
+      state = AuthState(status: AuthStatus.authenticated, user: refreshedUser);
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
     await _authRepository.logout();

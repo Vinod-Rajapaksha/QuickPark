@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using QuickPark.API.Data;
 using QuickPark.API.DTOs.Users;
 using QuickPark.API.Models;
+using QuickPark.API.Integrations.Storage;
 
 namespace QuickPark.API.Controllers
 {
@@ -14,11 +15,24 @@ namespace QuickPark.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly CloudinaryStorageClient _storage;
 
-        public UsersController(AppDbContext context)
+        public UsersController(AppDbContext context, IConfiguration configuration)
         {
             _context = context;
+
+            var cloudName = Resolve(configuration["Cloudinary:CloudName"], "CLOUDINARY_CLOUD_NAME");
+            var apiKey = Resolve(configuration["Cloudinary:ApiKey"], "CLOUDINARY_API_KEY");
+            var apiSecret = Resolve(configuration["Cloudinary:ApiSecret"], "CLOUDINARY_API_SECRET");
+            var folder = Resolve(configuration["Cloudinary:AvatarFolder"], "CLOUDINARY_AVATAR_FOLDER", "quickpark/avatars");
+
+            _storage = new CloudinaryStorageClient(cloudName, apiKey, apiSecret, folder);
         }
+
+        private static string Resolve(string? configValue, string envName, string fallback = "") =>
+            !string.IsNullOrWhiteSpace(configValue)
+                ? configValue!
+                : Environment.GetEnvironmentVariable(envName) ?? fallback;
 
         [HttpGet]
         [Authorize(Roles = "PLATFORM_ADMIN")]
@@ -58,6 +72,7 @@ namespace QuickPark.API.Controllers
                     Email = u.Email,
                     Phone = u.Phone,
                     NIC = u.NIC,
+                    ProfilePictureUrl = u.ProfilePictureUrl,
                     Role = u.Role.ToString(),
                     IsActive = u.IsActive,
                     CreatedAt = u.CreatedAt
@@ -127,6 +142,10 @@ namespace QuickPark.API.Controllers
             user.Email = request.Email;
             user.Phone = request.Phone;
             user.NIC = request.NIC;
+            if (!string.IsNullOrEmpty(request.ProfilePictureUrl))
+            {
+                user.ProfilePictureUrl = request.ProfilePictureUrl;
+            }
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -158,6 +177,51 @@ namespace QuickPark.API.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Password updated successfully" });
+        }
+
+        [HttpPost("profile-picture")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadProfilePicture(IFormFile file, CancellationToken ct)
+        {
+            var currentUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserIdStr) || !Guid.TryParse(currentUserIdStr, out Guid currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.Users.FindAsync(new object[] { currentUserId }, ct);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var validated = await DocumentFileValidator.ValidateAndReadAsync(file, "Profile picture", ct);
+                var extension = DocumentFileValidator.ExtensionFor(validated.ContentType);
+                var fileName = $"avatar_{currentUserId:N}_{DateTime.UtcNow:yyyyMMddHHmmss}.{extension}";
+
+                var upload = await _storage.UploadImageAsync(validated.Bytes, fileName, validated.ContentType, ct);
+
+                user.ProfilePictureUrl = upload.SecureUrl;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync(ct);
+
+                return Ok(new
+                {
+                    message = "Profile picture uploaded successfully",
+                    profilePictureUrl = upload.SecureUrl
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Failed to upload profile picture: {ex.Message}" });
+            }
         }
 
         [HttpPatch("{id}/status")]

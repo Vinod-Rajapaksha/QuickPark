@@ -6,8 +6,14 @@ import 'package:intl/intl.dart';
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final Function(String, Map<String, dynamic>)? onAction;
+  final bool isActionLocked;
 
-  const ChatBubble({super.key, required this.message, this.onAction});
+  const ChatBubble({
+    super.key,
+    required this.message,
+    this.onAction,
+    this.isActionLocked = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -113,69 +119,99 @@ class ChatBubble extends StatelessWidget {
                         "${message.actionPayload!['estimated_price']} LKR",
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
+                      if (isActionLocked)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "Reservation Submitted",
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
                                 ),
                               ),
-                              onPressed: () {
-                                if (onAction != null) {
-                                  onAction!(
-                                    'confirm_reservation',
-                                    message.actionPayload!,
-                                  );
-                                }
-                              },
-                              child: const Text("Confirm"),
-                            ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.surface,
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                        )
+                      else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                                elevation: 0,
-                                side: BorderSide(
-                                  color: Theme.of(context).dividerColor,
-                                ),
+                                onPressed: () {
+                                  if (onAction != null) {
+                                    onAction!(
+                                      'confirm_reservation',
+                                      message.actionPayload!,
+                                    );
+                                  }
+                                },
+                                child: const Text("Confirm"),
                               ),
-                              onPressed: () {
-                                if (onAction != null) {
-                                  onAction!(
-                                    'cancel_reservation',
-                                    message.actionPayload!,
-                                  );
-                                }
-                              },
-                              child: const Text("Cancel"),
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surface,
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  elevation: 0,
+                                  side: BorderSide(
+                                    color: Theme.of(context).dividerColor,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  if (onAction != null) {
+                                    onAction!(
+                                      'cancel_reservation',
+                                      message.actionPayload!,
+                                    );
+                                  }
+                                },
+                                child: const Text("Cancel"),
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -191,18 +227,24 @@ class ChatBubble extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.payment, size: 24, color: Colors.green),
+                      Icon(
+                        isActionLocked ? Icons.check_circle : Icons.payment,
+                        size: 24,
+                        color: isActionLocked ? Colors.grey : Colors.green,
+                      ),
                       const SizedBox(height: 8),
-                      const Text(
-                        "Payment Pending",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        isActionLocked
+                            ? "Payment Completed"
+                            : "Payment Pending",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
                         "${message.actionPayload!['estimated_price']} LKR",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: isActionLocked ? Colors.grey : Colors.green,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -210,22 +252,30 @@ class ChatBubble extends StatelessWidget {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
+                            backgroundColor: isActionLocked
+                                ? Colors.grey.shade300
+                                : Colors.green,
+                            foregroundColor: isActionLocked
+                                ? Colors.grey.shade600
+                                : Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          onPressed: () {
-                            if (onAction != null) {
-                              onAction!(
-                                'pay_reservation',
-                                message.actionPayload!,
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.payment),
-                          label: const Text("Pay Now"),
+                          onPressed: isActionLocked
+                              ? null
+                              : () {
+                                  if (onAction != null) {
+                                    onAction!(
+                                      'pay_reservation',
+                                      message.actionPayload!,
+                                    );
+                                  }
+                                },
+                          icon: Icon(
+                            isActionLocked ? Icons.lock : Icons.payment,
+                          ),
+                          label: Text(isActionLocked ? "Paid" : "Pay Now"),
                         ),
                       ),
                     ],

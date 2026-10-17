@@ -35,8 +35,16 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
         {/* Avatar Section */}
         <div className="relative group">
-          <div className="w-28 h-28 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl shadow-md border-4 border-white transition-transform group-hover:scale-105">
-            {(user.fullName?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
+          <div className="w-28 h-28 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl shadow-md border-4 border-white transition-transform group-hover:scale-105 overflow-hidden">
+            {user.profilePictureUrl ? (
+              <img
+                src={user.profilePictureUrl}
+                alt={user.fullName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              (user.fullName?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()
+            )}
           </div>
           <button
             onClick={onAvatarClick}

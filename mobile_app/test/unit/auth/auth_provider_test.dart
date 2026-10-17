@@ -64,6 +64,20 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> register(RegisterRequest request) async {}
+
+  @override
+  Future<void> updateProfile({
+    required String userId,
+    required String fullName,
+    required String email,
+    required String phone,
+    required String nic,
+  }) async {}
+
+  @override
+  Future<String> uploadProfilePicture(String filePath) async {
+    return 'https://example.com/avatar.jpg';
+  }
 }
 
 void main() {
