@@ -38,7 +38,8 @@ class _DriverDigitalPassScreenState
   @override
   void initState() {
     super.initState();
-    _endTime = DateTime.parse(widget.booking['endTime']);
+    final parsedEnd = DateTime.tryParse(widget.booking['endTime'] ?? '');
+    _endTime = (parsedEnd ?? DateTime.now()).toLocal();
     _updateTimer();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateTimer();
@@ -94,7 +95,8 @@ class _DriverDigitalPassScreenState
   }
 
   Widget _buildTicketCard(BuildContext context, bool isExpired) {
-    final startTime = DateTime.parse(widget.booking['startTime']);
+    final parsedStart = DateTime.tryParse(widget.booking['startTime'] ?? '');
+    final startTime = (parsedStart ?? DateTime.now()).toLocal();
 
     return Container(
       decoration: BoxDecoration(
@@ -382,9 +384,15 @@ class _DriverDigitalPassScreenState
               icon: const Icon(CupertinoIcons.creditcard),
               label: const Text('Pay Now'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
+                backgroundColor: Colors.white,
+                foregroundColor: Theme.of(context).primaryColor,
+                elevation: 4,
+                shadowColor: Colors.black.withValues(alpha: 0.3),
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
