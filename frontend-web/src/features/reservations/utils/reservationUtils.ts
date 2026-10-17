@@ -71,12 +71,15 @@ export const formatDateTime = (value: string | null): string => {
   return Number.isNaN(time) ? "—" : DATE_TIME_FORMAT.format(new Date(time));
 };
 
-// Mirrors the server: a driver may cancel their own booking until its start time has passed.
+// Mirrors the server: a driver may cancel their own booking if pending payment or until its start time has passed.
 export const canDriverCancel = (
   reservation: Reservation,
   now: Date = new Date(),
 ): boolean => {
-  if (reservation.status !== "PENDING" && reservation.status !== "CONFIRMED") return false;
-  const start = Date.parse(reservation.startTime);
-  return !Number.isNaN(start) && start > now.getTime();
+  if (reservation.status === "PENDING") return true;
+  if (reservation.status === "CONFIRMED") {
+    const start = Date.parse(reservation.startTime);
+    return !Number.isNaN(start) && start > now.getTime();
+  }
+  return false;
 };
