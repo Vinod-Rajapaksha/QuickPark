@@ -4,6 +4,7 @@ export interface User {
     email: string;
     phone: string;
     nic: string;
+    profilePictureUrl?: string;
     role: string;
     isActive: boolean;
     createdAt: string;
@@ -23,6 +24,7 @@ export interface UpdateUserRequest {
     email: string;
     phone: string;
     nic: string;
+    profilePictureUrl?: string;
 }
 
 export interface UpdateUserStatusRequest {
