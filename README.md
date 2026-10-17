@@ -166,7 +166,7 @@ docker-compose up -d --build
 
 After startup, access the services at:
 - **Web Portal:** `http://localhost` (Port 80)
-- **Core API:** `http://localhost:8080/swagger`
+- **Core API:** `http://localhost:5034/swagger`
 - **Agent Service Docs:** `http://localhost:8000/docs`
 - **PostgreSQL:** `localhost:5432`
 - **Redis:** `localhost:6379`
@@ -217,7 +217,7 @@ flutter run
 
 Interactive API documentation is auto-generated for all microservices:
 
-- **Core ASP.NET Core API:** `http://localhost:8080/swagger`
+- **Core ASP.NET Core API:** `http://localhost:5034/swagger`
 - **AI Agent API:** `http://localhost:8000/docs` or `http://localhost:8000/redoc`
 
 ---
