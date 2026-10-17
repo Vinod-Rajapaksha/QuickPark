@@ -25,6 +25,17 @@ class MockAuthNotifier extends Notifier<AuthState> implements AuthNotifier {
 
   @override
   Future<void> checkAuthStatus() async {}
+
+  @override
+  Future<void> updateProfile({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String nic,
+  }) async {}
+
+  @override
+  Future<void> uploadProfilePicture(String filePath) async {}
 }
 
 class MockGoRouter extends Mock implements GoRouter {}
