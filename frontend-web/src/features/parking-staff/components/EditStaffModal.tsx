@@ -9,14 +9,18 @@ interface EditStaffModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (staffId: string, data: UpdateStaffRequest) => Promise<boolean>;
+  onUpdateAssignment?: (staffId: string, facilityId: string) => Promise<boolean>;
   staff: StaffResponse | null;
+  facilities?: { facilityId: string; name: string }[];
 }
 
 export const EditStaffModal: React.FC<EditStaffModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onUpdateAssignment,
   staff,
+  facilities = [],
 }) => {
   const [formData, setFormData] = useState<UpdateStaffRequest>({
     fullName: "",
@@ -26,6 +30,7 @@ export const EditStaffModal: React.FC<EditStaffModalProps> = ({
     type: StaffType.STANDARD,
     position: "",
   });
+  const [facilityId, setFacilityId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [prevStaffId, setPrevStaffId] = useState<string | undefined>(staff?.id);
@@ -41,6 +46,7 @@ export const EditStaffModal: React.FC<EditStaffModalProps> = ({
         type: staff.type,
         position: staff.position,
       });
+      setFacilityId(staff.facilityId || "");
     }
   }
 
@@ -58,6 +64,13 @@ export const EditStaffModal: React.FC<EditStaffModalProps> = ({
     try {
       const success = await onSubmit(staff.id, formData);
       if (success) {
+        if (
+          facilityId &&
+          facilityId !== staff.facilityId &&
+          onUpdateAssignment
+        ) {
+          await onUpdateAssignment(staff.id, facilityId);
+        }
         onClose();
       }
     } finally {
@@ -81,6 +94,32 @@ export const EditStaffModal: React.FC<EditStaffModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Facility / Branch
+            </label>
+            <select
+              name="facilityId"
+              value={facilityId}
+              onChange={(e) => setFacilityId(e.target.value)}
+              required={facilities && facilities.length > 0}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a facility</option>
+              {facilities && facilities.length > 0 ? (
+                facilities.map((f) => (
+                  <option key={f.facilityId} value={f.facilityId}>
+                    {f.name}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>
+                  No facilities found
+                </option>
+              )}
+            </select>
+          </div>
+
           <Input
             label="Full Name"
             name="fullName"

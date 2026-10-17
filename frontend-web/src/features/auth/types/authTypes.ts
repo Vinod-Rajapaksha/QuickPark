@@ -13,6 +13,7 @@ export interface User {
   email: string;
   phone: string;
   nic: string;
+  profilePictureUrl?: string;
   role: Role;
 }
 

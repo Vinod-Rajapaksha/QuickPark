@@ -108,6 +108,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             Phone = user.Phone,
             NIC = user.NIC,
+            ProfilePictureUrl = user.ProfilePictureUrl,
             Role = user.Role
         };
     }

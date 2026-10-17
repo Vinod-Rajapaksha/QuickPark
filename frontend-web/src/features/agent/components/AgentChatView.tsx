@@ -98,8 +98,16 @@ export const AgentChatView: React.FC = () => {
     };
   }, [user, messages, addMessage]);
 
+  const [lockedActionIds, setLockedActionIds] = React.useState<Set<string>>(new Set());
+
   const handleAction = async (actionType: string, payload: Record<string, unknown>) => {
+    const actionKey = (payload.reservation_id as string) || 
+      `${payload.facility_id as string}_${payload.start_time as string}`;
+
     if (actionType === 'confirm_reservation') {
+      if (lockedActionIds.has(actionKey)) return;
+      setLockedActionIds((prev) => new Set(prev).add(actionKey));
+
       try {
         try {
           await chatApi.createReservation({
@@ -128,6 +136,11 @@ export const AgentChatView: React.FC = () => {
           timestamp: new Date().toISOString()
         });
       } catch (err) {
+        setLockedActionIds((prev) => {
+          const updated = new Set(prev);
+          updated.delete(actionKey);
+          return updated;
+        });
         console.error('Reservation creation failed:', err);
         sendMessage(`Sorry, I encountered an error creating your booking.`);
       }
@@ -135,6 +148,8 @@ export const AgentChatView: React.FC = () => {
       sendMessage(`I want to cancel the booking.`);
     } else if (actionType === 'pay_reservation') {
       if (!user) return;
+      if (lockedActionIds.has(actionKey)) return;
+
       const merchantId = import.meta.env.VITE_PAYHERE_MERCHANT_ID;
       const merchantSecret = import.meta.env.VITE_PAYHERE_MERCHANT_SECRET;
       const orderId = payload.reservation_id as string;
@@ -168,6 +183,7 @@ export const AgentChatView: React.FC = () => {
       }, async (_orderId) => {
         try {
           await paymentApi.confirmExternal(orderId, _orderId);
+          setLockedActionIds((prev) => new Set(prev).add(actionKey));
           addMessage({
             role: 'agent',
             content: 'Payment successful! Your reservation is fully confirmed.',
@@ -200,9 +216,22 @@ export const AgentChatView: React.FC = () => {
       </div>
       
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 bg-slate-50/50 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-sm">
-        {messages.map((msg, idx) => (
-          <ChatBubble key={idx} message={msg} onAction={handleAction} />
-        ))}
+        {messages.map((msg, idx) => {
+          const payload = msg.action_payload;
+          const actionKey = payload
+            ? ((payload.reservation_id as string) || `${payload.facility_id as string}_${payload.start_time as string}`)
+            : '';
+          const isLocked = lockedActionIds.has(actionKey);
+
+          return (
+            <ChatBubble
+              key={idx}
+              message={msg}
+              onAction={handleAction}
+              isActionLocked={isLocked}
+            />
+          );
+        })}
         {isLoading && (
           <div className="flex w-full justify-start">
             <div className="max-w-[80%] px-4 py-3 rounded-[18px] text-[0.95rem] leading-relaxed relative bg-white text-slate-500 rounded-bl-sm border border-slate-200 shadow-sm flex gap-1 items-center">

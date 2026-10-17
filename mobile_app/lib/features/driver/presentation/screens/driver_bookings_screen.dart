@@ -104,8 +104,10 @@ class _BookingsList extends ConsumerWidget {
         final now = DateTime.now();
         final bookings = allBookings.where((b) {
           final status = b['status'];
-          final endTime = DateTime.parse(b['endTime']);
-          final isExpired = status == 'CONFIRMED' && endTime.isBefore(now);
+          final parsedEnd = DateTime.tryParse(b['endTime'] ?? '')?.toLocal();
+          final isPastEndTime = parsedEnd != null && parsedEnd.isBefore(now);
+          final isExpired =
+              (status == 'CONFIRMED' || status == 'PENDING') && isPastEndTime;
 
           if (emptyTitle == 'Past') {
             return statuses.contains(status) || isExpired;
@@ -166,15 +168,44 @@ class _BookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final startTime = DateTime.parse(booking['startTime']);
+    final now = DateTime.now();
+    final startTime = (DateTime.tryParse(booking['startTime'] ?? '') ?? now)
+        .toLocal();
+    final endTime = (DateTime.tryParse(booking['endTime'] ?? '') ?? now)
+        .toLocal();
+    final rawStatus = (booking['status'] ?? '').toString().toUpperCase();
+    final isPastEndTime = endTime.isBefore(now);
     final isExpired =
-        booking['status'] == 'CONFIRMED' &&
-        DateTime.parse(booking['endTime']).isBefore(DateTime.now());
+        (rawStatus == 'CONFIRMED' || rawStatus == 'PENDING') && isPastEndTime;
     final isPast =
-        booking['status'] == 'COMPLETED' ||
-        booking['status'] == 'CANCELLED' ||
-        booking['status'] == 'EXPIRED' ||
+        rawStatus == 'COMPLETED' ||
+        rawStatus == 'CHECKED_OUT' ||
+        rawStatus == 'CANCELLED' ||
+        rawStatus == 'EXPIRED' ||
+        rawStatus == 'NOSHOW' ||
         isExpired;
+
+    String displayStatus = rawStatus;
+    Color statusColor = Colors.grey;
+    if (isExpired || rawStatus == 'EXPIRED') {
+      displayStatus = 'EXPIRED';
+      statusColor = Colors.red;
+    } else if (rawStatus == 'CANCELLED') {
+      displayStatus = 'CANCELLED';
+      statusColor = Colors.red.shade400;
+    } else if (rawStatus == 'COMPLETED' || rawStatus == 'CHECKED_OUT') {
+      displayStatus = 'COMPLETED';
+      statusColor = Colors.teal;
+    } else if (rawStatus == 'CHECKED_IN') {
+      displayStatus = 'ACTIVE';
+      statusColor = Colors.green;
+    } else if (rawStatus == 'CONFIRMED') {
+      displayStatus = 'CONFIRMED';
+      statusColor = theme.primaryColor;
+    } else if (rawStatus == 'PENDING') {
+      displayStatus = 'PENDING';
+      statusColor = Colors.orange;
+    }
 
     return GestureDetector(
       onTap: () {
@@ -214,12 +245,36 @@ class _BookingCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          booking['facilityName'] ?? 'Parking',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                booking['facilityName'] ?? 'Parking',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                displayStatus,
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -232,12 +287,14 @@ class _BookingCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (!isPast)
+                  if (!isPast) ...[
+                    const SizedBox(width: 8),
                     const Icon(
                       CupertinoIcons.chevron_right,
                       color: Colors.grey,
                       size: 16,
                     ),
+                  ],
                 ],
               ),
             ),

@@ -8,7 +8,7 @@ import ProfileHeader from "../../features/profile/components/ProfileHeader";
 import ProfileDetailsForm from "../../features/profile/components/ProfileDetailsForm";
 import ProfileSecurityTab from "../../features/profile/components/ProfileSecurityTab";
 import { profileSchema, type ProfileFormValues } from "../../features/profile/schemas/profileSchemas";
-import { updateUser } from "../../features/users/api/userApi";
+import { updateUser, uploadProfilePicture } from "../../features/users/api/userApi";
 
 export const Profile: React.FC = () => {
   const { user, checkSession } = useAuth();
@@ -58,10 +58,43 @@ export const Profile: React.FC = () => {
     setIsEditing(false);
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please choose a valid JPG or PNG image file.", "error");
+      return;
+    }
+
+    try {
+      showToast("Uploading profile picture...", "info");
+      await uploadProfilePicture(file);
+      await checkSession();
+      showToast("Profile picture updated successfully!", "success");
+    } catch (err) {
+      console.error("Avatar upload failed", err);
+      showToast("Failed to upload profile picture.", "error");
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   if (!user) return null;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleAvatarUpload}
+        accept="image/png,image/jpeg,image/jpg"
+        className="hidden"
+      />
       {/* Page Title */}
       <div className="flex items-start justify-between gap-4 mb-2">
         <div>
@@ -78,6 +111,7 @@ export const Profile: React.FC = () => {
       {/* Header Component */}
       <ProfileHeader
         user={user}
+        onAvatarClick={() => fileInputRef.current?.click()}
         onEditClick={() => {
           setActiveTab("details");
           setIsEditing(true);

@@ -348,6 +348,48 @@ public partial class ParkingService : IParkingService
         Guid driverId, ReservationStatus? status, DateTime? from, DateTime? to,
         CancellationToken ct = default)
     {
+        var now = DateTime.UtcNow;
+
+        if (status != ReservationStatus.PENDING)
+        {
+            // Auto-expire reservations whose end time has passed
+            var expiredPendingOrConfirmed = await _context.Set<Reservation>()
+                .Where(r => r.DriverId == driverId && 
+                            (r.Status == ReservationStatus.PENDING || r.Status == ReservationStatus.CONFIRMED) && 
+                            r.EndTime < now)
+                .ToListAsync(ct);
+
+            if (expiredPendingOrConfirmed.Any())
+            {
+                foreach (var exp in expiredPendingOrConfirmed)
+                {
+                    exp.Status = ReservationStatus.CANCELLED;
+                    exp.CancelReason = "Reservation expired";
+                    exp.CancelledBy = "System";
+                    exp.CancelledAt = now;
+                    exp.UpdatedAt = now;
+                }
+                await _context.SaveChangesAsync(ct);
+            }
+
+            var expiredCheckedIn = await _context.Set<Reservation>()
+                .Where(r => r.DriverId == driverId && 
+                            r.Status == ReservationStatus.CHECKED_IN && 
+                            r.EndTime < now)
+                .ToListAsync(ct);
+
+            if (expiredCheckedIn.Any())
+            {
+                foreach (var exp in expiredCheckedIn)
+                {
+                    exp.Status = ReservationStatus.CHECKED_OUT;
+                    exp.CheckedOutAt = exp.EndTime;
+                    exp.UpdatedAt = now;
+                }
+                await _context.SaveChangesAsync(ct);
+            }
+        }
+
         var query = ReservationsForResponse().Where(r => r.DriverId == driverId);
         var filtered = ApplyReservationFilters(query, status, from, to);
 
