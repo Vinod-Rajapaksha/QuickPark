@@ -58,8 +58,11 @@ public class QrCryptographicTests
         var reservationId = Guid.NewGuid();
         var token = _tokenService.GenerateReservationToken(reservationId);
 
-        // Tamper with the token 
-        var tamperedToken = token.Substring(0, token.Length - 1) + (token.EndsWith("a") ? "b" : "a");
+        // Tamper with the signature part of the token (flip a character in the signature segment)
+        var parts = token.Split('.');
+        var sig = parts[2];
+        var tamperedSig = (sig[0] == 'A' ? 'B' : 'A') + sig.Substring(1);
+        var tamperedToken = $"{parts[0]}.{parts[1]}.{tamperedSig}";
 
         // Act
         var result = _tokenService.ValidateReservationToken(tamperedToken);
