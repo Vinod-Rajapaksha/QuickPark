@@ -73,6 +73,46 @@ class AuthRepository {
     }
   }
 
+  Future<void> updateProfile({
+    required String userId,
+    required String fullName,
+    required String email,
+    required String phone,
+    required String nic,
+  }) async {
+    try {
+      await _dio.put(
+        '/Users/$userId',
+        data: {
+          'fullName': fullName,
+          'email': email,
+          'phone': phone,
+          'nic': nic,
+        },
+      );
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<String> uploadProfilePicture(String filePath) async {
+    try {
+      final fileName = filePath.split(RegExp(r'[/\\]')).last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+
+      final response = await _dio.post(
+        '/Users/profile-picture',
+        data: formData,
+      );
+
+      return response.data['profilePictureUrl']?.toString() ?? '';
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _dio.post('/auth/logout');

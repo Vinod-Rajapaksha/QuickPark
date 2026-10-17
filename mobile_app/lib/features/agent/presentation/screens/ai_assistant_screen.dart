@@ -27,6 +27,7 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
     ),
   ];
   bool _isLoading = false;
+  final Set<String> _lockedActionIds = {};
   final ScrollController _scrollController = ScrollController();
 
   void _scrollToBottom() {
@@ -108,9 +109,12 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
                     actionType: 'payment_required',
                     actionPayload: {
                       'reservation_id': pendingPayment['reservationId'],
+                      'facility_id': pendingPayment['facilityId'],
                       'facility_name': pendingPayment['facilityName'],
                       'estimated_price': pendingPayment['totalAmount'],
-                      'vehicle_type': pendingPayment['vehicleTypeName'],
+                      'vehicle_type':
+                          pendingPayment['vehicleTypeId'] ??
+                          pendingPayment['vehicleTypeName'],
                       'start_time': pendingPayment['startTime'],
                       'end_time': pendingPayment['endTime'],
                     },
@@ -272,7 +276,16 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
   }
 
   void _handleAction(String actionType, Map<String, dynamic> payload) async {
+    final actionKey =
+        payload['reservation_id']?.toString() ??
+        '${payload['facility_id']}_${payload['start_time']}';
+
     if (actionType == 'confirm_reservation') {
+      if (_lockedActionIds.contains(actionKey)) return;
+      setState(() {
+        _lockedActionIds.add(actionKey);
+      });
+
       try {
         final dio = ref.read(dioProvider);
         final agentUrl = dotenv.env['AGENT_API_URL'];
@@ -304,6 +317,9 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
         });
         _scrollToBottom();
       } catch (e) {
+        setState(() {
+          _lockedActionIds.remove(actionKey);
+        });
         _handleSendMessage(
           'Sorry, I encountered an error creating your booking.',
         );
@@ -311,18 +327,32 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
     } else if (actionType == 'cancel_reservation') {
       _handleSendMessage('I want to cancel the booking.');
     } else if (actionType == 'pay_reservation') {
+      if (_lockedActionIds.contains(actionKey)) return;
+      setState(() {
+        _lockedActionIds.add(actionKey);
+      });
+
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => DriverCheckoutScreen(
             reservationRequest: {
-              'facilityId': payload['facility_id'],
-              'vehicleTypeId': payload['vehicle_type'],
-              'startTime': payload['start_time'],
-              'endTime': payload['end_time'],
+              'facilityId': payload['facility_id'] ?? '',
+              'vehicleTypeId': payload['vehicle_type'] ?? '',
+              'startTime':
+                  payload['start_time'] ?? DateTime.now().toIso8601String(),
+              'endTime':
+                  payload['end_time'] ??
+                  DateTime.now()
+                      .add(const Duration(hours: 1))
+                      .toIso8601String(),
             },
-            facilityData: {'name': payload['facility_name']},
+            facilityData: {
+              'name': payload['facility_name'] ?? 'Parking Facility',
+              'address': payload['address'] ?? '',
+            },
             totalCost:
                 double.tryParse(payload['estimated_price'].toString()) ?? 0.0,
+            existingReservationId: payload['reservation_id'],
           ),
         ),
       );
@@ -426,9 +456,18 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
+                      final msg = _messages[index];
+                      final payload = msg.actionPayload;
+                      final actionKey = payload != null
+                          ? (payload['reservation_id']?.toString() ??
+                                '${payload['facility_id']}_${payload['start_time']}')
+                          : '';
+                      final isLocked = _lockedActionIds.contains(actionKey);
+
                       return ChatBubble(
-                        message: _messages[index],
+                        message: msg,
                         onAction: _handleAction,
+                        isActionLocked: isLocked,
                       );
                     },
                   ),

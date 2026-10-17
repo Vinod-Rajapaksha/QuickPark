@@ -50,12 +50,18 @@ class User {
   final String fullName;
   final String email;
   final String role;
+  final String? phone;
+  final String? nic;
+  final String? profilePictureUrl;
 
   User({
     required this.id,
     required this.fullName,
     required this.email,
     required this.role,
+    this.phone,
+    this.nic,
+    this.profilePictureUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -87,6 +93,9 @@ class User {
       fullName: json['fullName']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       role: parsedRole,
+      phone: json['phone']?.toString(),
+      nic: json['nic']?.toString(),
+      profilePictureUrl: json['profilePictureUrl']?.toString(),
     );
   }
 }
