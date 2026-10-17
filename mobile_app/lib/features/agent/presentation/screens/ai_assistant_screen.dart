@@ -361,8 +361,8 @@ class _AiAssistantModalState extends ConsumerState<AiAssistantModal> {
               title: Row(
                 children: [
                   Container(
-                      width: 36,
-                      height: 36,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
